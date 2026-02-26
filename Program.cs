@@ -11,8 +11,9 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
+    var timeoutHours = builder.Configuration.GetValue<int>("SessionTimeoutHours", 2);
     options.Cookie.Name = ".WebEIP.Session";
-    options.IdleTimeout = System.TimeSpan.FromHours(8); // Adjust as needed
+    options.IdleTimeout = System.TimeSpan.FromHours(timeoutHours);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });

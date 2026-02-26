@@ -1,0 +1,225 @@
+@* Views/Shared/_LovModal.cshtml *@
+<div id="genericLovModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-[75] items-center justify-center p-4 transition-opacity duration-200">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden border border-slate-300">
+        <!-- Header -->
+        <div class="bg-blue-600 text-white px-4 py-2 flex justify-between items-center cursor-move">
+            <h3 class="text-sm font-bold flex items-center gap-2" id="genericLovTitle">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                尋找
+            </h3>
+            <button class="hover:bg-blue-700 p-1 rounded transition-colors" onclick="closeGenericLov()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="p-4 flex-1 flex flex-col bg-slate-50">
+            <div class="flex gap-2 items-center mb-4">
+                <label class="text-sm font-bold text-slate-700 whitespace-nowrap">尋找 %</label>
+                <input type="text" id="genericLovSearchInput" class="flex-1 border border-slate-300 px-3 py-1.5 rounded-sm shadow-inner text-sm focus:outline-none focus:border-blue-500" placeholder="輸入關鍵字，按 Enter 搜尋...">
+                <button type="button" class="bg-slate-200 hover:bg-slate-300 border border-slate-400 px-4 py-1.5 rounded-sm text-sm font-bold text-slate-700 transition-colors shadow-sm" onclick="fetchGenericLovData()">尋找</button>
+            </div>
+
+            <!-- Table -->
+            <div class="border border-slate-300 bg-white flex-1 overflow-auto rounded-sm min-h-[300px] max-h-[400px]">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead class="bg-slate-100 text-slate-700 sticky top-0 shadow-sm" id="genericLovThead">
+                        <tr>
+                            <!-- 標題動態產生 -->
+                        </tr>
+                    </thead>
+                    <tbody id="genericLovTableBody">
+                        <!-- 資料由 JS 動態產生 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 按鈕區 -->
+        <div class="bg-slate-100 border-t border-slate-300 px-4 py-3 flex justify-center gap-4">
+            <button type="button" class="bg-white border text-blue-700 border-slate-400 px-6 py-1.5 rounded-sm shadow-sm hover:bg-blue-50 text-sm font-bold transition-colors" onclick="confirmGenericLovSelection()">確定</button>
+            <button type="button" class="bg-white border text-slate-700 border-slate-400 px-6 py-1.5 rounded-sm shadow-sm hover:bg-slate-100 text-sm font-bold transition-colors" onclick="closeGenericLov()">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let genericLovState = {
+        title: '',
+        apiUrl: '',
+        columns: [],
+        targetInputs: {},
+        dataFields: [],
+        selectedValue: {},
+        currentRow: null,
+        formatDisplay: null,
+        onConfirmCallback: null // Optional callback function after confirmation
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById('genericLovSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchGenericLovData();
+                }
+            });
+        }
+    });
+
+    /**
+     * 開啟通用 LOV 視窗 (開窗功能)
+     * @@param {string} title - 視窗標題
+     * @@param {string} apiUrl - API 路徑 (GET, 會在結尾加上 q 或 query 參數)
+     * @@param {Array<string>} columns - 表格標題陣列，例如: ['編號', '名稱']
+     * @@param {Array<string>} dataFields - 從 API 取得的欄位陣列，按順序對應 columns，例如: ['id', 'name']
+     * @@param {Object} targetInputs - key對應dataFields, value為目標HTML Input ID。特殊key 'FORMATTED_DISPLAY' 可用於組合字串
+     * @@param {Function} formatDisplay - 可選。如果 targetInputs 中有 'FORMATTED_DISPLAY'，此函數回傳組合字串
+     * @@param {Function} onConfirmCallback - 可選。確定選擇後的額外回呼函數
+     */
+    function openGenericLov(title, apiUrl, columns, dataFields, targetInputs, formatDisplay = null, onConfirmCallback = null) {
+        genericLovState.title = title;
+        genericLovState.apiUrl = apiUrl;
+        genericLovState.columns = columns;
+        genericLovState.dataFields = dataFields;
+        genericLovState.targetInputs = targetInputs;
+        genericLovState.formatDisplay = formatDisplay;
+        genericLovState.onConfirmCallback = onConfirmCallback;
+
+        document.getElementById('genericLovTitle').innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            ${title}
+        `;
+
+        // Render Thead
+        const thead = document.getElementById('genericLovThead').querySelector('tr');
+        thead.innerHTML = '';
+        columns.forEach(col => {
+            const th = document.createElement('th');
+            th.className = "border-b border-r border-slate-300 px-3 py-2 font-bold whitespace-nowrap";
+            th.innerText = col;
+            thead.appendChild(th);
+        });
+
+        // Clear previous data
+        document.getElementById('genericLovTableBody').innerHTML = '';
+        document.getElementById('genericLovSearchInput').value = '';
+
+        const modal = document.getElementById('genericLovModal');
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+
+        setTimeout(() => {
+            document.getElementById('genericLovSearchInput').focus();
+            fetchGenericLovData(); // Fetch initially
+        }, 100);
+    }
+
+    function closeGenericLov() {
+        const modal = document.getElementById('genericLovModal');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        genericLovState.selectedValue = {};
+        genericLovState.currentRow = null;
+    }
+
+    async function fetchGenericLovData() {
+        const tbody = document.getElementById('genericLovTableBody');
+        const query = document.getElementById('genericLovSearchInput').value.trim();
+        tbody.innerHTML = `<tr><td colspan="${genericLovState.columns.length}" class="text-center py-4 text-slate-500">正在搜尋...</td></tr>`;
+        genericLovState.currentRow = null;
+
+        try {
+            const sep = genericLovState.apiUrl.includes('?') ? '&' : '?';
+            // 使用 query 參數名稱以符合後端
+            const response = await fetch(`${genericLovState.apiUrl}${sep}query=${encodeURIComponent(query)}`);
+            const result = await response.json();
+
+            if (response.ok && result.status === 'success') {
+                renderGenericLovTable(result.data);
+            } else {
+                tbody.innerHTML = `<tr><td colspan="${genericLovState.columns.length}" class="text-center py-4 text-red-500">Error: ${result.message}</td></tr>`;
+            }
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="${genericLovState.columns.length}" class="text-center py-4 text-red-500">Fetch Failed: ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderGenericLovTable(data) {
+        const tbody = document.getElementById('genericLovTableBody');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${genericLovState.columns.length}" class="text-center py-4 text-slate-500">查無資料</td></tr>`;
+            return;
+        }
+
+        data.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.className = "cursor-pointer transition-colors border-b border-slate-200 hover:bg-blue-50";
+
+            tr.onclick = function () { selectGenericLovRow(tr, item); };
+            tr.ondblclick = function () { selectGenericLovRow(tr, item); confirmGenericLovSelection(); };
+
+            genericLovState.dataFields.forEach((field, fIdx) => {
+                const td = document.createElement('td');
+                td.className = "px-3 py-1.5 border-r border-slate-200 truncate max-w-[200px]" + (fIdx === 0 ? " font-mono text-blue-700" : " text-slate-700 font-medium");
+                td.innerText = item[field] || (item[field] === 0 ? '0' : ''); // handle 0 specifically
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+
+            if (index === 0) {
+                selectGenericLovRow(tr, item);
+            }
+        });
+    }
+
+    function selectGenericLovRow(rowElement, rowData) {
+        if (genericLovState.currentRow) {
+            genericLovState.currentRow.classList.remove('bg-blue-600', 'text-white');
+            genericLovState.currentRow.classList.add('hover:bg-blue-50');
+            genericLovState.currentRow.querySelectorAll('td').forEach(td => td.classList.remove('text-white'));
+            genericLovState.currentRow.querySelector('td:nth-child(1)').classList.add('text-blue-700');
+            genericLovState.currentRow.querySelector('td:nth-child(2)')?.classList.add('text-slate-700');
+        }
+
+        genericLovState.currentRow = rowElement;
+        genericLovState.currentRow.classList.remove('hover:bg-blue-50');
+        genericLovState.currentRow.classList.add('bg-blue-600', 'text-white');
+        genericLovState.currentRow.querySelectorAll('td').forEach(td => {
+            td.classList.remove('text-blue-700', 'text-slate-700', 'text-slate-500');
+            td.classList.add('text-white');
+        });
+
+        genericLovState.selectedValue = rowData;
+    }
+
+    function confirmGenericLovSelection() {
+        if (genericLovState.selectedValue && Object.keys(genericLovState.selectedValue).length > 0) {
+            // Loop through targetInputs mapping
+            for (const [dataKey, inputId] of Object.entries(genericLovState.targetInputs)) {
+
+                if (dataKey === 'FORMATTED_DISPLAY' && genericLovState.formatDisplay) {
+                    const el = document.getElementById(inputId);
+                    if (el) el.value = genericLovState.formatDisplay(genericLovState.selectedValue);
+                } else if (genericLovState.selectedValue[dataKey] !== undefined) {
+                    const el = document.getElementById(inputId);
+                    if (el) {
+                        el.value = genericLovState.selectedValue[dataKey];
+                    }
+                }
+            }
+
+            // Execute callback if defined
+            if (genericLovState.onConfirmCallback) {
+                genericLovState.onConfirmCallback(genericLovState.selectedValue);
+            }
+
+            closeGenericLov();
+        } else {
+            alert('請先選擇一筆資料');
+        }
+    }
+</script>

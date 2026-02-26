@@ -67,6 +67,14 @@ function openProgramModal(input) {
     document.getElementById('modal-plan-hours').textContent = data.planHours || '-';
     document.getElementById('modal-real-hours').textContent = data.realHours || '-';
 
+    const btnOpenProgram = document.getElementById('btnOpenProgram');
+    if (btnOpenProgram) {
+        btnOpenProgram.onclick = function(e) {
+            e.preventDefault();
+            openExecutionModal(`/mis/programs/${data.programNo || ''}`, `${data.programNo} ${data.programName}`);
+        };
+    }
+
     const modal = document.getElementById('programModal');
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
@@ -256,21 +264,74 @@ function removeActive(items) {
 function runProgram() {
     const programNo = document.getElementsByName('program_no')[0].value.trim().toUpperCase();
     if (programNo) {
-        // 非同步取得代號資料
-        fetch(`/api/mis/programs/${programNo}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('找不到該程式代號');
-                }
-                return response.json();
-            })
-            .then(data => {
-                openProgramModal(data);
-            })
-            .catch(error => {
-                alert(error.message || '查詢失敗，請檢查網路連線或稍後再試。');
-            });
+        // 使用者點選執行，直接跳出 iframe 浮動視窗
+        openExecutionModal(`/mis/programs/${programNo}`, programNo);
     } else {
         alert('請先輸入程式代號');
+    }
+}
+
+// -------------------------------------------------------------
+// Execution Modal (Iframe) functions
+// -------------------------------------------------------------
+function openExecutionModal(url, title) {
+    const modal = document.getElementById('executionModal');
+    const iframe = document.getElementById('executionIframe');
+    const titleEl = document.getElementById('executionModalTitle');
+
+    if (title) {
+        titleEl.textContent = title + " - 程式執行";
+    } else {
+        titleEl.textContent = "程式執行";
+    }
+
+    // Show spinner or default background then load
+    iframe.src = url;
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+
+    // Animate pop-in
+    setTimeout(() => {
+        document.getElementById('executionModalContent').classList.remove('scale-95');
+        document.getElementById('executionModalContent').classList.add('scale-100');
+    }, 10);
+
+    // If the detail modal is currently open, we can close it smoothly
+    closeProgramModal();
+}
+
+function closeExecutionModal() {
+    const modal = document.getElementById('executionModal');
+    const iframe = document.getElementById('executionIframe');
+    const modalContent = document.getElementById('executionModalContent');
+
+    modalContent.classList.remove('scale-100');
+    modalContent.classList.add('scale-95');
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        iframe.src = 'about:blank'; // Clear iframe to free resources
+    }, 300);
+}
+
+function toggleExecutionMaximize() {
+    const modalContent = document.getElementById('executionModalContent');
+    const maxIcon = document.getElementById('execMaximizeIcon');
+    const restoreIcon = document.getElementById('execRestoreIcon');
+
+    if (modalContent.classList.contains('max-w-7xl')) {
+        // Switch to Maximize
+        modalContent.classList.remove('max-w-7xl', 'h-[95vh]', 'rounded-2xl');
+        modalContent.classList.add('w-full', 'h-screen', 'rounded-none');
+        maxIcon.classList.add('hidden');
+        restoreIcon.classList.remove('hidden');
+    } else {
+        // Switch to Restore
+        modalContent.classList.add('max-w-7xl', 'h-[95vh]', 'rounded-2xl');
+        modalContent.classList.remove('w-full', 'h-screen', 'rounded-none');
+        maxIcon.classList.remove('hidden');
+        restoreIcon.classList.add('hidden');
     }
 }

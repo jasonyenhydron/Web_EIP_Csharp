@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/main.css" asp-append-version="true">
+    @RenderSection("Styles", required: false)
+</head>
+<body class="bg-slate-50 overflow-x-hidden">
+    @RenderBody()
+
+    <!-- SweetAlert2 for modern alerts -->
+    <!-- SweetAlert2 for modern alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- LOV 共用模組 -->
+    <partial name="~/Views/Shared/_LovModal.cshtml" />
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

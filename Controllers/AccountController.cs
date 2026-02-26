@@ -34,15 +34,19 @@ namespace Web_EIP_Csharp.Controllers
 
             try
             {
-                Console.WriteLine($"Attempting Oracle Connection: User={username}, TNS={tns}");
+                Console.WriteLine($"Attempting Oracle Connection and Validation: User={username}, TNS={tns}");
 
-                // Validate Connection
-                using (var connection = OracleDbHelper.GetConnection(username, password, tns))
+                // Validate Connection and User Login using IDM.f_idm_check_mis_password
+                bool isValidUser = await OracleDbHelper.ValidateUserLoginAsync(username, password, tns);
+                if (!isValidUser)
                 {
-                    await connection.OpenAsync();
+                    ViewBag.Error = "登入失敗: 帳號或密碼錯誤 (Invalid username or password)";
+                    ViewBag.Username = username;
+                    ViewBag.Tns = tns;
+                    return View();
                 }
 
-                // If connection works, attempt to fetch user name
+                // If connection works and user is valid, attempt to fetch user name
                 string userName = null;
                 try
                 {

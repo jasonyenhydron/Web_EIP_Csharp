@@ -222,7 +222,38 @@ namespace Web_EIP_Csharp.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
+
+            ViewBag.UserId = username;
+            ViewBag.UserName = HttpContext.Session.GetString("user_name") ?? username;
+
+            // Extract numeric employee ID from username (e.g. GONU7353 -> 7353)
+            var numericId = new string(username.Where(char.IsDigit).ToArray());
+            ViewBag.NumericUserId = string.IsNullOrEmpty(numericId) ? username : numericId;
+
             return View();
+        }
+
+        [HttpGet("api/mis/programs/HRMGD47/leave-types")]
+        public async Task<IActionResult> GetLeaveTypes([FromQuery] string query = "")
+        {
+            var username = HttpContext.Session.GetString("username");
+            var password = HttpContext.Session.GetString("password");
+            var tns = HttpContext.Session.GetString("tns");
+
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(tns))
+            {
+                return Unauthorized(new { status = "error", message = "Session expired. Please log in again." });
+            }
+
+            try
+            {
+                var types = await OracleDbHelper.GetLeaveTypesAsync(username, password, tns, query);
+                return Json(new { status = "success", data = types });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = "error", message = ex.Message });
+            }
         }
 
         [HttpPost("api/mis/programs/HRMGD47/submit")]
