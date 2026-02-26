@@ -1,0 +1,201 @@
+@{
+    ViewData["Title"] = "儀表板";
+    ViewBag.HeaderTitle = "儀表板";
+    ViewBag.HeaderIcon = @"<svg class=""w-6 h-6"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z""></path></svg>";
+}
+
+<div class="flex h-screen bg-slate-50 overflow-hidden">
+    <!-- Sidebar -->
+    <partial name="Components/_Sidebar" />
+
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <!-- Header -->
+        <partial name="Components/_Header" />
+
+        <!-- Main Content Scroller -->
+        <main class="flex-1 overflow-auto p-6">
+
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl mb-8 text-white overflow-hidden relative group">
+                <!-- Background decoration -->
+                <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+
+                <div class="flex flex-col md:flex-row items-center relative z-10">
+                    <!-- Left: Illustration -->
+                    <div class="hidden md:flex w-1/3 p-8 justify-center items-center bg-white/5 backdrop-blur-sm border-r border-white/10">
+                        <div class="relative">
+                            <!-- Abstract SVG Illustration: 3D Box/Data representation -->
+                            <svg class="w-32 h-32 text-blue-100/80 drop-shadow-2xl" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                                <circle cx="12" cy="12" r="3" class="animate-pulse" fill="currentColor" fill-opacity="0.2"/>
+                                <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke-dasharray="1 3" stroke-opacity="0.5"/>
+                            </svg>
+                            <!-- Dynamic Accents -->
+                            <div class="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full border-2 border-indigo-600 animate-bounce shadow-lg"></div>
+                            <div class="absolute -bottom-2 -left-2 w-3 h-3 bg-blue-300 rounded-full border-2 border-indigo-600 animate-pulse"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Content -->
+                    <div class="flex-1 p-8">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            <div>
+                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs font-bold mb-4 backdrop-blur-md">
+                                    <span class="flex h-2 w-2 rounded-full bg-blue-200 animate-ping"></span>
+                                    系統狀態：營運正常
+                                </div>
+                                <h1 class="text-3xl font-extrabold mb-2 tracking-tight">午安，@(ViewBag.UserName)！</h1>
+                                <p class="text-blue-100/90 text-lg">今日有 <span class="font-bold text-white underline decoration-blue-300 underline-offset-4">3</span> 項待辦事項與 <span class="font-bold text-white underline decoration-blue-300 underline-offset-4">1</span> 則新公告。</p>
+                            </div>
+                            <div class="flex flex-col items-start md:items-end">
+                                <span class="bg-white/20 px-5 py-2.5 rounded-2xl text-sm font-black backdrop-blur-xl border border-white/20 shadow-lg">
+                                    @ViewBag.TodayDate
+                                </span>
+                                <div class="mt-3 flex items-center gap-3 text-blue-200/80 text-xs font-semibold">
+                                    <div class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-blue-300" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"></path></svg>
+                                        最後登入：@DateTime.Now.ToString("h:mm tt")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Left Column (2/3 width) -->
+                <div class="lg:col-span-2 space-y-6">
+
+                    <!-- Announcements Widget -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                                最新公告
+                            </h3>
+                            <a href="#" class="text-sm text-blue-600 hover:text-blue-700 font-medium">查看全部 &rarr;</a>
+                        </div>
+                        <div class="divide-y divide-slate-100">
+                            <div class="p-4 hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded mr-2">置頂</span>
+                                <h4 class="font-medium text-slate-800 group-hover:text-blue-600 inline-block transition-colors">2026 年度員工旅遊調查開始</h4>
+                                <p class="text-sm text-slate-500 mt-1">請各位同仁於本週五前完成問卷調查...</p>
+                                <div class="mt-2 flex items-center gap-4 text-xs text-slate-400">
+                                    <span>2026-02-12</span>
+                                    <span>發布單位：福委會</span>
+                                </div>
+                            </div>
+                            <div class="p-4 hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <h4 class="font-medium text-slate-800 group-hover:text-blue-600 inline-block transition-colors">資訊安全宣導：防範釣魚郵件</h4>
+                                <p class="text-sm text-slate-500 mt-1">近期發現多起釣魚郵件攻擊，請勿點擊不明連結...</p>
+                                <div class="mt-2 flex items-center gap-4 text-xs text-slate-400">
+                                    <span>2026-02-10</span>
+                                    <span>發布單位：資訊部</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Workflow Widget -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                待辦簽核
+                            </h3>
+                            <a href="#" class="text-sm text-blue-600 hover:text-blue-700 font-medium">前往簽核中心 &rarr;</a>
+                        </div>
+                        <div class="p-4">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+                                        <tr>
+                                            <th class="px-4 py-2 rounded-l-lg">單號</th>
+                                            <th class="px-4 py-2">類別</th>
+                                            <th class="px-4 py-2">申請人</th>
+                                            <th class="px-4 py-2">日期</th>
+                                            <th class="px-4 py-2 rounded-r-lg">狀態</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-4 py-3 font-medium text-slate-900">PO-202602001</td>
+                                            <td class="px-4 py-3 text-slate-600">採購單</td>
+                                            <td class="px-4 py-3 text-slate-600">王大明</td>
+                                            <td class="px-4 py-3 text-slate-400">02/12</td>
+                                            <td class="px-4 py-3"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs">待簽核</span></td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-4 py-3 font-medium text-slate-900">LE-202602003</td>
+                                            <td class="px-4 py-3 text-slate-600">請假單</td>
+                                            <td class="px-4 py-3 text-slate-600">李小花</td>
+                                            <td class="px-4 py-3 text-slate-400">02/11</td>
+                                            <td class="px-4 py-3"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs">待簽核</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column (1/3 width) -->
+                <div class="space-y-6">
+
+                    <!-- Quick Links -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                            常用連結
+                        </h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <a href="#" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-600 transition-all border border-transparent hover:border-blue-200">
+                                <div class="bg-blue-100 p-2 rounded-lg mb-2 text-blue-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                                </div>
+                                <span class="text-xs font-medium">Oracle MIS</span>
+                            </a>
+                            <a href="#" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-green-50 hover:text-green-600 transition-all border border-transparent hover:border-green-200">
+                                <div class="bg-green-100 p-2 rounded-lg mb-2 text-green-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                </div>
+                                <span class="text-xs font-medium">報表系統</span>
+                            </a>
+                            <a href="#" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-orange-50 hover:text-orange-600 transition-all border border-transparent hover:border-orange-200">
+                                <div class="bg-orange-100 p-2 rounded-lg mb-2 text-orange-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <span class="text-xs font-medium">考勤查詢</span>
+                            </a>
+                            <a href="#" class="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-purple-50 hover:text-purple-600 transition-all border border-transparent hover:border-purple-200">
+                                <div class="bg-purple-100 p-2 rounded-lg mb-2 text-purple-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                </div>
+                                <span class="text-xs font-medium">系統設定</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Calendar / Time Widget (Simple) -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-sm p-6 text-white text-center">
+                        <div class="text-4xl font-bold mb-1 font-mono">@DateTime.Now.ToString("HH:mm")</div>
+                        <div class="text-slate-400 text-sm">@DateTime.Now.ToString("ddd, MMM dd", new System.Globalization.CultureInfo("en-US")).ToUpper()</div>
+                        <div class="mt-4 pt-4 border-t border-slate-700 flex justify-between text-xs text-slate-400">
+                            <span>台北 (GMT+8)</span>
+                            <span class="text-green-400">● 線上</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Side bar script -->
+    <script src="~/js/sidebar.js" asp-append-version="true"></script>
+}

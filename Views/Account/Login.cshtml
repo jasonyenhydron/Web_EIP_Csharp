@@ -1,0 +1,153 @@
+@{
+    ViewData["Title"] = "登入";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-md space-y-6">
+        <!-- 登入表單卡片 -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 hover:shadow-blue-200 hover:-translate-y-1">
+            <!-- 卡片標題 -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center py-6">
+                <h3 class="text-2xl font-bold flex items-center justify-center gap-2">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                    </svg>
+                    金可集團EIP登入
+                </h3>
+            </div>
+
+            <!-- 表單內容 -->
+            <div class="p-8">
+                @if (ViewBag.Error != null)
+                {
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                        <span class="block sm:inline">@ViewBag.Error</span>
+                    </div>
+                }
+
+                <form asp-controller="Account" asp-action="Login" method="post" id="loginForm" class="space-y-4">
+                    <!-- 帳號 -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <label for="username" class="w-20 text-right text-sm font-bold text-slate-700">帳號:</label>
+                            <input type="text"
+                                   class="flex-1 px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                                   name="username"
+                                   id="username"
+                                   value="@ViewBag.Username"
+                                   required>
+                        </div>
+                    </div>
+
+                    <!-- 密碼 -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <label for="password" class="w-20 text-right text-sm font-bold text-slate-700">密碼:</label>
+                            <input type="password"
+                                   class="flex-1 px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                                   name="password"
+                                   id="password"
+                                   required>
+                        </div>
+                    </div>
+
+                    <!-- 資料庫 -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <label for="tns" class="w-20 text-right text-sm font-bold text-slate-700">資料庫:</label>
+                            <select class="flex-1 px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 bg-white shadow-sm"
+                                    name="tns" id="tns" required>
+                                @if (ViewBag.TnsList != null)
+                                {
+                                    foreach (var tnsName in ViewBag.TnsList)
+                                    {
+                                        if (ViewBag.Tns == tnsName || (string.IsNullOrEmpty(ViewBag.Tns) && tnsName == "MIS"))
+                                        {
+                                            <option value="@tnsName" selected>@tnsName</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@tnsName">@tnsName</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 語言及日期預設值 Checkbox -->
+                    <div class="pl-20 mt-4 mb-2">
+                        <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                            <input type="checkbox" name="use_defaults" id="use_defaults" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                            <span>語言及日期型式使用使用者設定之預設值</span>
+                        </label>
+                    </div>
+
+                    <!-- 語言 -->
+                    <div id="lang_settings" class="space-y-2 hidden">
+                        <div class="flex items-center gap-2">
+                            <label for="language" class="w-20 text-right text-sm font-bold text-slate-700">語言:</label>
+                            <select class="flex-1 px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-500"
+                                    name="language" id="language">
+                                <option value="TW" selected>繁體中文</option>
+                                <option value="US">English</option>
+                            </select>
+                        </div>
+
+                        <!-- 日期型式 -->
+                        <div class="flex items-center gap-2">
+                            <label for="date_format" class="w-20 text-right text-sm font-bold text-slate-700">日期型式:</label>
+                            <select class="flex-1 px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-500"
+                                    name="date_format" id="date_format">
+                                <option value="CE" selected>CE</option>
+                                <option value="ROC">ROC</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 程式測試模式 -->
+                    <div class="pl-20 mt-2 mb-6">
+                        <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                            <input type="checkbox" name="test_mode" id="test_mode" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span>程式測試模式</span>
+                        </label>
+                    </div>
+
+                    <!-- 按鈕群組 -->
+                    <div class="flex gap-2 justify-center pt-2">
+                        <button type="submit"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-800 font-bold py-2 px-4 rounded border border-gray-400 shadow-sm transition-all"
+                                id="loginBtn">
+                            登入
+                        </button>
+                        <button type="button"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-800 font-bold py-2 px-4 rounded border border-gray-400 shadow-sm transition-all">
+                            改變密碼
+                        </button>
+                        <button type="button" onclick="window.close()"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-800 font-bold py-2 px-4 rounded border border-gray-400 shadow-sm transition-all">
+                            離開
+                        </button>
+                    </div>
+
+                    <!-- 工作目錄 -->
+                    <div class="mt-4">
+                        <div class="flex items-center gap-2">
+                            <label for="work_dir" class="w-20 text-right text-sm font-bold text-slate-700">工作目錄:</label>
+                            <input type="text"
+                                   class="flex-1 px-3 py-1 border border-slate-300 rounded bg-slate-50 text-slate-500 focus:outline-none focus:ring-0"
+                                   name="work_dir"
+                                   id="work_dir"
+                                   readonly>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- 加入時間戳防快取, asp-append-version 也能自動防快取 -->
+    <script src="~/js/login.js" asp-append-version="true"></script>
+}
