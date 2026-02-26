@@ -1,0 +1,69 @@
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Sidebar Collapsible Styles */
+#sidebar {
+    transition: width 0.3s ease-in-out;
+}
+
+#sidebar.collapsed {
+    width: 5rem; /* Equivalent to w-20 */
+}
+
+#sidebar.collapsed .sidebar-text,
+#sidebar.collapsed #mis-submenu,
+#sidebar.collapsed .sidebar-footer-text {
+    display: none;
+}
+
+#sidebar.collapsed .sidebar-logo {
+    display: none;
+}
+
+#sidebar.collapsed .h-16 {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#sidebar.collapsed .sidebar-toggle-btn {
+    margin-right: 0;
+}
+
+#sidebar.collapsed a {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#sidebar.collapsed a svg {
+    margin-right: 0;
+}
+
+#sidebar.collapsed .border-t {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+}
+/* Sidebar Toggle Animation */
+.hamburger-line {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background-color: currentColor;
+    border-radius: 99px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-toggle-btn.active .hamburger-line:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+.sidebar-toggle-btn.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+.sidebar-toggle-btn.active .hamburger-line:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}

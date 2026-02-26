@@ -181,7 +181,7 @@
 
                     <!-- Calendar / Time Widget (Simple) -->
                     <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-sm p-6 text-white text-center">
-                        <div class="text-4xl font-bold mb-1 font-mono">@DateTime.Now.ToString("HH:mm")</div>
+                        <div id="dashboard-clock" class="text-4xl font-bold mb-1 font-mono">@DateTime.Now.ToString("HH:mm")</div>
                         <div class="text-slate-400 text-sm">@DateTime.Now.ToString("ddd, MMM dd", new System.Globalization.CultureInfo("en-US")).ToUpper()</div>
                         <div class="mt-4 pt-4 border-t border-slate-700 flex justify-between text-xs text-slate-400">
                             <span>台北 (GMT+8)</span>
@@ -198,4 +198,18 @@
 @section Scripts {
     <!-- Side bar script -->
     <script src="~/js/sidebar.js" asp-append-version="true"></script>
+    <script>
+        function updateClock() {
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var clockEl = document.getElementById('dashboard-clock');
+            if (clockEl) {
+                clockEl.textContent = hours + ':' + minutes;
+            }
+        }
+        // 每秒檢查一次時間並更新
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Oracle.ManagedDataAccess.Client;
 using Web_EIP_Csharp.Helpers;
+using Web_EIP_Csharp.Models;
 
 namespace Web_EIP_Csharp.Controllers
 {
@@ -41,11 +42,13 @@ namespace Web_EIP_Csharp.Controllers
                         WHERE program_no LIKE :program_no || '%'
                           AND (employee_id = :employee_id OR :employee_id IS NULL)
                           AND (display_code = :display_code OR :display_code IS NULL)
+                          AND LANGUAGE_ID = 1
                         ORDER BY program_no";
 
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = sql;
+                        command.BindByName = true;
                         command.Parameters.Add(new OracleParameter("program_no", string.IsNullOrEmpty(program_no) ? "" : program_no));
                         command.Parameters.Add(new OracleParameter("employee_id", string.IsNullOrEmpty(employee_id) ? (object)DBNull.Value : employee_id));
                         command.Parameters.Add(new OracleParameter("display_code", string.IsNullOrEmpty(display_code) ? (object)DBNull.Value : display_code));
@@ -119,6 +122,191 @@ namespace Web_EIP_Csharp.Controllers
                 ViewBag.Error = $"系統錯誤: {e.Message}";
                 ViewBag.Programs = new List<Dictionary<string, object>>();
                 return View("MisPrograms");
+            }
+        }
+
+        [HttpGet("api/mis/programs/suggestions")]
+        public async Task<IActionResult> GetSuggestions([FromQuery] string q)
+        {
+            if (string.IsNullOrEmpty(q) || q.Length < 1 || q.Length > 50)
+            {
+                return Json(new List<object>()); // return empty list
+            }
+
+            var username = HttpContext.Session.GetString("username");
+            var password = HttpContext.Session.GetString("password");
+            var tns = HttpContext.Session.GetString("tns");
+
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(tns))
+            {
+                return Unauthorized(new { status = "error", message = "Not logged in" });
+            }
+
+            try
+            {
+                var suggestions = await OracleDbHelper.GetProgramSuggestionsAsync(username, password, tns, q);
+                return Json(suggestions);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { status = "error", message = e.Message });
+            }
+        }
+
+        [HttpGet("api/mis/programs/{program_no}")]
+        public async Task<IActionResult> GetProgramDetail(string program_no)
+        {
+            var username = HttpContext.Session.GetString("username");
+            var password = HttpContext.Session.GetString("password");
+            var tns = HttpContext.Session.GetString("tns");
+
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(tns))
+            {
+                return Unauthorized(new { status = "error", message = "Not logged in" });
+            }
+
+            try
+            {
+                using (var connection = OracleDbHelper.GetConnection(username, password, tns))
+                {
+                    await connection.OpenAsync();
+
+                    var sql = @"
+                        SELECT LANGUAGE_ID, PROGRAM_ID, PROGRAM_NO, PROGRAM_NAME,
+                               EMPLOYEE_ID, PURPOSE,
+                               PLAN_START_DEVELOP_DATE, PLAN_FINISH_DEVELOP_DATE,
+                               REAL_START_DEVELOP_DATE, REAL_FINISH_DEVELOP_DATE,
+                               PLAN_WORK_HOURS, REAL_WORK_HOURS,
+                               DISPLAY_CODE, PROGRAM_TYPE
+                        FROM idm_program_v
+                        WHERE program_no = :program_no
+                          AND LANGUAGE_ID = 1";
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = sql;
+                        command.BindByName = true;
+                        command.Parameters.Add(new OracleParameter("program_no", program_no.ToUpper()));
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                var program = new Dictionary<string, object>();
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    var val = reader.GetValue(i);
+                                    program.Add(reader.GetName(i), val == DBNull.Value ? null : val);
+                                }
+                                return Json(program);
+                            }
+                            else
+                            {
+                                return NotFound(new { status = "error", message = "Program not found" });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { status = "error", message = e.Message });
+            }
+        }
+
+        [HttpGet("mis/programs/HRMGD47")]
+        public IActionResult HRMGD47()
+        {
+            var username = HttpContext.Session.GetString("username");
+            if (string.IsNullOrEmpty(username))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            return View();
+        }
+
+        [HttpPost("api/mis/programs/HRMGD47/submit")]
+        public async Task<IActionResult> SubmitLeaveApplication([FromBody] HrmEmAskForLeave model)
+        {
+            var username = HttpContext.Session.GetString("username");
+            var password = HttpContext.Session.GetString("password");
+            var tns = HttpContext.Session.GetString("tns");
+
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(tns))
+            {
+                return Unauthorized(new { status = "error", message = "Session expired. Please log in again." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { status = "error", message = "Data validation failed", errors = ModelState });
+            }
+
+            try
+            {
+                using (var connection = OracleDbHelper.GetConnection(username, password, tns))
+                {
+                    await connection.OpenAsync();
+
+                    var sql = @"
+                        INSERT INTO hrm_em_ask_for_leave (
+                            employee_id, start_time, end_time, leave_id,
+                            system_leave_hours, leave_hours, leave_days,
+                            ask_for_leave_reason, em_ask_for_leave_status,
+                            flow_yn, agent_employee_id,
+                            destination_place, talking_about, return_yn,
+                            entry_id, entry_date
+                        ) VALUES (
+                            :employee_id, :start_time, :end_time, :leave_id,
+                            :system_leave_hours, :leave_hours, :leave_days,
+                            :ask_for_leave_reason, :em_ask_for_leave_status,
+                            :flow_yn, :agent_employee_id,
+                            :destination_place, :talking_about, :return_yn,
+                            :entry_id, sysdate
+                        ) RETURNING em_ask_for_leave_id INTO :new_id";
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = sql;
+                        command.BindByName = true;
+
+                        command.Parameters.Add(new OracleParameter("employee_id", model.EmployeeId));
+                        command.Parameters.Add(new OracleParameter("start_time", model.StartTime));
+                        command.Parameters.Add(new OracleParameter("end_time", model.EndTime));
+                        command.Parameters.Add(new OracleParameter("leave_id", model.LeaveId));
+
+                        command.Parameters.Add(new OracleParameter("system_leave_hours", model.SystemLeaveHours ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("leave_hours", model.LeaveHours ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("leave_days", model.LeaveDays ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("ask_for_leave_reason", model.AskForLeaveReason ?? (object)DBNull.Value));
+
+                        command.Parameters.Add(new OracleParameter("em_ask_for_leave_status", "00"));
+                        command.Parameters.Add(new OracleParameter("flow_yn", "N"));
+
+                        command.Parameters.Add(new OracleParameter("agent_employee_id", model.AgentEmployeeId ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("destination_place", model.DestinationPlace ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("talking_about", model.TalkingAbout ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("return_yn", model.ReturnYn ?? (object)DBNull.Value));
+
+                        command.Parameters.Add(new OracleParameter("entry_id", username.ToUpper()));
+
+                        var newIdParam = new OracleParameter("new_id", OracleDbType.Int64)
+                        {
+                            Direction = System.Data.ParameterDirection.Output
+                        };
+                        command.Parameters.Add(newIdParam);
+
+                        await command.ExecuteNonQueryAsync();
+
+                        string generatedId = newIdParam.Value?.ToString();
+
+                        return Ok(new { status = "success", message = "Application submitted successfully", id = generatedId });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
     }

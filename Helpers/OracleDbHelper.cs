@@ -24,6 +24,7 @@ namespace Web_EIP_Csharp.Helpers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "SELECT USER_NAME FROM IDM_USER WHERE USER_NO = :user_no";
+                    command.BindByName = true;
                     command.Parameters.Add(new OracleParameter("user_no", username.ToUpper()));
 
                     using (var reader = await command.ExecuteReaderAsync())
@@ -36,6 +37,43 @@ namespace Web_EIP_Csharp.Helpers
                 }
             }
             return userName;
+        }
+
+        public static async Task<List<Dictionary<string, string>>> GetProgramSuggestionsAsync(string username, string password, string tns, string query)
+        {
+            var suggestions = new List<Dictionary<string, string>>();
+            using (var connection = GetConnection(username, password, tns))
+            {
+                await connection.OpenAsync();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = @"
+                        SELECT PROGRAM_NO, PROGRAM_NAME
+                        FROM idm_program_v
+                        WHERE (UPPER(PROGRAM_NO) LIKE :q OR UPPER(PROGRAM_NAME) LIKE :q)
+                        AND LANGUAGE_ID = 1
+                        AND ROWNUM <= 10
+                        ORDER BY PROGRAM_NO ASC";
+                    command.BindByName = true;
+
+                    command.Parameters.Add(new OracleParameter("q", $"%{query.ToUpper()}%"));
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var dict = new Dictionary<string, string>
+                            {
+                                { "program_no", reader["PROGRAM_NO"].ToString() },
+                                { "program_name", reader["PROGRAM_NAME"].ToString() }
+                            };
+                            suggestions.Add(dict);
+                        }
+                    }
+                }
+            }
+            return suggestions;
         }
 
         // Common utility methods can be appended here later
