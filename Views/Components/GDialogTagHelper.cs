@@ -1,0 +1,60 @@
+using Microsoft.AspNetCore.Razor.TagHelpers;
+
+/*
+ * GDialogTagHelper — 對應 jeasyui Dialog / Modal
+ * <g-dialog id="dlgAdd" title="新增程式" width="lg">content</g-dialog>
+ * JS: gDialogOpen('dlgAdd') / gDialogClose('dlgAdd')
+ */
+namespace Web_EIP_Csharp.Views.Components
+{
+    [HtmlTargetElement("g-dialog")]
+    public class GDialogTagHelper : TagHelper
+    {
+        public string Id             { get; set; } = "";
+        public string Title          { get; set; } = "";
+        public string Width          { get; set; } = "md";  // sm|md|lg|xl|full
+        public bool   CloseBtn       { get; set; } = true;
+        public bool   BackdropClose  { get; set; } = true;
+
+        public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
+        {
+            var content = (await output.GetChildContentAsync()).GetContent();
+            var maxW    = Width switch
+            {
+                "sm"   => "max-w-sm",
+                "md"   => "max-w-lg",
+                "lg"   => "max-w-3xl",
+                "xl"   => "max-w-5xl",
+                "full" => "max-w-full mx-4",
+                _      => "max-w-lg"
+            };
+            var closeBtnHtml = CloseBtn
+                ? $"""<button type="button" onclick="gDialogClose('{Id}')" class="text-white/70 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>"""
+                : "";
+            var backdropAttr = BackdropClose
+                ? $"""onclick="if(event.target===this)gDialogClose('{Id}')" """
+                : "";
+
+            output.TagName = "div";
+            output.Attributes.SetAttribute("id", Id);
+            output.Attributes.SetAttribute("role", "dialog");
+            output.Attributes.SetAttribute("aria-modal", "true");
+            output.Attributes.SetAttribute("class", "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] items-center justify-center p-4");
+            output.Attributes.SetAttribute("style", "display:none;");
+            if (!string.IsNullOrEmpty(backdropAttr))
+                output.Attributes.SetAttribute("onclick", $"if(event.target===this)gDialogClose('{Id}')");
+
+            output.Content.SetHtmlContent($"""
+                <div class="bg-white rounded-2xl shadow-2xl w-full {maxW} flex flex-col border border-slate-200 transform transition-all duration-200 scale-95 opacity-0" id="{Id}-content">
+                    <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-2xl">
+                        <h3 class="text-base font-bold text-white">{Title}</h3>
+                        {closeBtnHtml}
+                    </div>
+                    <div class="p-5 overflow-y-auto max-h-[78vh]">
+                        {content}
+                    </div>
+                </div>
+            """);
+        }
+    }
+}

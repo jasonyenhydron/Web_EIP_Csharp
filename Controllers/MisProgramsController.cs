@@ -419,5 +419,82 @@ namespace Web_EIP_Csharp.Controllers
                 return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
+
+        // ---- IDMGD01 儲存單筆紀錄 ----
+        [HttpPut("api/mis/programs/IDMGD01/save")]
+        public async Task<IActionResult> SaveIdmProgram([FromBody] Dictionary<string, object> payload)
+        {
+            var username = HttpContext.Session.GetString("username");
+            var password = HttpContext.Session.GetString("password");
+            var tns      = HttpContext.Session.GetString("tns");
+
+            if (string.IsNullOrEmpty(username))
+                return Unauthorized(new { status = "error", message = "Not logged in" });
+
+            if (payload == null || !payload.ContainsKey("ROWID"))
+                return BadRequest(new { status = "error", message = "Missing ROWID" });
+
+            try
+            {
+                string rowId      = payload["ROWID"]?.ToString();
+                string displayCode = payload.ContainsKey("DISPLAY_CODE") ? payload["DISPLAY_CODE"]?.ToString() : null;
+                string purpose     = payload.ContainsKey("PURPOSE")       ? payload["PURPOSE"]?.ToString()       : null;
+                string programType = payload.ContainsKey("PROGRAM_TYPE")  ? payload["PROGRAM_TYPE"]?.ToString()  : null;
+                string employeeId  = payload.ContainsKey("EMPLOYEE_ID")   ? payload["EMPLOYEE_ID"]?.ToString()   : null;
+                string planStart   = payload.ContainsKey("PLAN_START_DEVELOP_DATE") ? payload["PLAN_START_DEVELOP_DATE"]?.ToString() : null;
+                string planFinish  = payload.ContainsKey("PLAN_FINISH_DEVELOP_DATE") ? payload["PLAN_FINISH_DEVELOP_DATE"]?.ToString() : null;
+                string realStart   = payload.ContainsKey("REAL_START_DEVELOP_DATE") ? payload["REAL_START_DEVELOP_DATE"]?.ToString() : null;
+                string realFinish  = payload.ContainsKey("REAL_FINISH_DEVELOP_DATE") ? payload["REAL_FINISH_DEVELOP_DATE"]?.ToString() : null;
+                string planHours   = payload.ContainsKey("PLAN_WORK_HOURS") ? payload["PLAN_WORK_HOURS"]?.ToString() : null;
+                string realHours   = payload.ContainsKey("REAL_WORK_HOURS") ? payload["REAL_WORK_HOURS"]?.ToString() : null;
+
+                using (var connection = OracleDbHelper.GetConnection(username, password, tns))
+                {
+                    await connection.OpenAsync();
+                    var sql = @"UPDATE idm_program SET
+                        DISPLAY_CODE              = :display_code,
+                        PURPOSE                   = :purpose,
+                        PROGRAM_TYPE              = :program_type,
+                        EMPLOYEE_ID               = :employee_id,
+                        PLAN_START_DEVELOP_DATE   = TO_DATE(:plan_start,  'YYYY-MM-DD'),
+                        PLAN_FINISH_DEVELOP_DATE  = TO_DATE(:plan_finish, 'YYYY-MM-DD'),
+                        REAL_START_DEVELOP_DATE   = TO_DATE(:real_start,  'YYYY-MM-DD'),
+                        REAL_FINISH_DEVELOP_DATE  = TO_DATE(:real_finish, 'YYYY-MM-DD'),
+                        PLAN_WORK_HOURS           = :plan_hours,
+                        REAL_WORK_HOURS           = :real_hours,
+                        TR_ID                     = :tr_id,
+                        TR_DATE                   = SYSDATE
+                    WHERE ROWID = :row_id";
+
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = sql;
+                        cmd.BindByName  = true;
+                        cmd.Parameters.Add(new OracleParameter("display_code", string.IsNullOrEmpty(displayCode) ? (object)DBNull.Value : displayCode));
+                        cmd.Parameters.Add(new OracleParameter("purpose",      string.IsNullOrEmpty(purpose)     ? (object)DBNull.Value : purpose));
+                        cmd.Parameters.Add(new OracleParameter("program_type", string.IsNullOrEmpty(programType) ? (object)DBNull.Value : programType));
+                        cmd.Parameters.Add(new OracleParameter("employee_id",  string.IsNullOrEmpty(employeeId)  ? (object)DBNull.Value : employeeId));
+                        cmd.Parameters.Add(new OracleParameter("plan_start",   string.IsNullOrEmpty(planStart)   ? (object)DBNull.Value : planStart));
+                        cmd.Parameters.Add(new OracleParameter("plan_finish",  string.IsNullOrEmpty(planFinish)  ? (object)DBNull.Value : planFinish));
+                        cmd.Parameters.Add(new OracleParameter("real_start",   string.IsNullOrEmpty(realStart)   ? (object)DBNull.Value : realStart));
+                        cmd.Parameters.Add(new OracleParameter("real_finish",  string.IsNullOrEmpty(realFinish)  ? (object)DBNull.Value : realFinish));
+                        cmd.Parameters.Add(new OracleParameter("plan_hours",   string.IsNullOrEmpty(planHours)   ? (object)DBNull.Value : decimal.TryParse(planHours, out var ph)   ? (object)ph   : DBNull.Value));
+                        cmd.Parameters.Add(new OracleParameter("real_hours",   string.IsNullOrEmpty(realHours)   ? (object)DBNull.Value : decimal.TryParse(realHours, out var rh)   ? (object)rh   : DBNull.Value));
+                        cmd.Parameters.Add(new OracleParameter("tr_id",        username));
+                        cmd.Parameters.Add(new OracleParameter("row_id",       rowId));
+
+                        int rows = await cmd.ExecuteNonQueryAsync();
+                        if (rows == 0)
+                            return NotFound(new { status = "error", message = "Record not found" });
+                    }
+                }
+
+                return Ok(new { status = "success", message = "Saved OK" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = "error", message = ex.Message });
+            }
+        }
     }
 }

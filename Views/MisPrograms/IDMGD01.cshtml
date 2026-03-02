@@ -1,281 +1,620 @@
-@model dynamic
-
 @{
-    ViewData["Title"] = "IDMGD01 - 程式資料維護";
+    var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
+    ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
 }
 
-<div class="px-4 py-8 max-w-7xl mx-auto" x-data="idmgd01App()">
-    <!-- Top Header & Search Area -->
-    <div class="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 p-4 flex flex-wrap items-end gap-4">
-        <div class="space-y-1">
-            <label class="block text-xs font-bold text-slate-700">程式編號</label>
-            <input type="text" x-model="search.programNo" class="block w-40 px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 uppercase">
-        </div>
+<div class="absolute inset-0 flex flex-col bg-slate-50 overflow-hidden" x-data="idmgd01App()" x-init="init()">
 
-        <div class="space-y-1">
-            <label class="block text-xs font-bold text-slate-700">員工編號</label>
-            <div class="flex rounded-md shadow-sm">
-                <input type="hidden" id="searchEmployeeId" x-model="search.employeeId">
-                <input type="text" id="searchEmployeeNo" class="w-24 block px-3 py-2 rounded-none rounded-l-md border border-slate-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-blue-700 font-bold bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors" readonly placeholder="員工" @@click="openSearchEmployeeLov()">
-                <input type="text" id="searchEmployeeName" class="w-32 block px-3 py-2 rounded-none rounded-r-md border-y border-r border-slate-300 bg-slate-50 text-slate-600 sm:text-sm cursor-pointer hover:bg-slate-100 transition-colors" readonly @@click="openSearchEmployeeLov()">
+    <!-- ===== 搜尋列 (g-panel 收合式) ===== -->
+    <div class="bg-white border-b border-slate-200 px-4 py-3 shrink-0">
+        <div class="flex flex-wrap items-end gap-3">
+
+            <!-- 程式編號 -->
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-slate-600">程式編號</label>
+                <input type="text" x-model="search.programNo"
+                       class="block w-36 px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 uppercase"
+                       @@keydown.enter="executeQuery()">
+            </div>
+
+            <!-- 員工編號（g-lov-input；lov-fn 呼叫 Alpine openSearchEmployeeLov）-->
+            <g-lov-input label="員工編號"
+                         hidden-id="searchEmployeeId"  x-model-hidden="search.employeeId"
+                         code-id="searchEmployeeNo"    code-placeholder="員工" code-width="w-20"
+                         name-id="searchEmployeeName"
+                         lov-fn="openSearchEmployeeLov()">
+            </g-lov-input>
+
+            <!-- 顯示碼 -->
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-slate-600">顯示碼</label>
+                <select x-model="search.displayCode"
+                        class="block w-20 px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">全部</option>
+                    <option value="Y">Y</option>
+                    <option value="N">N</option>
+                </select>
+            </div>
+
+            <!-- 查詢按鈕 -->
+            <g-button text="查詢" icon="search" type="primary" onclick=""></g-button>
+
+            <!-- 新增按鈕 -->
+            <g-button text="新增程式" icon="plus" type="success"
+                      onclick="gDialogOpen('dlgAdd')"></g-button>
+
+            <!-- 狀態欄 -->
+            <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
+                <span x-show="loading" class="flex items-center gap-1 text-blue-500">
+                    <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path>
+                    </svg>
+                    查詢中...
+                </span>
+                <span x-show="!loading && programs.length > 0">
+                    共 <b x-text="programs.length"></b> 筆，第 <b x-text="currentPage"></b>/<b x-text="totalPages"></b> 頁
+                </span>
+                <span x-show="editingRowId" class="text-amber-600 font-bold flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                    編輯中
+                </span>
             </div>
         </div>
+    </div>
 
-        <div class="space-y-1">
-            <label class="block text-xs font-bold text-slate-700">顯示碼</label>
-            <select x-model="search.displayCode" class="block w-24 px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                <option value="">全部</option>
-                <option value="Y">Y</option>
-                <option value="N">N</option>
-            </select>
-        </div>
-
-        <button type="button" @@click="executeQuery()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm text-sm transition-colors flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            Query
+    <!-- ===== Tab 區 (g-tabs) ===== -->
+    <!-- 手動 Tab Bar：保留 Alpine.js 完整控制（activeTab 驅動），不使用 g-tabs 避免巢狀 x-data 衝突 -->
+    <div class="bg-white border-b border-slate-200 px-4 flex gap-1 shrink-0">
+        <button @@click="activeTab='list'"
+                :class="activeTab==='list' ? 'border-blue-600 text-blue-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                class="flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            程式資料
+        </button>
+        <button @@click="activeTab='detail'"
+                :class="activeTab==='detail' ? 'border-blue-600 text-blue-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                class="flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            程式詳細資料
+        </button>
+        <button @@click="activeTab='maintenance'"
+                :class="activeTab==='maintenance' ? 'border-blue-600 text-blue-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                class="flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            程式維護
         </button>
     </div>
 
-    <!-- Tabs Container -->
-    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden min-h-[500px] flex flex-col">
+    <!-- ===== Tab 1：程式資料 ===== -->
+    <div x-show="activeTab==='list'" class="flex-1 flex flex-col min-h-0">
 
-        <!-- Tab Headers -->
-        <div class="flex border-b border-slate-200 bg-slate-50 px-2 pt-2 gap-1">
-            <button @@click="activeTab = 'list'" :class="activeTab === 'list' ? 'bg-white border-t border-x border-slate-200 text-blue-700 font-bold translate-y-px' : 'bg-transparent text-slate-600 hover:bg-slate-100 border-transparent'" class="px-6 py-2.5 text-sm rounded-t-md border transition-colors relative z-10">
-                程式資料
-            </button>
-            <button @@click="activeTab = 'detail'" :class="activeTab === 'detail' ? 'bg-white border-t border-x border-slate-200 text-blue-700 font-bold translate-y-px' : 'bg-transparent text-slate-600 hover:bg-slate-100 border-transparent'" class="px-6 py-2.5 text-sm rounded-t-md border transition-colors relative z-10">
-                程式詳細資料
-            </button>
-            <button @@click="activeTab = 'maintenance'" :class="activeTab === 'maintenance' ? 'bg-white border-t border-x border-slate-200 text-blue-700 font-bold translate-y-px' : 'bg-transparent text-slate-600 hover:bg-slate-100 border-transparent'" class="px-6 py-2.5 text-sm rounded-t-md border transition-colors relative z-10">
-                程式維護
-            </button>
-        </div>
-
-        <!-- Tab 1: 程式資料 (List) -->
-        <div x-show="activeTab === 'list'" class="flex-1 p-0 overflow-auto">
-            <table class="min-w-full divide-y divide-slate-200 border-b border-slate-200">
-                <thead class="bg-slate-50 sticky top-0 shadow-sm z-10">
+        <!-- 表格主體 -->
+        <div class="flex-1 overflow-auto">
+            <table class="min-w-full border-collapse text-sm" id="idmTable">
+                <thead class="bg-slate-100 sticky top-0 z-10 shadow-sm">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider border-r border-slate-200">程式編號</th>
-                        <th class="px-3 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider border-r border-slate-200 w-16">顯示</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider border-r border-slate-200">員工編號</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider border-r border-slate-200">用途</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider border-r border-slate-200">程式型態</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">建檔日期</th>
+                        <th class="th-cell w-8 text-center px-2">#</th>
+                        <template x-for="col in columns" :key="col.key">
+                            <th class="th-cell cursor-pointer select-none whitespace-nowrap hover:bg-slate-200 active:bg-slate-300 transition-colors"
+                                @@dblclick="toggleSort(col.key)">
+                                <span x-text="col.label"></span>
+                                <span class="ml-1 inline-block w-3 text-slate-400"
+                                      x-text="sortKey===col.key ? (sortDir==='asc' ? '▲' : '▼') : ''"></span>
+                            </th>
+                        </template>
+                        <th class="th-cell w-28 text-center px-2">操作</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-slate-200 cursor-pointer">
-                    <template x-for="item in programs" :key="item.ROWID">
-                        <tr @@click="selectRecord(item)" class="hover:bg-blue-50 transition-colors" :class="{'bg-blue-100/50': selectedRecord && selectedRecord.ROWID === item.ROWID}">
-                            <td class="px-4 py-2 text-sm font-bold text-blue-600 border-r border-slate-100" x-text="item.PROGRAM_NO"></td>
-                            <td class="px-3 py-2 text-sm text-center border-r border-slate-100" x-text="item.DISPLAY_CODE"></td>
-                            <td class="px-4 py-2 text-sm text-slate-600 border-r border-slate-100" x-text="item.EMPLOYEE_ID"></td>
-                            <td class="px-4 py-2 text-sm text-slate-800 border-r border-slate-100 truncate max-w-xs" x-text="item.PURPOSE"></td>
-                            <td class="px-4 py-2 text-sm text-slate-600 border-r border-slate-100" x-text="item.PROGRAM_TYPE"></td>
-                            <td class="px-4 py-2 text-sm text-slate-500" x-text="formatDate(item.ENTRY_DATE)"></td>
+                <tbody>
+                    <template x-for="(item, idx) in pagedPrograms" :key="item.ROWID">
+                        <tr @@click="selectRow(item)"
+                            :class="{
+                                'bg-blue-600 text-white': selectedRowId === item.ROWID && editingRowId !== item.ROWID,
+                                'bg-amber-50 ring-2 ring-inset ring-amber-400': editingRowId === item.ROWID,
+                                'bg-white': selectedRowId !== item.ROWID && editingRowId !== item.ROWID && idx % 2 === 0,
+                                'bg-slate-50': selectedRowId !== item.ROWID && editingRowId !== item.ROWID && idx % 2 !== 0
+                            }"
+                            class="border-b border-slate-200 transition-colors cursor-pointer group">
+
+                            <!-- 行號 -->
+                            <td class="px-2 py-1.5 text-center text-xs font-mono text-slate-400 w-8 border-r border-slate-200"
+                                :class="selectedRowId === item.ROWID ? 'text-white/70' : ''"
+                                x-text="(currentPage-1)*pageSize + idx + 1"></td>
+
+                            <!-- 程式編號 (唯讀) -->
+                            <td class="px-3 py-1.5 border-r border-slate-200 font-bold font-mono"
+                                :class="selectedRowId === item.ROWID ? 'text-white' : 'text-blue-600'">
+                                <span x-text="item.PROGRAM_NO"></span>
+                            </td>
+
+                            <!-- 顯示碼 -->
+                            <td class="px-3 py-1.5 border-r border-slate-200 text-center w-14">
+                                <template x-if="editingRowId === item.ROWID">
+                                    <select x-model="editRow.DISPLAY_CODE"
+                                            class="w-12 px-1 py-0.5 border border-amber-400 rounded text-slate-800 text-xs bg-white"
+                                            @@click.stop>
+                                        <option value="Y">Y</option>
+                                        <option value="N">N</option>
+                                    </select>
+                                </template>
+                                <template x-if="editingRowId !== item.ROWID">
+                                    <span x-text="item.DISPLAY_CODE"
+                                          :class="item.DISPLAY_CODE==='Y' ? (selectedRowId===item.ROWID ? 'text-green-200' : 'text-green-600 font-bold') : (selectedRowId===item.ROWID ? 'text-red-200' : 'text-red-500')">
+                                    </span>
+                                </template>
+                            </td>
+
+                            <!-- 員工編號 -->
+                            <td class="px-3 py-1.5 border-r border-slate-200"
+                                :class="selectedRowId === item.ROWID && editingRowId !== item.ROWID ? 'text-white' : 'text-slate-600'">
+                                <template x-if="editingRowId === item.ROWID">
+                                    <input type="text" x-model="editRow.EMPLOYEE_ID"
+                                           class="w-20 px-1.5 py-0.5 border border-amber-400 rounded text-slate-800 text-xs"
+                                           @@click.stop>
+                                </template>
+                                <template x-if="editingRowId !== item.ROWID">
+                                    <span x-text="item.EMPLOYEE_ID"></span>
+                                </template>
+                            </td>
+
+                            <!-- 用途 -->
+                            <td class="px-3 py-1.5 border-r border-slate-200 max-w-xs"
+                                :class="selectedRowId === item.ROWID && editingRowId !== item.ROWID ? 'text-white' : 'text-slate-700'">
+                                <template x-if="editingRowId === item.ROWID">
+                                    <input type="text" x-model="editRow.PURPOSE"
+                                           class="w-full px-1.5 py-0.5 border border-amber-400 rounded text-slate-800 text-xs"
+                                           @@click.stop>
+                                </template>
+                                <template x-if="editingRowId !== item.ROWID">
+                                    <span class="truncate block max-w-xs" x-text="item.PURPOSE"></span>
+                                </template>
+                            </td>
+
+                            <!-- 程式型態 -->
+                            <td class="px-3 py-1.5 border-r border-slate-200"
+                                :class="selectedRowId === item.ROWID && editingRowId !== item.ROWID ? 'text-white' : 'text-slate-600'">
+                                <template x-if="editingRowId === item.ROWID">
+                                    <input type="text" x-model="editRow.PROGRAM_TYPE"
+                                           class="w-20 px-1.5 py-0.5 border border-amber-400 rounded text-slate-800 text-xs"
+                                           @@click.stop>
+                                </template>
+                                <template x-if="editingRowId !== item.ROWID">
+                                    <span x-text="item.PROGRAM_TYPE"></span>
+                                </template>
+                            </td>
+
+                            <!-- 建檔日期 -->
+                            <td class="px-3 py-1.5 text-xs whitespace-nowrap"
+                                :class="selectedRowId === item.ROWID && editingRowId !== item.ROWID ? 'text-white/80' : 'text-slate-400'"
+                                x-text="formatDate(item.ENTRY_DATE)"></td>
+
+                            <!-- 操作欄 (g-button) -->
+                            <td class="px-2 py-1 text-center w-28" @@click.stop>
+                                <template x-if="editingRowId === item.ROWID">
+                                    <div class="flex gap-1 justify-center">
+                                        <button @@click="saveRow(item)"
+                                                class="px-2.5 py-0.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-bold shadow transition-colors">
+                                            儲存
+                                        </button>
+                                        <button @@click="cancelEdit()"
+                                                class="px-2 py-0.5 bg-slate-400 hover:bg-slate-500 text-white text-xs rounded transition-colors">
+                                            取消
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="editingRowId !== item.ROWID">
+                                    <div class="flex gap-1 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <!-- 檢視 icon：跳至 detail tab -->
+                                        <button @@click="selectRow(item); activeTab='detail'"
+                                                title="檢視詳細資料"
+                                                class="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 border border-slate-200 hover:border-indigo-300 transition-all">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        </button>
+                                        <!-- 編輯 icon：跳至 maintenance tab -->
+                                        <button @@click="startEdit(item); activeTab='maintenance'"
+                                                title="程式維護"
+                                                class="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-amber-100 text-slate-400 hover:text-amber-600 border border-slate-200 hover:border-amber-300 transition-all">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </button>
+                                        <!-- 刪除 icon -->
+                                        <button @@click="confirmDelete(item)"
+                                                title="刪除"
+                                                class="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-red-100 text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-300 transition-all">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </div>
+                                </template>
+                            </td>
                         </tr>
                     </template>
-                    <tr x-show="programs.length === 0">
-                        <td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">無資料 (No data)</td>
+
+                    <!-- 無資料 -->
+                    <tr x-show="!loading && programs.length === 0">
+                        <td colspan="8" class="py-12 text-center text-slate-400">
+                            <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            無符合資料
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- Tab 2: 程式詳細資料 (Detail) -->
-        <div x-show="activeTab === 'detail'" class="flex-1 p-6 bg-slate-50/50">
-            <div x-show="!selectedRecord" class="h-full flex items-center justify-center text-slate-400">
-                請先從列表中選擇一筆資料
-            </div>
+        <!-- 分頁列 (g-pagination) -->
+        <g-pagination alpine-total="totalPages"
+                      alpine-current="currentPage"
+                      alpine-prev="prevPage()"
+                      alpine-next="nextPage()"
+                      alpine-jump="jumpPage($event.target.value)"
+                      alpine-count="programs.length"
+                      alpine-page-size="pageSize"
+                      page-size-options="10,20,50">
+        </g-pagination>
+    </div>
 
-            <div x-show="selectedRecord" class="max-w-4xl mx-auto space-y-6">
-                <!-- Action Buttons -->
-                <div class="flex items-center gap-2 justify-end mb-4 bg-white p-2 rounded-md shadow-sm border border-slate-200">
-                    <div class="text-sm font-bold text-slate-500 mr-auto flex-1 bg-yellow-100 px-3 py-1.5 rounded" x-text="'程式編號: ' + (selectedRecord?.PROGRAM_NO || '')"></div>
-                    <button class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm rounded transition-colors">&lt;</button>
-                    <button class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm rounded transition-colors">&gt;</button>
+    <!-- ===== Tab 2：程式詳細資料 ===== -->
+    <div x-show="activeTab==='detail'" class="flex-1 overflow-auto p-5 bg-slate-50/50">
+        <div x-show="!selectedRecord" class="h-full flex items-center justify-center text-slate-400 text-sm">
+            請先從列表中點選一筆資料（點擊眼睛圖示）
+        </div>
+        <template x-if="selectedRecord">
+            <div class="max-w-3xl mx-auto space-y-4">
+                <!-- 程式編號標題列 -->
+                <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+                    <div class="text-base font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded font-mono" x-text="selectedRecord.PROGRAM_NO"></div>
+                    <span class="text-xs text-slate-400">詳細資料檢視 / 編輯</span>
                 </div>
 
-                <!-- Form Card -->
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-700">顯示碼</label>
-                            <input type="text" x-model="selectedRecord.DISPLAY_CODE" class="block w-24 px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 uppercase">
-                        </div>
+                <!-- 表單 (g-form-group + g-textbox) -->
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <g-form-group label="顯示碼">
+                            <input type="text" x-model="selectedRecord.DISPLAY_CODE"
+                                   class="block w-24 px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 uppercase">
+                        </g-form-group>
+                        <g-form-group label="員工編號">
+                            <input type="text" x-model="selectedRecord.EMPLOYEE_ID"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 text-blue-700 font-bold">
+                        </g-form-group>
+                        <g-form-group label="程式型態">
+                            <input type="text" x-model="selectedRecord.PROGRAM_TYPE"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </g-form-group>
+                        <g-form-group label="用途" col-span="2">
+                            <input type="text" x-model="selectedRecord.PURPOSE"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 bg-yellow-50">
+                        </g-form-group>
+                        <g-form-group label="預計開發開始日">
+                            <input type="date" x-model="localPlanStart"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </g-form-group>
+                        <g-form-group label="實際開發開始日">
+                            <input type="date" x-model="localRealStart"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </g-form-group>
+                        <g-form-group label="預計開發完工日">
+                            <input type="date" x-model="localPlanFinish"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </g-form-group>
+                        <g-form-group label="實際開發完工日">
+                            <input type="date" x-model="localRealFinish"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </g-form-group>
+                        <g-form-group label="預計工時">
+                            <input type="number" x-model="selectedRecord.PLAN_WORK_HOURS"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 text-right">
+                        </g-form-group>
+                        <g-form-group label="實際工時">
+                            <input type="number" x-model="selectedRecord.REAL_WORK_HOURS"
+                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 text-right">
+                        </g-form-group>
+                    </div>
 
-                        <div class="col-span-2 grid grid-cols-2 gap-4">
-                            <div class="space-y-1">
-                                <label class="block text-xs font-bold text-slate-700">員工編號 / 姓名</label>
-                                <div class="flex rounded-md shadow-sm">
-                                    <input type="text" x-model="selectedRecord.EMPLOYEE_ID" class="w-1/3 block px-3 py-2 rounded-none rounded-l-md border border-slate-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-blue-700 font-bold bg-blue-50" readonly>
-                                    <input type="text" class="w-2/3 block px-3 py-2 rounded-none rounded-r-md border-y border-r border-slate-300 bg-slate-50 text-slate-600 sm:text-sm" readonly placeholder="姓名">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-700">程式型態</label>
-                            <input type="text" x-model="selectedRecord.PROGRAM_TYPE" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-
-                        <div class="space-y-1 md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-700">用途</label>
-                            <input type="text" x-model="selectedRecord.PURPOSE" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 bg-yellow-50">
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-700 text-blue-600">預計開發開始日</label>
-                            <input type="datetime-local" x-model="localFormattedPlanStart" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-700 text-blue-600">實際開發開始日</label>
-                            <input type="datetime-local" x-model="localFormattedRealStart" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-700 text-blue-600">預計開發完工日</label>
-                            <input type="datetime-local" x-model="localFormattedPlanFinish" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-700 text-blue-600">實際開發完工日</label>
-                            <input type="datetime-local" x-model="localFormattedRealFinish" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-700 text-blue-600">預計工時</label>
-                            <input type="number" x-model="selectedRecord.PLAN_WORK_HOURS" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 text-right">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-700 text-blue-600">實際工時</label>
-                            <input type="number" x-model="selectedRecord.REAL_WORK_HOURS" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 text-right">
-                        </div>
+                    <!-- 儲存按鈕 -->
+                    <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
+                        <g-button text="返回列表" icon="list"  type="secondary" onclick="window._idmApp.activeTab='list'"></g-button>
+                        <g-button text="儲存"     icon="save"  type="success"  onclick="window._idmApp.saveSelectedRecord()"></g-button>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Tab 3: 程式維護 (Maintenance) -->
-        <div x-show="activeTab === 'maintenance'" class="flex-1 p-6 bg-slate-50/50 flex items-center justify-center">
-             <div class="text-slate-400">目前暫無維護紀錄資料結構</div>
-        </div>
-
+        </template>
     </div>
+
+    <!-- ===== Tab 3：程式維護 ===== -->
+    <div x-show="activeTab==='maintenance'" class="flex-1 overflow-auto p-5 bg-slate-50/50">
+        <template x-if="selectedRecord && editingRowId">
+            <div class="max-w-3xl mx-auto space-y-4">
+                <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+                    <div class="text-base font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded font-mono" x-text="selectedRecord.PROGRAM_NO"></div>
+                    <span class="text-xs text-amber-500 font-semibold flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                        維護模式－編輯中
+                    </span>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <g-form-group label="顯示碼">
+                            <select x-model="editRow.DISPLAY_CODE"
+                                    class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="Y">Y - 顯示</option>
+                                <option value="N">N - 隱藏</option>
+                            </select>
+                        </g-form-group>
+                        <g-form-group label="員工編號">
+                            <input type="text" x-model="editRow.EMPLOYEE_ID"
+                                   class="block w-full px-3 py-1.5 border border-amber-400 rounded-lg text-sm focus:ring-amber-400 focus:border-amber-400 bg-amber-50/30">
+                        </g-form-group>
+                        <g-form-group label="程式型態">
+                            <input type="text" x-model="editRow.PROGRAM_TYPE"
+                                   class="block w-full px-3 py-1.5 border border-amber-400 rounded-lg text-sm focus:ring-amber-400 focus:border-amber-400 bg-amber-50/30">
+                        </g-form-group>
+                        <g-form-group label="用途" col-span="2">
+                            <input type="text" x-model="editRow.PURPOSE"
+                                   class="block w-full px-3 py-1.5 border border-amber-400 rounded-lg text-sm focus:ring-amber-400 focus:border-amber-400 bg-amber-50/30">
+                        </g-form-group>
+                    </div>
+
+                    <!-- 操作按鈕 -->
+                    <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
+                        <g-button text="取消"         icon="close"   type="secondary" onclick="window._idmApp.cancelEdit(); window._idmApp.activeTab='list'"></g-button>
+                        <g-button text="儲存維護資料" icon="save"    type="success"  onclick="window._idmApp.saveRow(window._idmApp.selectedRecord)"></g-button>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <div x-show="!selectedRecord || !editingRowId" class="h-full flex items-center justify-center text-slate-400 text-sm">
+            請先從列表中點擊編輯圖示（鉛筆）以進入維護模式
+        </div>
+    </div>
+
+    <!-- ===== Toast ===== -->
+    <div x-show="toast.show" x-transition.opacity
+         :class="toast.type==='success' ? 'bg-green-600' : 'bg-red-600'"
+         class="fixed bottom-5 right-5 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2">
+        <span x-text="toast.msg"></span>
+    </div>
+
 </div>
 
-@section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script>
-        // Bind external LOV target fields to Alpine component via interval or event
-        function updateAlpineStateFromLov() {
-            const empIdInput = document.getElementById('searchEmployeeId');
-            if(empIdInput && window.currentAlpineInstance) {
-                window.currentAlpineInstance.search.employeeId = empIdInput.value;
-            }
-        }
+<!-- ===== Dialog：新增程式 (g-dialog) ===== -->
+<g-dialog id="dlgAdd" title="新增程式資料" width="md">
+    <div class="grid grid-cols-1 gap-4">
+        <g-form-group label="程式編號" required="true">
+            <input type="text" id="newProgramNo" maxlength="20"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 uppercase"
+                   placeholder="例：HRMGD99">
+        </g-form-group>
+        <g-form-group label="用途">
+            <input type="text" id="newPurpose"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="程式用途說明">
+        </g-form-group>
+        <g-form-group label="程式型態">
+            <input type="text" id="newProgramType"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="例：WEB">
+        </g-form-group>
+        <g-form-group label="顯示碼">
+            <select id="newDisplayCode"
+                    class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="Y">Y - 顯示</option>
+                <option value="N">N - 隱藏</option>
+            </select>
+        </g-form-group>
+    </div>
+    <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-slate-100">
+        <g-button text="取消" icon="close" type="secondary" onclick="gDialogClose('dlgAdd')"></g-button>
+        <g-button text="新增" icon="plus"  type="primary"   onclick="window._idmApp?.addProgram()"></g-button>
+    </div>
+</g-dialog>
 
-        // Global LOV triggers
+@section Styles {
+    <style>
+        html, body { height: 100% !important; overflow: hidden !important; }
+        .th-cell {
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-right: 1px solid #e2e8f0;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="~/js/g-components.js" asp-append-version="true"></script>
+    <script>
+        /* ===== 員工 LOV 回呼 ===== */
+        function updateAlpineSearchEmp() {
+            const el = document.getElementById('searchEmployeeId');
+            if (el && window._idmApp) window._idmApp.search.employeeId = el.value;
+        }
         function openSearchEmployeeLov() {
-            // Using the shared generic LOV function
             openGenericLov(
-                '尋找員工 (Employee)',
-                '/api/lov/hrm/employees',
-                ['編號', '名稱', 'ID'],
-                ['employee_no', 'employee_name', 'employee_id'],
-                {
-                    'employee_id': 'searchEmployeeId',
-                    'employee_no': 'searchEmployeeNo',
-                    'employee_name': 'searchEmployeeName'
-                },
-                null,
-                updateAlpineStateFromLov // Call this when LOV confirms
+                '尋找員工 (Employee)', '/api/lov/hrm/employees',
+                ['編號', '名稱', 'ID'], ['employee_no', 'employee_name', 'employee_id'],
+                { 'employee_id': 'searchEmployeeId', 'employee_no': 'searchEmployeeNo', 'employee_name': 'searchEmployeeName' },
+                null, updateAlpineSearchEmp
             );
         }
 
-        function toDateTimeLocal(isoString) {
-            if (!isoString) return '';
-            // Oracle DATE returns something like "2023-01-01T00:00:00" in JSON depending on serializer
-            try {
-                const date = new Date(isoString);
-                const offset = date.getTimezoneOffset() * 60000;
-                const localISOTime = (new Date(date - offset)).toISOString().slice(0, 16);
-                return localISOTime;
-            } catch(e) {
-                return '';
-            }
+        /* ===== 日期工具 ===== */
+        function isoToDate(iso) {
+            if (!iso) return '';
+            try { return new Date(iso).toISOString().slice(0, 10); } catch { return ''; }
         }
 
+        /* ===== Alpine 元件 ===== */
         document.addEventListener('alpine:init', () => {
             Alpine.data('idmgd01App', () => ({
-                activeTab: 'list', // list, detail, maintenance
-                search: {
-                    programNo: '',
-                    employeeId: '',
-                    displayCode: 'Y'
-                },
-                programs: [],
-                selectedRecord: null,
 
-                init() {
-                    window.currentAlpineInstance = this;
-                    this.executeQuery();
-                },
+                activeTab : 'list',
+                loading   : false,
+                toast     : { show: false, msg: '', type: 'success' },
 
-                get localFormattedPlanStart() { return toDateTimeLocal(this.selectedRecord?.PLAN_START_DEVELOP_DATE); },
-                set localFormattedPlanStart(val) { if(this.selectedRecord) this.selectedRecord.PLAN_START_DEVELOP_DATE = val; },
+                search    : { programNo: '', employeeId: '', displayCode: 'Y' },
 
-                get localFormattedRealStart() { return toDateTimeLocal(this.selectedRecord?.REAL_START_DEVELOP_DATE); },
-                set localFormattedRealStart(val) { if(this.selectedRecord) this.selectedRecord.REAL_START_DEVELOP_DATE = val; },
+                programs  : [],
+                columns   : [
+                    { key: 'PROGRAM_NO',   label: '程式編號' },
+                    { key: 'DISPLAY_CODE', label: '顯示' },
+                    { key: 'EMPLOYEE_ID',  label: '員工編號' },
+                    { key: 'PURPOSE',      label: '用途' },
+                    { key: 'PROGRAM_TYPE', label: '程式型態' },
+                    { key: 'ENTRY_DATE',   label: '建檔日期' },
+                ],
 
-                get localFormattedPlanFinish() { return toDateTimeLocal(this.selectedRecord?.PLAN_FINISH_DEVELOP_DATE); },
-                set localFormattedPlanFinish(val) { if(this.selectedRecord) this.selectedRecord.PLAN_FINISH_DEVELOP_DATE = val; },
+                sortKey : '', sortDir: 'asc',
+                pageSize: 20, currentPage: 1, gotoPage: 1,
 
-                get localFormattedRealFinish() { return toDateTimeLocal(this.selectedRecord?.REAL_FINISH_DEVELOP_DATE); },
-                set localFormattedRealFinish(val) { if(this.selectedRecord) this.selectedRecord.REAL_FINISH_DEVELOP_DATE = val; },
+                selectedRowId: null, selectedRecord: null,
+                editingRowId : null, editRow: {},
 
-
-                formatDate(isoString) {
-                    if (!isoString) return '';
-                    return new Date(isoString).toLocaleString('zh-TW', {
-                        year: 'numeric', month: '2-digit', day: '2-digit',
-                        hour: '2-digit', minute:'2-digit'
+                /* ── computed ── */
+                get sortedPrograms() {
+                    if (!this.sortKey) return this.programs;
+                    const dir = this.sortDir === 'asc' ? 1 : -1;
+                    return [...this.programs].sort((a, b) => {
+                        const av = a[this.sortKey] ?? '', bv = b[this.sortKey] ?? '';
+                        return av < bv ? -dir : av > bv ? dir : 0;
                     });
                 },
+                get totalPages()    { return Math.max(1, Math.ceil(this.sortedPrograms.length / this.pageSize)); },
+                get pagedPrograms() { const s = (this.currentPage - 1) * this.pageSize; return this.sortedPrograms.slice(s, s + +this.pageSize); },
 
-                async executeQuery() {
-                    try {
-                        // Force update employeeId if set by LOV
-                        this.search.employeeId = document.getElementById('searchEmployeeId').value;
+                /* ── 日期 getter/setter ── */
+                get localPlanStart()   { return isoToDate(this.selectedRecord?.PLAN_START_DEVELOP_DATE); },
+                set localPlanStart(v)  { if (this.selectedRecord) this.selectedRecord.PLAN_START_DEVELOP_DATE = v; },
+                get localPlanFinish()  { return isoToDate(this.selectedRecord?.PLAN_FINISH_DEVELOP_DATE); },
+                set localPlanFinish(v) { if (this.selectedRecord) this.selectedRecord.PLAN_FINISH_DEVELOP_DATE = v; },
+                get localRealStart()   { return isoToDate(this.selectedRecord?.REAL_START_DEVELOP_DATE); },
+                set localRealStart(v)  { if (this.selectedRecord) this.selectedRecord.REAL_START_DEVELOP_DATE = v; },
+                get localRealFinish()  { return isoToDate(this.selectedRecord?.REAL_FINISH_DEVELOP_DATE); },
+                set localRealFinish(v) { if (this.selectedRecord) this.selectedRecord.REAL_FINISH_DEVELOP_DATE = v; },
 
-                        const params = new URLSearchParams({
-                            programNo: this.search.programNo,
-                            employeeId: this.search.employeeId,
-                            displayCode: this.search.displayCode
-                        });
+                /* ── 初始化 ── */
+                init() { window._idmApp = this; this.executeQuery(); },
 
-                        const response = await fetch('/api/mis/programs/IDMGD01/list?' + params.toString());
-                        const result = await response.json();
-
-                        if (result.status === 'success') {
-                            this.programs = result.data;
-                            if(this.selectedRecord) {
-                                // check if selected still exists
-                                const exists = this.programs.find(p => p.ROWID === this.selectedRecord.ROWID);
-                                if(!exists) this.selectedRecord = null;
-                            }
-                        } else {
-                            alert('Query error: ' + result.message);
-                        }
-                    } catch (e) {
-                        alert('Query failed: ' + e);
-                    }
+                formatDate(iso) {
+                    if (!iso) return '';
+                    return new Date(iso).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
                 },
 
-                selectRecord(item) {
-                    this.selectedRecord = JSON.parse(JSON.stringify(item)); // simple clone for editing
-                    this.activeTab = 'detail';
+                showToast(msg, type = 'success') {
+                    gToast(msg, type);   // 使用 g-components.js 的 gToast
+                    this.toast = { show: true, msg, type };
+                    setTimeout(() => this.toast.show = false, 2800);
+                },
+
+                /* ── 查詢 ── */
+                async executeQuery() {
+                    this.search.employeeId = document.getElementById('searchEmployeeId').value;
+                    this.loading = true; this.editingRowId = null;
+                    try {
+                        const params = new URLSearchParams({
+                            programNo: this.search.programNo, employeeId: this.search.employeeId, displayCode: this.search.displayCode
+                        });
+                        const res    = await fetch('/api/mis/programs/IDMGD01/list?' + params);
+                        if (res.status === 401) { window.location.href = '/Account/Login'; return; }
+                        const result = await res.json();
+                        if (result.status === 'success') {
+                            this.programs = result.data; this.currentPage = 1; this.gotoPage = 1;
+                            this.selectedRowId = null; this.selectedRecord = null;
+                        } else this.showToast('查詢失敗: ' + result.message, 'error');
+                    } catch (e) { this.showToast('網路錯誤: ' + e, 'error'); }
+                    finally { this.loading = false; }
+                },
+
+                /* ── 選擇列 ── */
+                selectRow(item) {
+                    if (this.editingRowId) return;
+                    this.selectedRowId  = item.ROWID;
+                    this.selectedRecord = JSON.parse(JSON.stringify(item));
+                },
+
+                /* ── inline 編輯 ── */
+                startEdit(item) {
+                    this.selectRow(item);
+                    this.editingRowId = item.ROWID;
+                    this.editRow = JSON.parse(JSON.stringify(item));
+                },
+                cancelEdit() { this.editingRowId = null; this.editRow = {}; },
+
+                /* ── 確認刪除 ── */
+                async confirmDelete(item) {
+                    if (!(await gConfirm(`確定刪除程式 ${item.PROGRAM_NO}？\n此操作無法還原。`, '刪除確認'))) return;
+                    this.showToast(`已刪除 ${item.PROGRAM_NO}（示範）`, 'success');
+                    // 實際刪除：await fetch('/api/mis/programs/IDMGD01/delete', { method:'DELETE', ... })
+                },
+
+                /* ── 新增程式 ── */
+                async addProgram() {
+                    const no   = document.getElementById('newProgramNo')?.value.trim();
+                    if (!no) { gToast('程式編號為必填', 'warning'); return; }
+                    gDialogClose('dlgAdd');
+                    gToast(`新增程式 ${no}（示範）`, 'info');
+                    // 實際新增：await fetch('/api/mis/programs/IDMGD01/add', { method:'POST', ... })
+                },
+
+                /* ── inline 儲存 ── */
+                async saveRow(item) {
+                    const payload = { ...this.editRow };
+                    try {
+                        const res    = await fetch('/api/mis/programs/IDMGD01/save', {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        });
+                        const result = await res.json();
+                        if (result.status === 'success') {
+                            const idx = this.programs.findIndex(p => p.ROWID === item.ROWID);
+                            if (idx >= 0) {
+                                Object.assign(this.programs[idx], this.editRow);
+                                if (this.selectedRecord?.ROWID === item.ROWID)
+                                    this.selectedRecord = JSON.parse(JSON.stringify(this.programs[idx]));
+                            }
+                            this.editingRowId = null; this.editRow = {};
+                            this.showToast('✓ 儲存成功', 'success');
+                        } else this.showToast('儲存失敗: ' + result.message, 'error');
+                    } catch (e) { this.showToast('網路錯誤: ' + e, 'error'); }
+                },
+
+                /* ── detail tab 儲存 ── */
+                async saveSelectedRecord() {
+                    if (!this.selectedRecord) return;
+                    const payload = { ...this.selectedRecord };
+                    try {
+                        const res    = await fetch('/api/mis/programs/IDMGD01/save', {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        });
+                        const result = await res.json();
+                        if (result.status === 'success') {
+                            const idx = this.programs.findIndex(p => p.ROWID === this.selectedRecord.ROWID);
+                            if (idx >= 0) Object.assign(this.programs[idx], this.selectedRecord);
+                            this.showToast('✓ 儲存成功', 'success');
+                        } else this.showToast('儲存失敗: ' + result.message, 'error');
+                    } catch (e) { this.showToast('網路錯誤: ' + e, 'error'); }
+                },
+
+                /* ── 排序 ── */
+                toggleSort(key) {
+                    if (this.sortKey === key) this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+                    else { this.sortKey = key; this.sortDir = 'asc'; }
+                    this.currentPage = 1;
+                },
+
+                /* ── 分頁 ── */
+                prevPage() { if (this.currentPage > 1) { this.currentPage--; this.gotoPage = this.currentPage; } },
+                nextPage() { if (this.currentPage < this.totalPages) { this.currentPage++; this.gotoPage = this.currentPage; } },
+                jumpPage(v)  {
+                    const p = Math.min(Math.max(1, parseInt(v)), this.totalPages);
+                    this.currentPage = p; this.gotoPage = p;
                 }
             }));
         });
