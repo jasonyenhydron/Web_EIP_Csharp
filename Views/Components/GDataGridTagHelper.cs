@@ -39,7 +39,7 @@ namespace Web_EIP_Csharp.Views.Components
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
             var compId   = string.IsNullOrEmpty(Id) ? $"grid_{Guid.NewGuid():N}" : Id;
-            var fnName   = $"gDataGrid_{compId}";
+            var fnName   = $"gDataGrid_{{compId}}";
             var striped  = Striped ? "odd:bg-white even:bg-slate-50/60" : "";
             var rowClick = !string.IsNullOrEmpty(OnRowClick)
                 ? $"onclick=\"({OnRowClick})(row)\""
@@ -70,7 +70,7 @@ namespace Web_EIP_Csharp.Views.Components
                 var wStyle  = string.IsNullOrEmpty(width) ? "" : $"width:{width}px;min-width:{width}px;";
                 var thAlign = align is "center" or "right" ? $"text-{align}" : "text-left";
                 var tdAlign = align is "center" or "right" ? $"text-{align}" : "text-left";
-                thHtml.Append($"""
+                thHtml.Append($$"""
                     <th @@dblclick="toggleSort('{field}')" style="{wStyle}"
                         class="px-3 py-2.5 {thAlign} text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 cursor-pointer hover:bg-slate-200 transition-colors select-none whitespace-nowrap group">
                         <span class="inline-flex items-center gap-1">
@@ -82,18 +82,18 @@ namespace Web_EIP_Csharp.Views.Components
                         </span>
                     </th>
                 """);
-                tdHtml.Append($"""
+                tdHtml.Append($$"""
                     <td class="px-3 py-2 {tdAlign} text-sm text-slate-700 border-b border-slate-100 whitespace-nowrap" x-text="row['{field}']??''"></td>
                 """);
             }
 
             output.TagName = "div";
             output.Attributes.SetAttribute("id", compId);
-            output.Attributes.SetAttribute("class", $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col {Class}");
+            output.Attributes.SetAttribute("class", $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col {{Class}}");
             output.Attributes.SetAttribute("x-data", $"{fnName}()");
             output.Attributes.SetAttribute("x-init", "init()");
 
-            output.Content.SetHtmlContent($"""
+            output.Content.SetHtmlContent($$"""
                 <!-- Toolbar -->
                 <div class="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-50/70 shrink-0 flex-wrap">
                     <div class="flex items-center gap-2">
@@ -179,8 +179,8 @@ namespace Web_EIP_Csharp.Views.Components
 
                 <!-- Alpine Component Script -->
                 <script>
-                function {fnName}() {{
-                    return {{
+                function {fnName}() {
+                    return {
                         rows       : [],
                         loading    : false,
                         sortKey    : '',
@@ -189,49 +189,49 @@ namespace Web_EIP_Csharp.Views.Components
                         pageSize   : {PageSize},
                         selectedRow: null,
 
-                        get sortedRows() {{
+                        get sortedRows() {
                             if (!this.sortKey) return this.rows;
                             const dir = this.sortDir === 'asc' ? 1 : -1;
-                            return [...this.rows].sort((a, b) => {{
+                            return [...this.rows].sort((a, b) => {
                                 const av = a[this.sortKey] ?? '';
                                 const bv = b[this.sortKey] ?? '';
                                 return av < bv ? -dir : av > bv ? dir : 0;
-                            }});
-                        }},
-                        get totalPages()  {{ return Math.max(1, Math.ceil(this.sortedRows.length / this.pageSize)); }},
-                        get pagedRows()   {{
+                            });
+                        },
+                        get totalPages()  { return Math.max(1, Math.ceil(this.sortedRows.length / this.pageSize)); },
+                        get pagedRows()   {
                             const s = (this.currentPage - 1) * this.pageSize;
                             return this.sortedRows.slice(s, s + Number(this.pageSize));
-                        }},
+                        },
 
-                        async init()     {{ await this.fetchData(); }},
-                        async fetchData() {{
+                        async init()     { await this.fetchData(); },
+                        async fetchData() {
                             this.loading = true;
-                            try {{
-                                const res  = await fetch('{ApiUrl}');
+                            try {
+                                const res  = await fetch('{{ApiUrl}}');
                                 const json = await res.json();
-                                if (res.status === 401) {{ window.location.href = '/Account/Login'; return; }}
+                                if (res.status === 401) { window.location.href = '/Account/Login'; return; }
                                 this.rows  = json.data ?? json;
                                 this.currentPage = 1;
-                            }} catch(e) {{ console.error('GDataGrid fetch error:', e); }}
-                            finally    {{ this.loading = false; }}
-                        }},
-                        toggleSort(key) {{
+                            } catch(e) { console.error('GDataGrid fetch error:', e); }
+                            finally    { this.loading = false; }
+                        },
+                        toggleSort(key) {
                             if (this.sortKey === key) this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-                            else {{ this.sortKey = key; this.sortDir = 'asc'; }}
-                        }},
-                        prevPage() {{ if (this.currentPage > 1) this.currentPage--; }},
-                        nextPage() {{ if (this.currentPage < this.totalPages) this.currentPage++; }},
-                        jumpPage(v) {{
+                            else { this.sortKey = key; this.sortDir = 'asc'; }
+                        },
+                        prevPage() { if (this.currentPage > 1) this.currentPage--; },
+                        nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; },
+                        jumpPage(v) {
                             const p = parseInt(v);
                             if (!isNaN(p)) this.currentPage = Math.min(Math.max(1, p), this.totalPages);
-                        }},
+                        },
                         // 供外部使用：取得目前選中列
-                        getSelectedRow() {{ return this.selectedRow; }},
+                        getSelectedRow() { return this.selectedRow; },
                         // 供外部使用：重新整理
-                        refresh() {{ this.fetchData(); }}
-                    }};
-                }}
+                        refresh() { this.fetchData(); }
+                    };
+                }
                 </script>
             """);
         }

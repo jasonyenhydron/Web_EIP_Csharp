@@ -175,7 +175,7 @@ namespace Web_EIP_Csharp.Views.Components
             var middleRow  = $"""<div class="flex flex-1 min-h-0 overflow-hidden">{westHtml}{centerHtml}{eastHtml}</div>""";
 
             output.TagName = "div";
-            output.Attributes.SetAttribute("class", $"flex flex-col overflow-hidden {Class}");
+            output.Attributes.SetAttribute("class", $"flex flex-col overflow-hidden {{Class}}");
             output.Content.SetHtmlContent($"{northHtml}{middleRow}{southHtml}");
         }
     }
