@@ -340,5 +340,84 @@ namespace Web_EIP_Csharp.Controllers
                 return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
+        [HttpGet("mis/programs/IDMGD01")]
+        public IActionResult IDMGD01()
+        {
+            var username = HttpContext.Session.GetString("username");
+            if (string.IsNullOrEmpty(username))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            ViewBag.UserId = username;
+            ViewBag.UserName = HttpContext.Session.GetString("user_name");
+            ViewBag.NumericUserId = HttpContext.Session.GetString("numeric_user_id"); // Assuming this might be logged somewhere, else null
+
+            return View("~/Views/MisPrograms/IDMGD01.cshtml");
+        }
+
+        [HttpGet("api/mis/programs/IDMGD01/list")]
+        public async Task<IActionResult> GetIdmProgramList(string programNo, string employeeId, string displayCode)
+        {
+            var username = HttpContext.Session.GetString("username");
+            var password = HttpContext.Session.GetString("password");
+            var tns = HttpContext.Session.GetString("tns");
+
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(tns))
+            {
+                return Unauthorized(new { status = "error", message = "Not logged in" });
+            }
+
+            try
+            {
+                var programs = new List<Dictionary<string, object>>();
+
+                using (var connection = OracleDbHelper.GetConnection(username, password, tns))
+                {
+                    await connection.OpenAsync();
+
+                    var sql = @"
+                        SELECT ROWID, PROGRAM_ID, PURPOSE, EMPLOYEE_ID, VENDOR_ID, PERSON_ID,
+                               PLAN_START_DEVELOP_DATE, PLAN_FINISH_DEVELOP_DATE,
+                               REAL_START_DEVELOP_DATE, REAL_FINISH_DEVELOP_DATE,
+                               PLAN_WORK_HOURS, REAL_WORK_HOURS,
+                               ENTRY_ID, ENTRY_DATE, TR_ID, TR_DATE,
+                               PROGRAM_NO, DISPLAY_CODE, PROGRAM_TYPE
+                        FROM idm_program
+                        WHERE program_no like :program_no || '%'
+                          AND (employee_id = :employee_id or :employee_id is null)
+                          AND (display_code = :display_code or :display_code is null)
+                        ORDER BY program_no";
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = sql;
+                        command.BindByName = true;
+                        command.Parameters.Add(new OracleParameter("program_no", string.IsNullOrEmpty(programNo) ? "" : programNo));
+                        command.Parameters.Add(new OracleParameter("employee_id", string.IsNullOrEmpty(employeeId) ? (object)DBNull.Value : employeeId));
+                        command.Parameters.Add(new OracleParameter("display_code", string.IsNullOrEmpty(displayCode) ? (object)DBNull.Value : displayCode));
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var dict = new Dictionary<string, object>();
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    dict[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                                }
+                                programs.Add(dict);
+                            }
+                        }
+                    }
+                }
+
+                return Ok(new { status = "success", data = programs });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = "error", message = ex.Message });
+            }
+        }
     }
 }
