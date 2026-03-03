@@ -8,7 +8,7 @@
     <script>
         const originalWarn = console.warn;
         console.warn = function() {
-            // ?脫迫 null/undefined arguments[0] ????TypeError
+            // Guard null/undefined arguments[0] to avoid TypeError.
             if (arguments.length > 0 && arguments[0] != null && typeof arguments[0] === 'string' &&
                 arguments[0].includes('cdn.tailwindcss.com should not be used in production')) return;
             originalWarn.apply(console, arguments);
@@ -39,14 +39,14 @@
         </button>
     </div>
 
-    @* ?函??梁嚗??臬?蝒?+ Toast *@
+    @* Global message / toast components *@
     <g-messager/>
     <g-error-message />
 
     @* SweetAlert2 *@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    @* LOV ?梁璅∠? *@
+    @* LOV modal component *@
     <partial name="~/Views/Shared/_LovModal.cshtml" />
 
 

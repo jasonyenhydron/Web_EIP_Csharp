@@ -3,33 +3,28 @@
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-status-badge嚗蝑????噬蝡?隞?    /// 憿舐內??撠?暺?+ ??誨蝣?+ ???摮??冽銵典?喃?閫?    ///
-    /// 雿輻?孵?嚗???嚗?    ///   <g-status-badge code="00" label="?萄銝? color="amber" />
-    ///
-    /// 雿輻?孵?嚗lpine.js ??嚗?
-    ///   <g-status-badge alpine-code="record.statusCode" alpine-label="record.statusName" />
-    ///
-    /// color ?舫嚗mber嚗?閮哨?| green | blue | red | slate
+    /// Status badge with ping indicator and label text.
+    /// Supports static text or Alpine.js expressions.
     /// </summary>
     [HtmlTargetElement("g-status-badge")]
     public class GStatusBadgeTagHelper : TagHelper
     {
-        /// <summary>??誨蝣潘???嚗?/summary>
+        /// <summary>Status code text.</summary>
         public string Code { get; set; } = string.Empty;
 
-        /// <summary>???摮???嚗?/summary>
+        /// <summary>Status label text.</summary>
         public string Label { get; set; } = string.Empty;
 
-        /// <summary>??誨蝣潘?Alpine.js ?? x-text 銵券?撘?</summary>
+        /// <summary>Alpine expression for status code.</summary>
         public string AlpineCode { get; set; } = string.Empty;
 
-        /// <summary>???摮?Alpine.js ?? x-text 銵券?撘?</summary>
+        /// <summary>Alpine expression for status label.</summary>
         public string AlpineLabel { get; set; } = string.Empty;
 
-        /// <summary>憿銝駁?嚗mber | green | blue | red | slate</summary>
+        /// <summary>Badge color: amber | green | blue | red | slate.</summary>
         public string Color { get; set; } = "amber";
 
-        /// <summary>?梯?????嚗??芋撘遣霅啗身 false嚗??芋撘身 true嚗?/summary>
+        /// <summary>Disable ping animation when true.</summary>
         public bool NoPing { get; set; } = false;
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
@@ -37,7 +32,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("class", "inline-flex items-center gap-2");
 
-            // 憿撠?
+            // Color palette mapping
             (string pingColor, string dotColor, string textColor, string bgColor, string borderColor) = Color?.ToLower() switch
             {
                 "green" => ("bg-green-400",  "bg-green-500",  "text-green-700",  "bg-green-50",  "border-green-200"),
@@ -70,7 +65,7 @@ namespace Web_EIP_Csharp.Views.Components
 
             string badgeContent = string.IsNullOrEmpty(codeText)
                 ? labelText
-                : $"?? {codeText} {labelText}";
+                : $"{codeText} {labelText}".Trim();
 
             string badgeHtml = $@"<span class=""text-xs font-bold {textColor} {bgColor} px-2.5 py-1 rounded-full border {borderColor}"">{badgeContent}</span>";
 
@@ -81,4 +76,6 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string? s)   => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
+
+
 

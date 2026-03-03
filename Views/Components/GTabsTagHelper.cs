@@ -1,10 +1,13 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+Ôªøusing Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GTabsTagHelper / GTabTagHelper ??Â∞çÊ? jeasyui Tabs
- * ?®Ê?Ôº? *   <g-tabs active-tab="0">
- *       <g-tab title="Ê∏ÖÂñÆ" icon="list">...content...</g-tab>
- *       <g-tab title="Á∂≠Ë≠∑" icon="edit">...content...</g-tab>
+ * GTabsTagHelper / GTabTagHelper
+ * Render tab headers and panels with Alpine.js state.
+ *
+ * Example:
+ *   <g-tabs active-tab="0">
+ *       <g-tab title="List" icon="list">...content...</g-tab>
+ *       <g-tab title="Edit" icon="edit">...content...</g-tab>
  *   </g-tabs>
  */
 namespace Web_EIP_Csharp.Views.Components
@@ -14,7 +17,7 @@ namespace Web_EIP_Csharp.Views.Components
         public List<(string Title, string Icon, string Content)> Tabs { get; } = new();
     }
 
-    // ---- Â≠êÂ?‰ª?<g-tab> ----
+    // Child tag: <g-tab>
     [HtmlTargetElement("g-tab", ParentTag = "g-tabs")]
     public class GTabTagHelper : TagHelper
     {
@@ -30,7 +33,7 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 
-    // ---- ?∂Â?‰ª?<g-tabs> ----
+    // Container tag: <g-tabs>
     [HtmlTargetElement("g-tabs")]
     [RestrictChildren("g-tab")]
     public class GTabsTagHelper : TagHelper
@@ -96,4 +99,5 @@ namespace Web_EIP_Csharp.Views.Components
         };
     }
 }
+
 

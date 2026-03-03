@@ -2,10 +2,6 @@
 
 namespace Web_EIP_Csharp.Views.Components
 {
-    /// <summary>
-    /// g-checkbox ??撠? jEasyUI Checkbox嚗heckgroup ?抒??桀?憛?
-    /// <g-checkbox name="agree" label="????甈? value="1" checked="true" alpine-model="form.agree"/>
-    /// </summary>
     [HtmlTargetElement("g-checkbox")]
     public class GCheckBoxTagHelper : TagHelper
     {
@@ -36,11 +32,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-radio-group ??撠? jEasyUI RadioGroup嚗?貊黎嚗?    /// <g-radio-group name="gender" label="?批" options="M:??F:憟? value="M" alpine-model="form.gender"/>
-    /// layout: inline(?身) | stack
-    /// </summary>
     [HtmlTargetElement("g-radio-group")]
     public class GRadioGroupTagHelper : TagHelper
     {
@@ -95,10 +86,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-check-group ??撠? jEasyUI CheckGroup嚗??貊黎嚗?    /// <g-check-group name="roles[]" label="閫" options="1:蝞∠???2:雿輻??3:閮芸恥"/>
-    /// </summary>
     [HtmlTargetElement("g-check-group")]
     public class GCheckGroupTagHelper : TagHelper
     {
@@ -150,11 +137,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-slider ??撠? jEasyUI Slider嚗??單?獢選?
-    /// <g-slider name="volume" label="?喲?" value="50" min="0" max="100" step="1"/>
-    /// </summary>
     [HtmlTargetElement("g-slider")]
     public class GSliderTagHelper : TagHelper
     {
@@ -198,11 +180,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-rating ??撠? jEasyUI Rate嚗?蝝???
-    /// <g-rating name="score" value="3" max="5" alpine-model="form.score"/>
-    /// </summary>
     [HtmlTargetElement("g-rating")]
     public class GRatingTagHelper : TagHelper
     {
@@ -251,11 +228,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-filebox ??撠? jEasyUI FileBox嚗?獢??喉?
-    /// <g-filebox name="attachment" label="?辣" accept=".pdf,.xlsx" multiple="true"/>
-    /// </summary>
     [HtmlTargetElement("g-filebox")]
     public class GFileBoxTagHelper : TagHelper
     {
@@ -284,11 +256,10 @@ namespace Web_EIP_Csharp.Views.Components
 
             output.TagName = "div";
             output.Attributes.SetAttribute("class", $"flex flex-col gap-1 {colClass} {Class}");
-            // ????> ??JS 摮葡蝯?憟踝??踹??曉 $@"..." 摮葡銝剛◤隤文
-            var onchangeJs  = $"const lbl=document.getElementById('{inputId}_label');if(this.files.length){{const c=this.files.length;lbl.textContent=c>1?c+' ???':this.files[0].name;}}else{{lbl.textContent='????';}}";
+            var onchangeJs  = $"const lbl=document.getElementById('{inputId}_label');if(this.files.length){{const c=this.files.length;lbl.textContent=c>1?c+' 個檔案':this.files[0].name;}}else{{lbl.textContent='請選擇檔案';}}";
 
             var acceptSpan  = string.IsNullOrEmpty(Accept) ? "" : @"<span class=""text-xs text-slate-400 ml-1"">(" + Accept + ")</span>";
-            var multiTxt    = Multiple ? "?????" : "";
+            var multiTxt    = Multiple ? "可多選 " : "";
             var disLblCls   = Disabled ? "opacity-50 cursor-not-allowed" : "";
             output.Content.SetHtmlContent($@"
                 {labelHtml}
@@ -298,7 +269,7 @@ namespace Web_EIP_Csharp.Views.Components
                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12""/>
                     </svg>
                     <span class=""text-sm text-slate-500 group-hover:text-blue-600"" id=""{inputId}_label"">
-                        暺??豢?{multiTxt}{acceptSpan}
+                        請選擇檔案 {multiTxt}{acceptSpan}
                     </span>
                     <input type=""file"" id=""{inputId}"" name=""{Name}"" {multiAttr} {disAttr} {reqAttr} {accAttr}
                            class=""sr-only""
@@ -307,10 +278,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-tagbox ??撠? jEasyUI TagBox嚗?蝐方撓?交?嚗?    /// <g-tagbox name="tags" label="璅惜" value="Tag1,Tag2"/>
-    /// </summary>
     [HtmlTargetElement("g-tagbox")]
     public class GTagBoxTagHelper : TagHelper
     {
@@ -318,7 +285,7 @@ namespace Web_EIP_Csharp.Views.Components
         public string Name  { get; set; } = "";
         public string Label { get; set; } = "";
         public string Value { get; set; } = "";
-        public string Placeholder { get; set; } = "???? Enter ??";
+        public string Placeholder { get; set; } = "輸入後按 Enter";
         public bool   Disabled    { get; set; } = false;
         public int    ColSpan     { get; set; } = 1;
         public string Class       { get; set; } = "";
@@ -355,5 +322,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 
 

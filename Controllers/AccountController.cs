@@ -32,7 +32,7 @@ namespace Web_EIP_Csharp.Controllers
 
             if (string.IsNullOrEmpty(tns) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                ViewBag.Error = "隢撓?亙??渡?亥?閮?/ Incomplete login information";
+                ViewBag.Error = "請輸入完整登入資訊 (Incomplete login information)";
                 return View();
             }
 
@@ -51,7 +51,7 @@ namespace Web_EIP_Csharp.Controllers
 
                 if (!string.Equals(valid?.ToString(), "Y", StringComparison.OrdinalIgnoreCase))
                 {
-                    ViewBag.Error = "?餃憭望?: 撣唾???蝣潮隤?(Invalid username or password)";
+                    ViewBag.Error = "登入失敗: 帳號或密碼錯誤 (Invalid username or password)";
                     ViewBag.Username = username;
                     ViewBag.Tns = tns;
                     return View();

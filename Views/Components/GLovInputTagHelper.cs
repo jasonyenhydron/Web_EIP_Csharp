@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 using System.Text;
 
 namespace Web_EIP_Csharp.Views.Components
@@ -37,7 +37,7 @@ namespace Web_EIP_Csharp.Views.Components
         [HtmlAttributeName("lov-api")]
         public string LovApi { get; set; } = string.Empty;
         [HtmlAttributeName("lov-columns")]
-        public string LovColumns { get; set; } = string.Empty; // e.g. "蝺刻?,?迂,ID"
+        public string LovColumns { get; set; } = string.Empty; // e.g. "Code,Name,ID"
         [HtmlAttributeName("lov-fields")]
         public string LovFields { get; set; } = string.Empty;  // e.g. "employee_no,employee_name,employee_id"
         [HtmlAttributeName("lov-key-hidden")]
@@ -238,4 +238,5 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string s) => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
+
 

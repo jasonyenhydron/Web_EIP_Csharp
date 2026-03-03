@@ -1,12 +1,8 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GPaginationTagHelper ??對�? jeasyui Pagination
- * 綁�? Alpine.js 變數
- * <g-pagination alpine-total="totalPages" alpine-current="currentPage"
- *              alpine-prev="prevPage()" alpine-next="nextPage()"
- *              alpine-count="items.length" page-size-options="10,20,50"
- *              alpine-page-size="pageSize"/>
+ * GPaginationTagHelper
+ * Reusable Alpine.js pagination footer.
  */
 namespace Web_EIP_Csharp.Views.Components
 {
@@ -26,9 +22,9 @@ namespace Web_EIP_Csharp.Views.Components
         {
             var opts = PageSizeOptions.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
-                .Select(s => $"""<option :selected="{AlpinePageSize}=={s}" value="{s}">{s} �???/option>""");
+                .Select(s => $"""<option :selected="{AlpinePageSize}=={s}" value="{s}">{s} 筆/頁</option>""");
             var countHtml = !string.IsNullOrEmpty(AlpineCount)
-                ? $"""<span class="text-slate-400 text-xs">??<span x-text="{AlpineCount}" class="font-bold text-slate-700"></span> �?/span>"""
+                ? $"""<span class="text-slate-400 text-xs">共<span x-text="{AlpineCount}" class="font-bold text-slate-700"></span> 筆</span>"""
                 : "";
 
             output.TagName = "div";
@@ -54,7 +50,7 @@ namespace Web_EIP_Csharp.Views.Components
                                class="w-14 text-center text-xs border border-slate-300 rounded-lg py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400">
                         <span class="text-slate-400 text-xs">/</span>
                         <span x-text="{AlpineTotal}" class="text-xs font-bold text-slate-700 min-w-[1.25rem] text-center"></span>
-                        <span class="text-slate-400 text-xs">??/span>
+                        <span class="text-slate-400 text-xs">頁</span>
                     </div>
                     <button type="button" @@click="{AlpineNext}" :disabled="{AlpineCurrent}>={AlpineTotal}"
                             :class="{AlpineCurrent}>={AlpineTotal}?'opacity-40 cursor-not-allowed':'hover:bg-slate-200'"
@@ -66,4 +62,5 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 

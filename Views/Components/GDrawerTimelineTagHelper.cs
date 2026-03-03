@@ -3,10 +3,11 @@
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-drawer ??撠? jEasyUI Drawer嚗?撅?選?
-    /// <g-drawer id="myDrawer" title="閰喟敦鞈?" position="right" width="400px">content</g-drawer>
-    /// ??嚗DrawerOpen('myDrawer')  ??嚗DrawerClose('myDrawer')
-    /// position: right(?身) | left | top | bottom
+    /// Drawer component.
+    /// Example:
+    /// <g-drawer id="myDrawer" title="Details" position="right" width="400px">content</g-drawer>
+    /// Use DrawerOpen('myDrawer') / DrawerClose('myDrawer').
+    /// position: right (default) | left | top | bottom
     /// </summary>
     [HtmlTargetElement("g-drawer")]
     public class GDrawerTagHelper : TagHelper
@@ -16,7 +17,7 @@ namespace Web_EIP_Csharp.Views.Components
         public string Title    { get; set; } = "";
         public string Position { get; set; } = "right";  // right | left | top | bottom
         public string Width    { get; set; } = "380px";
-        public string Height   { get; set; } = "300px";  // top/bottom ??
+        public string Height   { get; set; } = "300px";  // for top/bottom drawer
         public bool   Overlay  { get; set; } = true;
         public string Class    { get; set; } = "";
 
@@ -92,9 +93,11 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     /// <summary>
-    /// g-timeline ??撠? jEasyUI Timeline嚗??遘嚗?    /// <g-timeline>
-    ///   <g-timeline-item date="2024-01-15" title="閮撱箇?" icon="plus" type="success">?批捆</g-timeline-item>
-    ///   <g-timeline-item date="2024-01-16" title="撖拇??" icon="check" type="primary">?批捆</g-timeline-item>
+    /// Timeline component.
+    /// Example:
+    /// <g-timeline>
+    ///   <g-timeline-item date="2024-01-15" title="Created" icon="plus" type="success">...</g-timeline-item>
+    ///   <g-timeline-item date="2024-01-16" title="Reviewed" icon="check" type="primary">...</g-timeline-item>
     /// </g-timeline>
     /// </summary>
     public class GTimelineContext

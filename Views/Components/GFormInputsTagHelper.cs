@@ -1,14 +1,10 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+ï»¿using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.AspNetCore.Http;
 using Oracle.ManagedDataAccess.Client;
 using Web_EIP_Csharp.Helpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
-    /// <summary>
-    /// g-combobox ??å°æ? jEasyUI ComboBoxï¼ˆä??‰é¸?‡æ?ï¼?    /// <g-combobox name="dept" label="?¨é?" options="HR:äººè?,IT:è³‡è?,OP:?Ÿé?" value="IT"/>
-    /// ?–å??œæ??¸é?å»ºç?ï¼Œæ??é? api-url ?•æ?è¼‰å…¥
-    /// </summary>
     [HtmlTargetElement("g-combobox-legacy")]
     public class GComboBoxTagHelper : TagHelper
     {
@@ -16,9 +12,9 @@ namespace Web_EIP_Csharp.Views.Components
         public string Name        { get; set; } = "";
         public string Label       { get; set; } = "";
         public string Value       { get; set; } = "";
-        public string Placeholder { get; set; } = "è«‹é¸??..";
+        public string Placeholder { get; set; } = "è«‹é¸æ“‡..";
         public string Options     { get; set; } = "";  // "value:text,value:text,..."
-        public string ApiUrl      { get; set; } = "";   // ?•æ?è¼‰å…¥ API
+        public string ApiUrl      { get; set; } = "";   // dynamic options API
         public string ValueField  { get; set; } = "id";
         public string TextField   { get; set; } = "name";
         public string AlpineModel { get; set; } = "";
@@ -37,8 +33,6 @@ namespace Web_EIP_Csharp.Views.Components
             var xmodel   = !string.IsNullOrEmpty(AlpineModel) ? $@" x-model=""{AlpineModel}""" : "";
             var onChange = !string.IsNullOrEmpty(Onchange) ? $@" onchange=""{Onchange}""" : "";
             var required = Required ? @"<span class=""text-red-500 ml-0.5 font-bold"">*</span>" : "";
-
-            // ?œæ??¸é?
             var optSb = new System.Text.StringBuilder();
             optSb.Append($@"<option value="""">{Placeholder}</option>");
             if (!string.IsNullOrWhiteSpace(Options))
@@ -52,8 +46,6 @@ namespace Web_EIP_Csharp.Views.Components
                     optSb.Append($@"<option value=""{v}""{sel}>{t}</option>");
                 }
             }
-
-            // ?•æ?è¼‰å…¥?³æœ¬
             var dynScript = !string.IsNullOrEmpty(ApiUrl) ? $@"
                 <script>
                 (function() {{
@@ -88,12 +80,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-datebox ??å°æ? jEasyUI DateBoxï¼ˆæ—¥?Ÿé¸?‡ï?
-    /// <g-datebox name="startDate" label="?‹å??¥æ?" value="2024-01-01" required="true"/>
-    /// type: date | datetime-local | month | week | time
-    /// </summary>
     [HtmlTargetElement("g-datebox")]
     public class GDateBoxTagHelper : TagHelper
     {
@@ -140,10 +126,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-numberbox ??å°æ? jEasyUI NumberBoxï¼ˆæ•¸å­—è¼¸?¥æ?ï¼?    /// <g-numberbox name="qty" label="?¸é?" min="0" max="9999" step="1" precision="0"/>
-    /// </summary>
     [HtmlTargetElement("g-numberbox")]
     public class GNumberBoxTagHelper : TagHelper
     {
@@ -154,9 +136,9 @@ namespace Web_EIP_Csharp.Views.Components
         public string Min         { get; set; } = "";
         public string Max         { get; set; } = "";
         public string Step        { get; set; } = "1";
-        public int    Precision   { get; set; } = 0;  // å°æ•¸ä½æ•¸
-        public string Prefix      { get; set; } = "";  // ?ç½®ç¬¦è?å¦?$
-        public string Suffix      { get; set; } = "";  // å¾Œç½®ç¬¦è?å¦?%
+        public int    Precision   { get; set; } = 0;  // decimal precision
+        public string Prefix      { get; set; } = "";  // prefix text, e.g. $
+        public string Suffix      { get; set; } = "";  // suffix text, e.g. %
         public string AlpineModel { get; set; } = "";
         public bool   Required    { get; set; } = false;
         public bool   Disabled    { get; set; } = false;
@@ -209,10 +191,6 @@ namespace Web_EIP_Csharp.Views.Components
             }
         }
     }
-
-    /// <summary>
-    /// g-number-spinner ??å°æ? jEasyUI NumberSpinnerï¼ˆå¸¶? æ??‰é??„æ•¸å­—æ?ï¼?    /// <g-number-spinner name="qty" label="?¸é?" value="1" min="0" max="99"/>
-    /// </summary>
     [HtmlTargetElement("g-number-spinner")]
     public class GNumberSpinnerTagHelper : TagHelper
     {
@@ -245,7 +223,7 @@ namespace Web_EIP_Csharp.Views.Components
                 <div class=""flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 bg-white"">
                     <button type=""button"" {disAttr}
                             onclick=""const i=document.getElementById('{inputId}');const v=parseInt(i.value||0);if(v>{Min}-1){{i.value=Math.max({Min},v-{Step});i.dispatchEvent(new Event('change'));}}""
-                            class=""px-2.5 py-2 text-slate-600 hover:bg-slate-100 transition-colors border-r border-slate-300 font-bold text-lg leading-none disabled:opacity-40"">??/button>
+                            class=""px-2.5 py-2 text-slate-600 hover:bg-slate-100 transition-colors border-r border-slate-300 font-bold text-lg leading-none disabled:opacity-40"">-</button>
                     <input type=""number"" id=""{inputId}"" name=""{Name}"" value=""{Value}""
                            min=""{Min}"" max=""{Max}"" step=""{Step}"" {xmodel} {disAttr}
                            class=""flex-1 text-center text-sm border-0 focus:outline-none bg-transparent py-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"">
@@ -257,4 +235,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
+
 

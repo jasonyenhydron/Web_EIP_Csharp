@@ -13,7 +13,7 @@ namespace Web_EIP_Csharp.Views.Components
         public string Name { get; set; } = "";
         public string Label { get; set; } = "";
         public string Value { get; set; } = "";
-        public string Placeholder { get; set; } = "?券";
+        public string Placeholder { get; set; } = "請選擇";
         public string Items { get; set; } = ""; // value:text,value:text
         public string Sql { get; set; } = "";   // SELECT value,text FROM ...
         public string ValueField { get; set; } = "";
@@ -113,5 +113,7 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
+
 
 

@@ -3,11 +3,11 @@
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-menu ??撠? jEasyUI Menu嚗???殷?
+    /// Menu component with menu items and divider support.
     /// <g-menu id="actMenu" trigger-id="actBtn">
-    ///   <g-menu-item text="蝺刻摩" icon="edit" onclick="edit()"/>
+    ///   <g-menu-item text="Edit" icon="edit" onclick="edit()"/>
     ///   <g-menu-divider/>
-    ///   <g-menu-item text="?芷" icon="trash" onclick="del()" type="danger"/>
+    ///   <g-menu-item text="Delete" icon="trash" onclick="del()" type="danger"/>
     /// </g-menu>
     /// </summary>
     public class GMenuContext
@@ -70,7 +70,7 @@ namespace Web_EIP_Csharp.Views.Components
     {
         [HtmlAttributeName("id")]
         public string Id        { get; set; } = "";
-        public string TriggerId { get; set; } = "";  // 暺??芸???憿舐內?詨
+        public string TriggerId { get; set; } = "";  // trigger element id
         public string Position  { get; set; } = "bottom-left";  // bottom-left|bottom-right|top-left|top-right
         public string Class     { get; set; } = "";
 
@@ -122,16 +122,16 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     /// <summary>
-    /// g-switch-button ??撠? jEasyUI SwitchButton嚗?????
-    /// <g-switch-button name="isActive" label="?" checked="true" alpine-model="form.active"/>
+    /// Toggle switch component.
+    /// <g-switch-button name="isActive" label="啟用" checked="true" alpine-model="form.active"/>
     /// </summary>
     [HtmlTargetElement("g-switch-button")]
     public class GSwitchButtonTagHelper : TagHelper
     {
         public string Name        { get; set; } = "";
         public string Label       { get; set; } = "";
-        public string LabelOn     { get; set; } = "?";
-        public string LabelOff    { get; set; } = "?";
+        public string LabelOn     { get; set; } = "開";
+        public string LabelOff    { get; set; } = "關";
         public bool   Checked     { get; set; } = false;
         public string AlpineModel { get; set; } = "";
         public bool   Disabled    { get; set; } = false;

@@ -114,3 +114,18 @@
 - 不重覆手寫共用 JS/CSS 載入，改用 `g-js/g-style`
 - 新增 UI 功能先評估是否抽到 TagHelper
 - 所有 CRUD API 應維持 JSON 一致格式
+
+## 8. Recent Implementation Notes (2026-03-03)
+
+### 8.1 GDataGridTagHelper
+- Grid body container now uses `g-grid-body` with `overflow-y-auto`.
+- Default scroll cap is `max-height: var(--g-grid-body-max-height, 52vh)`.
+- Pagination area now displays total count (`rows.length`) to the left of pager controls.
+- Toolbar total count is rendered only when pagination is disabled.
+
+### 8.2 IDM role-function query compatibility
+- `IdmController` now supports both `FUNCTION_NO` and `FUNCTION_ID` column variants.
+- Added fallback SQL branch to prevent Oracle invalid identifier errors when schema differs.
+
+### 8.3 Datagrid fetch robustness
+- Frontend fetch handler now safely handles malformed/non-array payloads and defaults to empty rows.

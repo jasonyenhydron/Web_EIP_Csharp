@@ -1,26 +1,29 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GDataGridTagHelper ????? jeasyui DataGrid
- * ?????Alpine.js ??渲麾???????API ?????兩??+ ??? + ???
+ * GDataGridTagHelper
+ * Alpine.js based data grid with:
+ * - sorting (single / multi)
+ * - header filtering
+ * - pagination
+ * - optional CRUD action buttons
  *
- * ?????
+ * Example:
  *   <g-datagrid id="programGrid"
- *               api-url="/api/mis/programs/IDMGD01/list"
- *               columns="PROGRAM_NO:??????:120,DISPLAY_CODE:?輯???60:center,PURPOSE:??蜃?
+ *               api="/api/mis/programs/IDMGD01/list"
+ *               columns="PROGRAM_NO:程式編號:120:left,DISPLAY_CODE:顯示:60:center,PURPOSE:用途"
  *               page-size="20"
  *               striped="true"
  *               on-row-click="onRowSelected(row)"/>
  *
- * columns ?瞉????謅??????????????
- *   field:???:??瞍犁x:???(left|center|right)
+ * columns format:
+ *   field:title:width:align(editor/filter options...)
  */
 namespace Web_EIP_Csharp.Views.Components
 {
     [HtmlTargetElement("g-datagrid")]
     public class GDataGridTagHelper : TagHelper
     {
-        // --- ?蝞賃秧??????謕?????????????---
         public string Id           { get; set; } = "";
         [HtmlAttributeName("api")]
         public string Api          { get; set; } = "";
@@ -51,8 +54,6 @@ namespace Web_EIP_Csharp.Views.Components
         public bool   ShowFilter   { get; set; } = false;
         public bool   QueryAutoColumn { get; set; } = false;
         public bool   TitleFilterEnabled { get; set; } = true;
-
-        //  --- ????---
         public bool   AllowAdd     { get; set; } = true;
         public bool   AllowDelete  { get; set; } = true;
         public bool   AllowUpdate  { get; set; } = true;
@@ -77,8 +78,6 @@ namespace Web_EIP_Csharp.Views.Components
         public string TitleSortField { get; set; } = "";
         public string SortableColumns { get; set; } = "";
         public bool   MultiSortEnabled { get; set; } = false;
-
-        // --- ??貊????踐??????---
         public bool   BufferView   { get; set; } = false;
         public bool   CheckOnSelect{ get; set; } = true;
         public string CloudReportName{ get; set; } = "";
@@ -98,12 +97,12 @@ namespace Web_EIP_Csharp.Views.Components
         public bool   ViewCommandVisible   { get; set; } = true;
 
         // --- JS ?哨?颲?Callback (Alpine.js integration) ---
-        public string OnLoadSuccess{ get; set; } = ""; // ???????
+        public string OnLoadSuccess{ get; set; } = ""; // callback after load success
         public string OnSelect     { get; set; } = ""; // ?綜等???
         public string OnInsert     { get; set; } = ""; // ?????
         public string OnInserted   { get; set; } = ""; // ????謅?
-        public string OnUpdate     { get; set; } = ""; // ?箏???
-        public string OnUpdated    { get; set; } = ""; // ?箏??謅?
+        public string OnUpdate     { get; set; } = ""; // callback before update
+        public string OnUpdated    { get; set; } = ""; // callback after update
         public string OnDelete     { get; set; } = ""; // ??畸???
         public string OnDeleted    { get; set; } = ""; // ??畸??謅?
         public string OnDeleting   { get; set; } = ""; // ??畸??謅?
@@ -143,7 +142,6 @@ namespace Web_EIP_Csharp.Views.Components
             var actualApiUrl = !string.IsNullOrEmpty(ApiUrl) ? ApiUrl : Api;
             if (string.IsNullOrEmpty(actualApiUrl) && !string.IsNullOrEmpty(RemoteName))
             {
-                // mvc ?? ?撣搗ntroller action crud select update insert delete ?荔??url
                 var tableParam = !string.IsNullOrEmpty(DataMember) ? $"?DataMember={DataMember}" : "";
                 actualApiUrl = $"/{RemoteName}/select{tableParam}".Replace("//", "/");
             }
@@ -200,8 +198,6 @@ namespace Web_EIP_Csharp.Views.Components
                 var tdAlign = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
                 var isSortable = sortableFieldSet.Contains(col.Field);
                 var sortableHeaderClass = isSortable ? "cursor-pointer hover:bg-slate-200" : "cursor-default";
-
-                // --- 1. ?萄赯?(Header) ---
                 var filterIconBtn = actualTitleFilterEnabled
                     ? $@"<button type=""button"" @click.stop=""openHeaderFilter('{col.Field}', $event)"" title=""欄位篩選""
                                class=""ml-1 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-blue-100 text-blue-600 transition-colors"">
@@ -238,8 +234,6 @@ namespace Web_EIP_Csharp.Views.Components
                             {filterIconBtn}
                         </span>
                     </th>");
-
-                // --- 2. ????(Filter) ---
                 if (ShowFilter)
                 {
                     filterHtml.Append($@"<th class=""px-2 py-1.5 bg-indigo-50/50 border-b border-slate-200"">");
@@ -311,8 +305,6 @@ namespace Web_EIP_Csharp.Views.Components
 
                 tdHtml.Append("</td>");
             }
-
-            // --- 4. ??? (Action) ??? ---
             if (!string.IsNullOrEmpty(EditMode) && (AllowUpdate || AllowDelete || UpdateCommandVisible || DeleteCommandVisible || ViewCommandVisible))
             {
                 thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 w-24 shrink-0 sticky right-0"">操作</th>");
@@ -867,11 +859,8 @@ namespace Web_EIP_Csharp.Views.Components
                         }},
                         async confirmSave() {{
                             if(!this.editingId) return;
-
-                            // MVC CRUD Auto Apply Update/Insert (??祈澈 editingId ????row id???????insert)
-                            // ?謕??????貊???native row add??蹓澗? update
                             if ('{AutoApply}'.toLowerCase() === 'true' && '{RemoteName}') {{
-                                const action = 'update'; // ?????insert ?????穿???editingId !== 'new' ???望?
+                                const action = 'update'; // use update path for inline row save
                                 const tableParam = '{DataMember}' ? '?DataMember={DataMember}' : '';
                                 const url = `/{RemoteName}/${{action}}${{tableParam}}`.replace('//', '/');
                                 try {{
@@ -997,6 +986,7 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 
 
 

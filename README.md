@@ -65,3 +65,10 @@ dotnet run
   - 優先檢查 SQL 字串拼接與條件參數是否一致。
 - Datagrid 按鈕沒反應
   - 先看 Console 是否有 Alpine 表達式錯誤（例如變數未定義）。
+
+## Update Notes (2026-03-03)
+- `g-datagrid` table body now uses a constrained scroll area (`g-grid-body`) with `overflow-y-auto` and default `max-height: var(--g-grid-body-max-height, 52vh)`.
+- Pagination now shows total record count (`共 X 筆`) on the left side of page switch controls.
+- Toolbar total count is now shown only when pagination is disabled, to avoid duplicate count display.
+- `IdmController` role-function query added schema compatibility for `FUNCTION_NO` / `FUNCTION_ID` and fallback SQL, reducing Oracle invalid identifier failures.
+- Datagrid fetch flow now guards against malformed/non-array responses to avoid client-side iteration errors.

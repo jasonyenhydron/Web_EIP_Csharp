@@ -1,11 +1,8 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GSearchBoxTagHelper ??對�? jeasyui ComboBox
- * <g-search-box id="empBox" name="emp_no" api-url="/api/lov/hrm/employees"
- *               display-field="employee_no" value-field="employee_id"
- *               label-fields="employee_no,employee_name"
- *               target-id="hidEmpId" placeholder="輸入?�工..."/>
+ * GSearchBoxTagHelper
+ * Lightweight search input with dropdown suggestions from API.
  */
 namespace Web_EIP_Csharp.Views.Components
 {
@@ -14,7 +11,7 @@ namespace Web_EIP_Csharp.Views.Components
     {
         public string Id           { get; set; } = "";
         public string Name         { get; set; } = "";
-        public string Placeholder  { get; set; } = "輸入?�鍵�?..";
+        public string Placeholder  { get; set; } = "請輸入關鍵字...";
         public string ApiUrl       { get; set; } = "";
         public string DisplayField { get; set; } = "";
         public string ValueField   { get; set; } = "";
@@ -63,7 +60,7 @@ namespace Web_EIP_Csharp.Views.Components
                                 const r = await fetch(`{ApiUrl}?query=${{encodeURIComponent(q)}}`);
                                 const j = await r.json();
                                 const d = j.data ?? j;
-                                lst.innerHTML = d.length ? '' : '<li class=""px-4 py-3 text-sm text-slate-400"">?�符?��???/li>';
+                                lst.innerHTML = d.length ? '' : '<li class=""px-4 py-3 text-sm text-slate-400"">無符合資料</li>';
                                 d.forEach(item=>{{
                                     const li = document.createElement('li');
                                     li.className='px-4 py-2.5 text-sm cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors';
@@ -87,4 +84,5 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 

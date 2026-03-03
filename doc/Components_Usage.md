@@ -177,3 +177,22 @@
 2. 行為集中：共用行為放 TagHelper 或 `g-components.js`。  
 3. 避免重複：CSS/JS 載入一律走 `g-style` / `g-js`。  
 4. 新功能先抽象：可重用的需求優先做成元件屬性。  
+
+## 11. 近期更新（2026-03-03）
+
+`g-datagrid` 已更新以下行為：
+
+- 可捲動區域
+  - 表格主體使用 `.g-grid-body`。
+  - 預設樣式包含 `max-height: var(--g-grid-body-max-height, 52vh)` 與 `overflow-y-auto`，避免出現「有捲軸但無法捲動」。
+- 分頁筆數位置
+  - `共 X 筆` 顯示在分頁切換區（上一頁/頁碼/下一頁）左側。
+  - 工具列上方的筆數僅在 `pagination="false"` 時顯示，避免重複資訊。
+- 自訂高度方式
+  - 可在外層容器覆寫 CSS 變數，例如：
+
+```html
+<div style="--g-grid-body-max-height: 60vh;">
+  <g-datagrid ...></g-datagrid>
+</div>
+```
