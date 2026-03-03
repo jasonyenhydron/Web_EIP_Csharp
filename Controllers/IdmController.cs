@@ -12,6 +12,17 @@ namespace Web_EIP_Csharp.Controllers
 {
     public class IdmController : Controller
     {
+        private sealed class RoleFunctionColumnMeta
+        {
+            public string SelectExpr { get; set; } = "CAST(NULL AS VARCHAR2(100)) AS FUNCTION_NO";
+            public string OrderExpr { get; set; } = "ROLE_NO";
+            public string UpdateClause { get; set; } = string.Empty;
+            public string InsertColumn { get; set; } = string.Empty;
+            public string InsertValue { get; set; } = string.Empty;
+            public string ParameterName { get; set; } = string.Empty;
+            public bool UseNumericParameter { get; set; } = false;
+        }
+
         private static string BuildDbConnectionString(string tns) =>
             DbHelper.DefaultConnectionString;
 
@@ -311,35 +322,8 @@ namespace Web_EIP_Csharp.Controllers
 
             try
             {
-                const string sql = @"
-                    SELECT ROWID, ROLE_FUNCTION_ID, PROGRAM_ID, POSITION_NO,
-                           ROLE_ID, ROLE_NO, ROLE_NAME, FUNCTION_NO,
-                           DISPLAY_ORDER, DISPLAY_COLOR,
-                           ENTRY_ID, ENTRY_DATE, TR_ID, TR_DATE
-                    FROM idm_role_function_program
-                    WHERE PROGRAM_ID = :program_id
-                      AND POSITION_NO = :position_no
-                    ORDER BY NVL(DISPLAY_ORDER, 999999), ROLE_NO, FUNCTION_NO";
-
-                var dt = await DbHelper.GetDataTableAsync(
-                    BuildDbConnectionString(tns),
-                    CommandType.Text,
-                    sql,
-                    new DbParameter[]
-                    {
-                        DbHelper.CreateParameter("program_id", programId.Value),
-                        DbHelper.CreateParameter("position_no", positionNo)
-                    });
-
-                var rows = new List<Dictionary<string, object>>();
-                foreach (DataRow row in dt.Rows)
-                {
-                    var dict = new Dictionary<string, object>();
-                    foreach (DataColumn c in dt.Columns)
-                        dict[c.ColumnName] = row[c] == DBNull.Value ? string.Empty : row[c];
-                    rows.Add(dict);
-                }
-
+                var conn = BuildDbConnectionString(tns);
+                var rows = await QueryRoleFunctionProgramsAsync(conn, programId.Value, positionNo);
                 return Ok(new { status = "success", data = rows });
             }
             catch (Exception ex)
@@ -373,20 +357,22 @@ namespace Web_EIP_Csharp.Controllers
             var roleNo = GetString(payload, "ROLE_NO");
             var roleName = GetString(payload, "ROLE_NAME");
             var functionNo = GetString(payload, "FUNCTION_NO");
+            var functionId = ParseNullableLong(functionNo);
             var displayOrder = GetLong(payload, "DISPLAY_ORDER");
             var displayColor = GetString(payload, "DISPLAY_COLOR");
 
             try
             {
                 var conn = BuildDbConnectionString(tns);
+                var funcMeta = await ResolveRoleFunctionColumnMetaAsync(conn);
                 if (!string.IsNullOrWhiteSpace(rowId))
                 {
-                    const string updateSql = @"
+                    var updateSql = $@"
                         UPDATE idm_role_function_program SET
                             ROLE_ID = :role_id,
                             ROLE_NO = :role_no,
                             ROLE_NAME = :role_name,
-                            FUNCTION_NO = :function_no,
+                            {funcMeta.UpdateClause}
                             DISPLAY_ORDER = :display_order,
                             DISPLAY_COLOR = :display_color,
                             POSITION_NO = :position_no,
@@ -394,22 +380,29 @@ namespace Web_EIP_Csharp.Controllers
                             TR_DATE = SYSDATE
                         WHERE ROWID = :row_id";
 
+                    var updateParams = new List<DbParameter>
+                    {
+                        DbHelper.CreateParameter("role_id", ToDb(roleId)),
+                        DbHelper.CreateParameter("role_no", ToDb(roleNo)),
+                        DbHelper.CreateParameter("role_name", ToDb(roleName)),
+                        DbHelper.CreateParameter("display_order", ToDb(displayOrder)),
+                        DbHelper.CreateParameter("display_color", ToDb(displayColor)),
+                        DbHelper.CreateParameter("position_no", positionNo),
+                        DbHelper.CreateParameter("tr_id", username),
+                        DbHelper.CreateParameter("row_id", rowId)
+                    };
+                    if (!string.IsNullOrEmpty(funcMeta.ParameterName))
+                    {
+                        updateParams.Add(DbHelper.CreateParameter(
+                            funcMeta.ParameterName,
+                            funcMeta.UseNumericParameter ? ToDb(functionId) : ToDb(functionNo)));
+                    }
+
                     var affected = await DbHelper.ExecuteNonQueryAsync(
                         conn,
                         CommandType.Text,
                         updateSql,
-                        new DbParameter[]
-                        {
-                            DbHelper.CreateParameter("role_id", ToDb(roleId)),
-                            DbHelper.CreateParameter("role_no", ToDb(roleNo)),
-                            DbHelper.CreateParameter("role_name", ToDb(roleName)),
-                            DbHelper.CreateParameter("function_no", ToDb(functionNo)),
-                            DbHelper.CreateParameter("display_order", ToDb(displayOrder)),
-                            DbHelper.CreateParameter("display_color", ToDb(displayColor)),
-                            DbHelper.CreateParameter("position_no", positionNo),
-                            DbHelper.CreateParameter("tr_id", username),
-                            DbHelper.CreateParameter("row_id", rowId)
-                        });
+                        updateParams.ToArray());
 
                     if (affected == 0)
                         return NotFound(new { status = "error", message = "Detail record not found" });
@@ -422,35 +415,42 @@ namespace Web_EIP_Csharp.Controllers
                         "SELECT NVL(MAX(ROLE_FUNCTION_ID), 0) + 1 FROM idm_role_function_program");
                     var nextId = Convert.ToInt64(nextIdObj);
 
-                    const string insertSql = @"
+                    var insertSql = $@"
                         INSERT INTO idm_role_function_program (
                             ROLE_FUNCTION_ID, PROGRAM_ID, POSITION_NO,
-                            ROLE_ID, ROLE_NO, ROLE_NAME, FUNCTION_NO, DISPLAY_ORDER, DISPLAY_COLOR,
+                            ROLE_ID, ROLE_NO, ROLE_NAME{funcMeta.InsertColumn}, DISPLAY_ORDER, DISPLAY_COLOR,
                             ENTRY_ID, ENTRY_DATE, TR_ID, TR_DATE
                         ) VALUES (
                             :role_function_id, :program_id, :position_no,
-                            :role_id, :role_no, :role_name, :function_no, :display_order, :display_color,
+                            :role_id, :role_no, :role_name{funcMeta.InsertValue}, :display_order, :display_color,
                             :entry_id, SYSDATE, :tr_id, SYSDATE
                         )";
+
+                    var insertParams = new List<DbParameter>
+                    {
+                        DbHelper.CreateParameter("role_function_id", nextId),
+                        DbHelper.CreateParameter("program_id", programId.Value),
+                        DbHelper.CreateParameter("position_no", positionNo),
+                        DbHelper.CreateParameter("role_id", ToDb(roleId)),
+                        DbHelper.CreateParameter("role_no", ToDb(roleNo)),
+                        DbHelper.CreateParameter("role_name", ToDb(roleName)),
+                        DbHelper.CreateParameter("display_order", ToDb(displayOrder)),
+                        DbHelper.CreateParameter("display_color", ToDb(displayColor)),
+                        DbHelper.CreateParameter("entry_id", username),
+                        DbHelper.CreateParameter("tr_id", username)
+                    };
+                    if (!string.IsNullOrEmpty(funcMeta.ParameterName))
+                    {
+                        insertParams.Add(DbHelper.CreateParameter(
+                            funcMeta.ParameterName,
+                            funcMeta.UseNumericParameter ? ToDb(functionId) : ToDb(functionNo)));
+                    }
 
                     await DbHelper.ExecuteNonQueryAsync(
                         conn,
                         CommandType.Text,
                         insertSql,
-                        new DbParameter[]
-                        {
-                            DbHelper.CreateParameter("role_function_id", nextId),
-                            DbHelper.CreateParameter("program_id", programId.Value),
-                            DbHelper.CreateParameter("position_no", positionNo),
-                            DbHelper.CreateParameter("role_id", ToDb(roleId)),
-                            DbHelper.CreateParameter("role_no", ToDb(roleNo)),
-                            DbHelper.CreateParameter("role_name", ToDb(roleName)),
-                            DbHelper.CreateParameter("function_no", ToDb(functionNo)),
-                            DbHelper.CreateParameter("display_order", ToDb(displayOrder)),
-                            DbHelper.CreateParameter("display_color", ToDb(displayColor)),
-                            DbHelper.CreateParameter("entry_id", username),
-                            DbHelper.CreateParameter("tr_id", username)
-                        });
+                        insertParams.ToArray());
                 }
 
                 return Ok(new { status = "success", message = "Saved OK" });
@@ -540,6 +540,143 @@ namespace Web_EIP_Csharp.Controllers
             if (long.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var val)) return val;
             if (long.TryParse(raw, NumberStyles.Any, CultureInfo.CurrentCulture, out val)) return val;
             return null;
+        }
+
+        private static long? ParseNullableLong(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+            if (long.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var v)) return v;
+            if (long.TryParse(raw, NumberStyles.Any, CultureInfo.CurrentCulture, out v)) return v;
+            return null;
+        }
+
+        private static async Task<bool> ColumnExistsAsync(string conn, string tableName, string columnName)
+        {
+            var obj = await DbHelper.ExecuteScalarAsync(
+                conn,
+                CommandType.Text,
+                @"SELECT COUNT(1)
+                  FROM USER_TAB_COLUMNS
+                  WHERE TABLE_NAME = :table_name
+                    AND COLUMN_NAME = :column_name",
+                new DbParameter[]
+                {
+                    DbHelper.CreateParameter("table_name", tableName.ToUpperInvariant()),
+                    DbHelper.CreateParameter("column_name", columnName.ToUpperInvariant())
+                });
+
+            return Convert.ToInt32(obj) > 0;
+        }
+
+        private static async Task<RoleFunctionColumnMeta> ResolveRoleFunctionColumnMetaAsync(string conn)
+        {
+            const string tableName = "IDM_ROLE_FUNCTION_PROGRAM";
+            if (await ColumnExistsAsync(conn, tableName, "FUNCTION_NO"))
+            {
+                return new RoleFunctionColumnMeta
+                {
+                    SelectExpr = "FUNCTION_NO",
+                    OrderExpr = "FUNCTION_NO",
+                    UpdateClause = "FUNCTION_NO = :function_no,",
+                    InsertColumn = ", FUNCTION_NO",
+                    InsertValue = ", :function_no",
+                    ParameterName = "function_no",
+                    UseNumericParameter = false
+                };
+            }
+
+            if (await ColumnExistsAsync(conn, tableName, "FUNCTION_ID"))
+            {
+                return new RoleFunctionColumnMeta
+                {
+                    SelectExpr = "TO_CHAR(FUNCTION_ID) AS FUNCTION_NO",
+                    OrderExpr = "FUNCTION_ID",
+                    UpdateClause = "FUNCTION_ID = :function_id,",
+                    InsertColumn = ", FUNCTION_ID",
+                    InsertValue = ", :function_id",
+                    ParameterName = "function_id",
+                    UseNumericParameter = true
+                };
+            }
+
+            return new RoleFunctionColumnMeta
+            {
+                SelectExpr = "CAST(NULL AS VARCHAR2(100)) AS FUNCTION_NO",
+                OrderExpr = "ROLE_NO",
+                UpdateClause = string.Empty,
+                InsertColumn = string.Empty,
+                InsertValue = string.Empty,
+                ParameterName = string.Empty,
+                UseNumericParameter = false
+            };
+        }
+
+        private static async Task<List<Dictionary<string, object>>> QueryRoleFunctionProgramsAsync(string conn, long programId, int positionNo)
+        {
+            try
+            {
+                var funcMeta = await ResolveRoleFunctionColumnMetaAsync(conn);
+                var sql = $@"
+                    SELECT ROWID, ROLE_FUNCTION_ID, PROGRAM_ID, POSITION_NO,
+                           ROLE_ID, ROLE_NO, ROLE_NAME, {funcMeta.SelectExpr},
+                           DISPLAY_ORDER, DISPLAY_COLOR,
+                           ENTRY_ID, ENTRY_DATE, TR_ID, TR_DATE
+                    FROM idm_role_function_program
+                    WHERE PROGRAM_ID = :program_id
+                      AND POSITION_NO = :position_no
+                    ORDER BY NVL(DISPLAY_ORDER, 999999), ROLE_NO, {funcMeta.OrderExpr}";
+
+                var dt = await DbHelper.GetDataTableAsync(
+                    conn,
+                    CommandType.Text,
+                    sql,
+                    new DbParameter[]
+                    {
+                        DbHelper.CreateParameter("program_id", programId),
+                        DbHelper.CreateParameter("position_no", positionNo)
+                    });
+
+                return DataTableToRows(dt);
+            }
+            catch
+            {
+                // fallback: avoid invalid identifier issues on custom/legacy schema
+                var fallbackSql = @"
+                    SELECT ROWID, ROLE_FUNCTION_ID, PROGRAM_ID, POSITION_NO,
+                           ROLE_ID, ROLE_NO, ROLE_NAME,
+                           CAST(NULL AS VARCHAR2(100)) AS FUNCTION_NO,
+                           DISPLAY_ORDER, DISPLAY_COLOR,
+                           ENTRY_ID, ENTRY_DATE, TR_ID, TR_DATE
+                    FROM idm_role_function_program
+                    WHERE PROGRAM_ID = :program_id
+                      AND POSITION_NO = :position_no
+                    ORDER BY ROLE_FUNCTION_ID";
+
+                var dt = await DbHelper.GetDataTableAsync(
+                    conn,
+                    CommandType.Text,
+                    fallbackSql,
+                    new DbParameter[]
+                    {
+                        DbHelper.CreateParameter("program_id", programId),
+                        DbHelper.CreateParameter("position_no", positionNo)
+                    });
+
+                return DataTableToRows(dt);
+            }
+        }
+
+        private static List<Dictionary<string, object>> DataTableToRows(DataTable dt)
+        {
+            var rows = new List<Dictionary<string, object>>();
+            foreach (DataRow row in dt.Rows)
+            {
+                var dict = new Dictionary<string, object>();
+                foreach (DataColumn c in dt.Columns)
+                    dict[c.ColumnName] = row[c] == DBNull.Value ? string.Empty : row[c];
+                rows.Add(dict);
+            }
+            return rows;
         }
 
         private static object ToDb(string? value) => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value;

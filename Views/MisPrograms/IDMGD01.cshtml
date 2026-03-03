@@ -2,9 +2,19 @@
     var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
     ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
+    var employeeLovSql = Uri.EscapeDataString(@"
+SELECT employee_id, employee_no, employee_name
+FROM (
+    SELECT employee_id, employee_no, employee_name,
+           ROW_NUMBER() OVER (ORDER BY employee_no ASC) AS rn
+    FROM hrm_employee_v
+    WHERE (UPPER(employee_no) LIKE :q OR UPPER(employee_name) LIKE :q)
+)
+WHERE rn > :offset AND rn <= :endRow");
+    var employeeLovApi = $"/api/lov/query?sql={employeeLovSql}";
 }
 
-<div class="absolute inset-0 flex flex-col bg-slate-50 overflow-x-hidden overflow-y-auto" x-data="idmgd01App()" x-init="init()">
+<div class="absolute inset-0 flex flex-col bg-slate-50 overflow-hidden" x-data="idmgd01App()" x-init="init()">
 
     <div class="bg-white border-b border-slate-200 px-4 py-3 shrink-0">
         <div class="flex flex-wrap items-end gap-3">
@@ -20,7 +30,7 @@
                          code-id="searchEmployeeNo" code-placeholder="員工" code-width="w-20"
                          name-id="searchEmployeeName"
                          lov-title="尋找員工 (Employee)"
-                         lov-api="/api/lov/hrm/employees"
+                         lov-api="@employeeLovApi"
                          lov-columns="編號,名稱,ID"
                          lov-fields="employee_no,employee_name,employee_id"
                          lov-key-hidden="employee_id"
@@ -41,7 +51,7 @@
         </div>
     </div>
 
-    <div class="flex flex-col">
+    <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
         <g-datagrid id="idmGrid"
                     api="/Idm/select?DataMember=IDMGD01"
                     columns="PROGRAM_NO:程式編號:150:left:text::text,DISPLAY_CODE:顯示:80:center:select:Y=Y;N=N:select,EMPLOYEE_ID:員工編號:150:left:text::lov,PURPOSE:用途:220:left:text::text,PROGRAM_TYPE:程式型態:120:left:text::text,ENTRY_DATE:建檔日期:170:left:readonly::"
@@ -66,7 +76,7 @@
                     @@edit="editRecord($event.detail.row)"
                     @@delete="confirmDelete($event.detail.row)"
                     @@query="executeQueryFromGrid($event.detail.filters)"
-                    extra-class="shrink-0"
+                    extra-class="flex-1 min-h-0 max-h-[52vh]"
                     clean-style="false"></g-datagrid>
 
         <div class="border-t border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">

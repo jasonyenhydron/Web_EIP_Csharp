@@ -22,6 +22,61 @@ function toDateOnly(value) {
     return s;
 }
 
+let __modalScrollLockCount = 0;
+let __modalScrollTop = 0;
+
+function lockBackgroundScroll() {
+    __modalScrollLockCount += 1;
+    if (__modalScrollLockCount > 1) return;
+
+    __modalScrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${__modalScrollTop}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.classList.add('g-modal-open');
+}
+
+function unlockBackgroundScroll() {
+    if (__modalScrollLockCount <= 0) {
+        __modalScrollLockCount = 0;
+        return;
+    }
+    __modalScrollLockCount -= 1;
+    if (__modalScrollLockCount > 0) return;
+
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    document.body.classList.remove('g-modal-open');
+    window.scrollTo(0, __modalScrollTop);
+}
+
+function stopBackdropScroll(event) {
+    const programModal = document.getElementById('programModal');
+    const execModal = document.getElementById('executionModal');
+    const target = event.target;
+
+    const inProgramContent = target?.closest?.('#modalContent');
+    const inExecContent = target?.closest?.('#executionModalContent');
+    const programVisible = programModal && !programModal.classList.contains('hidden') && programModal.style.display !== 'none';
+    const execVisible = execModal && !execModal.classList.contains('hidden') && execModal.style.display !== 'none';
+
+    if ((programVisible || execVisible) && !inProgramContent && !inExecContent) {
+        event.preventDefault();
+    }
+}
+
+document.addEventListener('wheel', stopBackdropScroll, { passive: false });
+document.addEventListener('touchmove', stopBackdropScroll, { passive: false });
+
 function openProgramModal(input) {
     let data;
 
@@ -81,8 +136,10 @@ function openProgramModal(input) {
     const modal = document.getElementById('programModal');
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
+    modal.style.overscrollBehavior = 'contain';
 
     const content = document.getElementById('modalContent');
+    content.style.overscrollBehavior = 'contain';
     if (!content.classList.contains('w-screen')) {
         toggleMaximizeModal();
     }
@@ -99,16 +156,19 @@ function openProgramModal(input) {
         };
     }
 
-    document.body.style.overflow = 'hidden';
+    lockBackgroundScroll();
 }
 
-function closeProgramModal() {
+function closeProgramModal(unlockScroll = true) {
     const modal = document.getElementById('programModal');
     const content = document.getElementById('modalContent');
+    const wasVisible = modal.style.display !== 'none' && !modal.classList.contains('hidden');
 
     modal.style.display = 'none';
     modal.classList.add('hidden');
-    document.body.style.overflow = '';
+    if (unlockScroll && wasVisible) {
+        unlockBackgroundScroll();
+    }
 
     if (content.classList.contains('w-screen')) {
         toggleMaximizeModal();
@@ -325,11 +385,14 @@ function openExecutionModal(url, title) {
 
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
+    modal.style.overscrollBehavior = 'contain';
+    lockBackgroundScroll();
 
     setTimeout(() => {
         const content = document.getElementById('executionModalContent');
         content.classList.remove('scale-95');
         content.classList.add('scale-100');
+        content.style.overscrollBehavior = 'contain';
     }, 10);
 
     closeProgramModal();
@@ -347,6 +410,7 @@ function closeExecutionModal() {
         modal.classList.add('hidden');
         modal.style.display = 'none';
         iframe.src = 'about:blank';
+        unlockBackgroundScroll();
     }, 300);
 }
 

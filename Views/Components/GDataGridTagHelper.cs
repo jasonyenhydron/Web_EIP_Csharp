@@ -401,6 +401,7 @@ namespace Web_EIP_Csharp.Views.Components
                         </select>
                     </div>
                     <div class=""flex items-center gap-1"">
+                        <span class=""text-xs text-slate-500 whitespace-nowrap pr-1"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-700"" x-text=""rows.length""></span> 筆</span>
                         <button type=""button"" @click=""prevPage()"" :disabled=""currentPage<=1""
                                 :class=""currentPage<=1?'opacity-40 cursor-not-allowed':'hover:bg-slate-200'""
                                 class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
@@ -426,7 +427,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("id", compId);
             var cleanStyleClass = CleanStyle ? "flex-1 border-0 rounded-none w-full shadow-none" : "";
-            var defaultClass = $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative {cleanStyleClass}".Trim();
+            var defaultClass = $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative min-h-0 {cleanStyleClass}".Trim();
             var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
             output.Attributes.SetAttribute("class", finalClass);
             output.Attributes.SetAttribute("x-data", $"{fnName}()");
@@ -453,7 +454,7 @@ namespace Web_EIP_Csharp.Views.Components
                         </button>
                         
                     </div>
-                    <span class=""text-xs text-slate-400"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-600"" x-text=""rows.length""></span> 筆</span>
+                    {(!Pagination ? $@"<span class=""text-xs text-slate-400"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-600"" x-text=""rows.length""></span> 筆</span>" : "")}
                 </div>
                 <div x-show=""headerFilter.open""
                      x-transition
@@ -512,7 +513,7 @@ namespace Web_EIP_Csharp.Views.Components
                     </div>
                 </div>
                 <!-- Table -->
-                <div class=""overflow-auto flex-1"" style=""min-height:120px;"">
+                <div class=""g-grid-body overflow-x-auto overflow-y-auto flex-1 min-h-0"" style=""min-height:120px; max-height: var(--g-grid-body-max-height, 52vh); scrollbar-gutter: stable both-edges;"">
                     <div x-show=""loading"" class=""absolute inset-0 z-20 bg-white/50 backdrop-blur-[1px] flex items-center justify-center text-blue-600 gap-2"">
                         <svg class=""w-8 h-8 animate-spin"" fill=""none"" viewBox=""0 0 24 24"">
                             <circle class=""opacity-25"" cx=""12"" cy=""12"" r=""10"" stroke=""currentColor"" stroke-width=""4""/>
@@ -643,10 +644,27 @@ namespace Web_EIP_Csharp.Views.Components
                                     params.forEach((v, k) => urlObj.searchParams.append(k, v));
                                 }}
                                 const res  = await fetch(urlObj.toString());
-                                const json = await res.json();
+                                let json = null;
+                                try {{
+                                    json = await res.json();
+                                }} catch {{
+                                    json = {{ status: 'error', data: [] }};
+                                }}
                                 if (res.status === 401) {{ window.location.href = '/Account/Login'; return; }}
-                                this.allRows = json.data ?? json;
-                                this.rows = [...this.allRows];
+                                if (!res.ok) {{
+                                    console.error('GDataGrid fetch http error:', res.status, json);
+                                    this.allRows = [];
+                                    this.rows = [];
+                                    this.applyColumnFilters(false);
+                                    this.currentPage = 1;
+                                    this.selectedRow = null;
+                                    return;
+                                }}
+                                const dataRows = Array.isArray(json?.data)
+                                    ? json.data
+                                    : (Array.isArray(json) ? json : []);
+                                this.allRows = dataRows;
+                                this.rows = [...dataRows];
                                 this.applyColumnFilters(false);
                                 this.currentPage = 1;
                                 this.selectedRow = null;
