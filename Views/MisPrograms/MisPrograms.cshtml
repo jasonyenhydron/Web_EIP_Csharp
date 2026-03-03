@@ -1,6 +1,6 @@
-@{
-    ViewData["Title"] = "MIS 系統 - 程式項目";
-    ViewBag.HeaderTitle = "MIS 系統 - 程式項目";
+﻿@{
+    ViewData["Title"] = "MIS 蝟餌絞 - 蝔??";
+    ViewBag.HeaderTitle = "MIS 蝟餌絞 - 蝔??";
     ViewBag.HeaderIcon = @"<svg class=""w-6 h-6"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4""></path></svg>";
 }
 
@@ -21,73 +21,80 @@
         <!-- Main Content -->
         <main class="flex-1 overflow-auto p-6">
 
-            <!-- ===== 頁面標題（g-page-title）===== -->
-            <g-page-title title="MIS 程式項目列表"
-                          subtitle="查看和管理系統程式項目"
+            <!-- ===== ?璅?嚗-page-title嚗?==== -->
+            <g-page-title title="MIS 蝔???”"
+                          subtitle="?亦??恣?頂蝯梁?撘???
                           icon="database">
             </g-page-title>
 
-            <!-- ===== 錯誤訊息（g-alert）===== -->
+            <!-- ===== ?航炊閮嚗-alert嚗?==== -->
             @if (ViewBag.Error != null)
             {
                 <g-alert type="error" message="@ViewBag.Error" dismissible="true"></g-alert>
             }
 
-            <!-- ===== 篩選條件（g-panel）===== -->
-            <g-panel title="篩選條件" icon="filter" class="mb-6">
+            <!-- ===== 蝭拚璇辣嚗-panel嚗?==== -->
+            <g-panel title="蝭拚璇辣" icon="filter" class="mb-6">
                 <form method="get" action="/mis/programs" class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-                    <!-- 程式代號（含 Suggestion Dropdown）-->
+                    <!-- 蝔?隞??嚗 Suggestion Dropdown嚗?->
                     <div class="flex flex-col gap-1">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">程式代號</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">蝔?隞??</label>
                         <div class="relative">
                             <input type="text" name="program_no" id="inputProgramNo"
                                    value="@ViewBag.ProgramNoFilter"
                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   placeholder="輸入程式代號..." autocomplete="off">
-                            <!-- JS 注入 Suggestion dropdown -->
+                                   placeholder="頛詨蝔?隞??..." autocomplete="off">
+                            <!-- JS 瘜典 Suggestion dropdown -->
                             <div id="suggestionList"
                                  class="absolute z-[60] w-full mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 hidden overflow-hidden transition-all duration-200 opacity-0 transform -translate-y-2">
                             </div>
                         </div>
                     </div>
 
-                    <!-- 負責人員 -->
-                    <div class="flex flex-col gap-1">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">負責人員</label>
-                        <input type="text" name="employee_id" value="@ViewBag.EmployeeIdFilter"
-                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="員工編號...">
-                    </div>
+                    <!-- 負責人員（LOV） -->
+                    <g-lov-input label="負責人員"
+                                 code-id="employee_id"
+                                 code-value="@ViewBag.EmployeeIdFilter"
+                                 code-placeholder="員工編號..."
+                                 lov-title="尋找員工 (Employee)"
+                                 lov-api="/api/lov/hrm/employees"
+                                 lov-columns="編號,名稱,ID"
+                                 lov-fields="employee_no,employee_name,employee_id"
+                                 lov-key-code="employee_id"
+                                 lov-sort-enabled="true"
+                                 lov-buffer-view="true"
+                                 lov-page-size="50">
+                    </g-lov-input>
 
-                    <!-- 顯示狀態 -->
+                    <!-- 憿舐內???-->
                     <div class="flex flex-col gap-1">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">顯示狀態</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">憿舐內???/label>
                         <select name="display_code"
                                 class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">全部</option>
-                            <option value="Y" @(ViewBag.DisplayCodeFilter == "Y" ? "selected" : "")>顯示</option>
-                            <option value="N" @(ViewBag.DisplayCodeFilter == "N" ? "selected" : "")>隱藏</option>
+                            <option value="">?券</option>
+                            <option value="Y" @(ViewBag.DisplayCodeFilter == "Y" ? "selected" : "")>憿舐內</option>
+                            <option value="N" @(ViewBag.DisplayCodeFilter == "N" ? "selected" : "")>?梯?</option>
                         </select>
                     </div>
 
-                    <!-- 操作按鈕 -->
+                    <!-- ???? -->
                     <div class="flex items-end gap-2">
-                        <g-button text="查詢" icon="search"  type="primary" submit="true"           class="flex-1"></g-button>
-                        <g-button text="執行" icon="play"    type="success" onclick="runProgram()"  class="flex-1"></g-button>
-                        <g-button text="重置" icon="refresh" type="ghost"   href="/mis/programs"    class="flex-1"></g-button>
+                        <g-button text="?亥岷" icon="search"  type="primary" submit="true"           class="flex-1"></g-button>
+                        <g-button text="?瑁?" icon="play"    type="success" onclick="runProgram()"  class="flex-1"></g-button>
+                        <g-button text="?蔭" icon="refresh" type="ghost"   href="/mis/programs"    class="flex-1"></g-button>
                     </div>
                 </form>
             </g-panel>
 
-            <!-- ===== 程式項目樹狀列表（g-panel）===== -->
+            <!-- ===== 蝔??璅寧??”嚗-panel嚗?==== -->
             <g-panel icon="list">
-                <!-- 標題插槽使用自訂 slot 內容 -->
+                <!-- 璅??局雿輻?芾? slot ?批捆 -->
                 <div slot="title" class="flex justify-between items-center w-full">
                     <span class="font-bold text-slate-700">
-                        程式項目
+                        蝔??
                         <span class="text-sm font-normal text-slate-500">
-                            （共 @(ViewBag.Programs?.Count ?? 0) 筆）
+                            嚗 @(ViewBag.Programs?.Count ?? 0) 蝑?
                         </span>
                     </span>
                 </div>
@@ -152,11 +159,11 @@
                                             <span class="program-purpose text-sm text-slate-500 ml-4 hidden md:inline">@pPurpose</span>
                                             @if (displayCode == "Y")
                                             {
-                                                <span class="status-badge active ml-auto">顯示</span>
+                                                <span class="status-badge active ml-auto">憿舐內</span>
                                             }
                                             else
                                             {
-                                                <span class="status-badge inactive ml-auto">隱藏</span>
+                                                <span class="status-badge inactive ml-auto">?梯?</span>
                                             }
                                         </div>
                                     }
@@ -167,9 +174,9 @@
                 }
                 else
                 {
-                    <!-- 無資料（g-empty-state）-->
-                    <g-empty-state title="無符合條件的資料"
-                                   subtitle="請調整篩選條件後重新查詢"
+                    <!-- ?∟???g-empty-state嚗?->
+                    <g-empty-state title="?∠泵??隞嗥?鞈?"
+                                   subtitle="隢矽?渡祟?豢?隞嗅???亥岷"
                                    icon="search">
                     </g-empty-state>
                 }
@@ -179,7 +186,7 @@
     </div>
 </div>
 
-<!-- ===== 程式詳細資訊 Modal（原本手刻 200+ 行，保留 JS 互動不動）===== -->
+<!-- ===== 蝔?閰喟敦鞈? Modal嚗??祆???200+ 銵?靽? JS 鈭?銝?嚗?==== -->
 <div id="programModal"
      class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 items-center justify-center p-4 transition-all duration-300">
     <div id="modalContent"
@@ -191,7 +198,7 @@
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
                 </svg>
-                程式詳細資訊
+                蝔?閰喟敦鞈?
             </h2>
             <div class="flex items-center gap-1">
                 <button type="button" id="maximizeBtn" onclick="toggleMaximizeModal()"
@@ -214,34 +221,34 @@
 
         <!-- Modal Body -->
         <div class="flex-1 overflow-y-auto bg-slate-50 p-8">
-            <!-- 程式編號 + 名稱 -->
+            <!-- 蝔?蝺刻? + ?迂 -->
             <div class="mb-8 flex flex-col md:flex-row md:items-center border-b border-slate-200 pb-6 gap-4">
                 <span id="modal-program-no" class="text-4xl font-black text-blue-600 font-mono tracking-tighter"></span>
                 <span id="modal-program-name" class="text-2xl text-slate-700 font-semibold md:ml-2"></span>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- 左欄：基本資訊 -->
+                <!-- 撌行?嚗?祈?閮?-->
                 <div class="space-y-6">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                         <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            基本資訊
+                            ?箸鞈?
                         </h4>
                         <div class="space-y-5">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">用途說明</label>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">?券牧??/label>
                                 <p id="modal-purpose" class="text-lg text-slate-800 leading-relaxed font-medium"></p>
                             </div>
                             <div class="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-400 mb-1">負責人員</label>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">鞎痊鈭箏</label>
                                     <span id="modal-employee-id" class="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg font-mono text-sm font-bold border border-blue-100 inline-block"></span>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-400 mb-1">程式類型</label>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">蝔?憿?</label>
                                     <p id="modal-program-type" class="text-sm text-slate-700 font-medium"></p>
                                 </div>
                             </div>
@@ -249,48 +256,48 @@
                     </div>
                 </div>
 
-                <!-- 右欄：時程與工時 -->
+                <!-- ?單?嚗?蝔?撌交? -->
                 <div class="space-y-6">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                         <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            時程與工時
+                            ???極??
                         </h4>
                         <div class="grid grid-cols-2 gap-8">
-                            <!-- 計畫時程 -->
+                            <!-- 閮?? -->
                             <div class="space-y-4">
-                                <h5 class="text-xs font-black text-slate-500 border-b border-slate-100 pb-2">計畫時程</h5>
+                                <h5 class="text-xs font-black text-slate-500 border-b border-slate-100 pb-2">閮??</h5>
                                 <div class="space-y-3">
                                     <div>
-                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">開始日期</label>
+                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">???交?</label>
                                         <p id="modal-plan-start" class="text-sm font-mono text-slate-600">-</p>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">預計完成</label>
+                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">??摰?</label>
                                         <p id="modal-plan-finish" class="text-sm font-mono text-slate-600">-</p>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">預估工時</label>
+                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">?摯撌交?</label>
                                         <p id="modal-plan-hours" class="text-sm font-mono text-slate-600">-</p>
                                     </div>
                                 </div>
                             </div>
-                            <!-- 實際執行 -->
+                            <!-- 撖阡??瑁? -->
                             <div class="space-y-4">
-                                <h5 class="text-xs font-black text-blue-600 border-b border-blue-100 pb-2">實際執行</h5>
+                                <h5 class="text-xs font-black text-blue-600 border-b border-blue-100 pb-2">撖阡??瑁?</h5>
                                 <div class="space-y-3">
                                     <div>
-                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">實際開始</label>
+                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">撖阡???</label>
                                         <p id="modal-real-start" class="text-sm font-mono text-blue-700 font-bold">-</p>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">實際完成</label>
+                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">撖阡?摰?</label>
                                         <p id="modal-real-finish" class="text-sm font-mono text-blue-700 font-bold">-</p>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">累計工時</label>
+                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">蝝航?撌交?</label>
                                         <p id="modal-real-hours" class="text-sm font-mono text-blue-700 font-bold">-</p>
                                     </div>
                                 </div>
@@ -308,26 +315,26 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
-                進入程式
+                ?脣蝔?
             </a>
             <button type="button" onclick="closeProgramModal()"
                     class="px-8 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-full font-bold flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                關閉詳細資訊
+                ??閰喟敦鞈?
             </button>
         </div>
     </div>
 </div>
 
-<!-- ===== 程式執行視窗（g-iframe-modal）===== -->
+<!-- ===== 蝔??瑁?閬?嚗-iframe-modal嚗?==== -->
 <g-iframe-modal
     id="executionModal"
     modal-content-id="executionModalContent"
     iframe-id="executionIframe"
     title-id="executionModalTitle"
-    title="程式執行"
+    title="蝔??瑁?"
     gradient="indigo"
     maximize-btn-id="execMaximizeBtn"
     maximize-icon-id="execMaximizeIcon"

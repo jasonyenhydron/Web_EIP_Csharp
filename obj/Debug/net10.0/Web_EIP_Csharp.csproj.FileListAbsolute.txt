@@ -108,7 +108,10 @@ D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\Web_EIP_Csharp.genruntimeconfig.cache
 D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\ref\Web_EIP_Csharp.dll
 D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\Web_EIP_Csharp.sourcelink.json
 D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\dw01hbokqu-{0}-b3o9vfqjpv-b3o9vfqjpv.gz
-D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\q2btyr6y5a-{0}-cjipjoqg71-cjipjoqg71.gz
 D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\hupq679sa4-{0}-kl9iez6rah-kl9iez6rah.gz
 D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\ey6e33y74y-{0}-ybio07a9kw-ybio07a9kw.gz
-D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\vsxmaaon9n-{0}-k5c8s7k5od-k5c8s7k5od.gz
+D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\dmnca07ygw-{0}-21zw497mow-21zw497mow.gz
+D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\kd0w8pkess-{0}-gelwuni2dj-gelwuni2dj.gz
+D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\st8u3ftr9n-{0}-phb29x8ybn-phb29x8ybn.gz
+D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\q2btyr6y5a-{0}-wnursdc6ss-wnursdc6ss.gz
+D:\CODE\Web_EIP_Csharp\obj\Debug\net10.0\compressed\vsxmaaon9n-{0}-rstpux55pr-rstpux55pr.gz

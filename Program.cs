@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
 
 // Add Session Services
 builder.Services.AddDistributedMemoryCache();
@@ -21,10 +24,52 @@ builder.Services.AddSession(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var feature = context.Features.Get<IExceptionHandlerPathFeature>();
+        var ex = feature?.Error;
+
+        static (int? lineNumber, string fileName) ParseLine(string? stack)
+        {
+            if (string.IsNullOrWhiteSpace(stack)) return (null, "");
+            var m = Regex.Match(stack, @" in (?<file>.*):line (?<line>\d+)");
+            if (!m.Success) return (null, "");
+            var file = m.Groups["file"].Value ?? "";
+            var lineText = m.Groups["line"].Value ?? "";
+            if (!int.TryParse(lineText, out var line)) return (null, file);
+            return (line, file);
+        }
+
+        var (lineNumber, fileName) = ParseLine(ex?.StackTrace);
+
+        var isApi = context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)
+                    || context.Request.Headers.Accept.Any(h => h.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+                    || string.Equals(context.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+        if (isApi)
+        {
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/json; charset=utf-8";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                status = "error",
+                message = ex?.Message ?? "Unhandled exception",
+                lineNumber,
+                fileName,
+                detail = app.Environment.IsDevelopment() ? ex?.ToString() : ""
+            });
+            return;
+        }
+
+        context.Response.Redirect("/Home/Error");
+    });
+});
+
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    // The default HSTS value is 30 days. You may want to change this for production scenarios.
     app.UseHsts();
 }
 

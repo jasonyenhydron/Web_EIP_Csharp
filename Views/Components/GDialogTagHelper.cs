@@ -45,12 +45,12 @@ namespace Web_EIP_Csharp.Views.Components
                 output.Attributes.SetAttribute("onclick", $"if(event.target===this)gDialogClose('{Id}')");
 
             output.Content.SetHtmlContent($"""
-                <div class="bg-white rounded-2xl shadow-2xl w-full {maxW} flex flex-col border border-slate-200 transform transition-all duration-200 scale-95 opacity-0" id="{Id}-content">
-                    <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-2xl">
-                        <h3 class="text-base font-bold text-white">{Title}</h3>
+                <div class="bg-white rounded-2xl shadow-2xl w-full {maxW} mx-4 sm:mx-auto flex flex-col border border-slate-200 transform transition-all duration-200 scale-95 opacity-0" id="{Id}-content">
+                    <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-2xl shrink-0">
+                        <h3 class="text-base font-bold text-white truncate pr-2">{Title}</h3>
                         {closeBtnHtml}
                     </div>
-                    <div class="p-5 overflow-y-auto max-h-[78vh]">
+                    <div class="p-4 sm:p-5 overflow-y-auto max-h-[80vh]">
                         {content}
                     </div>
                 </div>

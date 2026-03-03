@@ -1,87 +1,63 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using System.Text;
 
 namespace Web_EIP_Csharp.Views.Components
 {
-    /// <summary>
-    /// g-lov-input：通用 LOV（List of Values）選擇輸入組合元件
-    /// 產生：hidden id 欄 + code 顯示欄 + name 顯示欄，點擊任一顯示欄呼叫 lov-fn 函式。
-    ///
-    /// 使用方式（員工）：
-    ///   <g-lov-input label="申請員工" required="true"
-    ///                hidden-id="employeeId"    hidden-value="@ViewBag.NumericUserId"
-    ///                code-id="employeeNo"      code-value="@ViewBag.UserId"    code-placeholder="員工編號"
-    ///                name-id="employeeName"    name-value="@ViewBag.UserName"  name-placeholder="姓名"
-    ///                lov-fn="openEmployeeLov('employeeId','employeeNo','employeeName')"
-    ///                col-span="3" />
-    ///
-    /// 使用方式（假別，只有 display + button，無 name 欄）：
-    ///   <g-lov-input label="假別" required="true"
-    ///                hidden-id="leaveId"
-    ///                name-id="leaveTypeDisplay"  name-placeholder="請選擇假別"
-    ///                lov-fn="openLeaveTypeLov()"  show-button="true"
-    ///                col-span="2" />
-    /// </summary>
     [HtmlTargetElement("g-lov-input")]
     public class GLovInputTagHelper : TagHelper
     {
-        // ── 標籤設定 ──
-        /// <summary>欄位 Label 文字</summary>
         public string Label { get; set; } = string.Empty;
-
-        /// <summary>是否必填（顯示紅色星號）</summary>
         public bool Required { get; set; } = false;
-
-        /// <summary>Grid 欄位佔用數（md:col-span-N）</summary>
         public int ColSpan { get; set; } = 1;
 
-        // ── Hidden 欄位 ──
-        /// <summary>隱藏欄 ID（存 numeric ID，如 employee_id）</summary>
         public string HiddenId { get; set; } = string.Empty;
-
-        /// <summary>隱藏欄預設值</summary>
         public string HiddenValue { get; set; } = string.Empty;
-
-        // ── Code 欄位（左側窄欄，員工編號 / 假別代碼等）──
-        /// <summary>Code 欄 ID；留空則不顯示 code 欄</summary>
         public string CodeId { get; set; } = string.Empty;
-
-        /// <summary>Code 欄預設值</summary>
         public string CodeValue { get; set; } = string.Empty;
-
-        /// <summary>Code 欄 placeholder</summary>
         public string CodePlaceholder { get; set; } = "代碼";
-
-        /// <summary>Code 欄寬度 Tailwind class（預設 w-1/3）</summary>
         public string CodeWidth { get; set; } = "w-1/3";
-
-        // ── Name 欄位（右側寬欄，姓名 / 名稱等）──
-        /// <summary>Name 欄 ID；留空則不顯示 name 欄</summary>
         public string NameId { get; set; } = string.Empty;
-
-        /// <summary>Name 欄預設值</summary>
         public string NameValue { get; set; } = string.Empty;
-
-        /// <summary>Name 欄 placeholder</summary>
         public string NamePlaceholder { get; set; } = "名稱";
 
-        // ── x-model 綁定 (Alpine.js) ──
-        /// <summary>Code 欄 x-model 屬性值（留空則不加）</summary>
+        [HtmlAttributeName("x-model-code")]
         public string XModelCode { get; set; } = string.Empty;
-
-        /// <summary>Name 欄 x-model 屬性值（留空則不加）</summary>
+        [HtmlAttributeName("x-model-name")]
         public string XModelName { get; set; } = string.Empty;
-
-        /// <summary>Hidden 欄 x-model 屬性值（留空則不加）</summary>
+        [HtmlAttributeName("x-model-hidden")]
         public string XModelHidden { get; set; } = string.Empty;
 
-        // ── 行為 ──
-        /// <summary>LOV 開啟 JS 表達式（整個 onclick 內容）</summary>
+        // Legacy mode: existing inline JS function call.
+        [HtmlAttributeName("lov-fn")]
         public string LovFn { get; set; } = string.Empty;
 
-        /// <summary>是否在右側顯示省略號按鈕（…），預設 false</summary>
-        public bool ShowButton { get; set; } = false;
+        // Declarative mode (no extra JS function needed).
+        [HtmlAttributeName("lov-title")]
+        public string LovTitle { get; set; } = string.Empty;
+        [HtmlAttributeName("lov-api")]
+        public string LovApi { get; set; } = string.Empty;
+        [HtmlAttributeName("lov-columns")]
+        public string LovColumns { get; set; } = string.Empty; // e.g. "編號,名稱,ID"
+        [HtmlAttributeName("lov-fields")]
+        public string LovFields { get; set; } = string.Empty;  // e.g. "employee_no,employee_name,employee_id"
+        [HtmlAttributeName("lov-key-hidden")]
+        public string LovKeyHidden { get; set; } = string.Empty;
+        [HtmlAttributeName("lov-key-code")]
+        public string LovKeyCode { get; set; } = string.Empty;
+        [HtmlAttributeName("lov-key-name")]
+        public string LovKeyName { get; set; } = string.Empty;
+        [HtmlAttributeName("lov-display-format")]
+        public string LovDisplayFormat { get; set; } = string.Empty; // e.g. "{leave_id} - {leave_name}"
+        [HtmlAttributeName("lov-on-confirm")]
+        public string LovOnConfirm { get; set; } = string.Empty; // optional callback function name
+        [HtmlAttributeName("lov-buffer-view")]
+        public bool LovBufferView { get; set; } = true;
+        [HtmlAttributeName("lov-page-size")]
+        public int LovPageSize { get; set; } = 50;
+        [HtmlAttributeName("lov-sort-enabled")]
+        public bool LovSortEnabled { get; set; } = false;
 
-        /// <summary>是否唯讀（不允許手動輸入，預設 true）</summary>
+        public bool ShowButton { get; set; } = false;
         public bool Readonly { get; set; } = true;
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
@@ -92,13 +68,9 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("class", $"flex flex-col gap-1 {colClass}".Trim());
 
-            // ── Label ──
-            string required = Required
-                ? " <span class=\"text-red-500 ml-0.5\">*</span>"
-                : string.Empty;
+            string required = Required ? " <span class=\"text-red-500 ml-0.5\">*</span>" : string.Empty;
             string labelHtml = $"<label class=\"text-xs font-semibold text-slate-600\">{HtmlEncode(Label)}{required}</label>";
 
-            // ── Hidden field ──
             string hiddenHtml = string.Empty;
             if (!string.IsNullOrEmpty(HiddenId))
             {
@@ -106,17 +78,16 @@ namespace Web_EIP_Csharp.Views.Components
                 hiddenHtml = $"<input type=\"hidden\" id=\"{HtmlId(HiddenId)}\" name=\"{HtmlEncode(HiddenId)}\"{xm} value=\"{HtmlEncode(HiddenValue)}\">";
             }
 
-            // ── Input wrapper ──
-            string onclick = !string.IsNullOrEmpty(LovFn) ? $" onclick=\"{HtmlAttr(LovFn)}\"" : string.Empty;
+            string onclick = BuildOnClick();
+            onclick = string.IsNullOrEmpty(onclick) ? string.Empty : $" onclick=\"{HtmlAttr(onclick)}\"";
 
-            // Code 欄（左側）
             string codeHtml = string.Empty;
             if (!string.IsNullOrEmpty(CodeId))
             {
-                string rdAttr   = Readonly ? " readonly" : string.Empty;
-                string xmAttr   = !string.IsNullOrEmpty(XModelCode) ? $" x-model=\"{XModelCode}\"" : string.Empty;
-                bool   hasName  = !string.IsNullOrEmpty(NameId) || ShowButton;
-                string rounded  = hasName ? "rounded-r-none" : "rounded-lg";
+                string rdAttr = Readonly ? " readonly" : string.Empty;
+                string xmAttr = !string.IsNullOrEmpty(XModelCode) ? $" x-model=\"{XModelCode}\"" : string.Empty;
+                bool hasName = !string.IsNullOrEmpty(NameId) || ShowButton;
+                string rounded = hasName ? "rounded-r-none" : "rounded-lg";
                 codeHtml = $@"<input type=""text"" id=""{HtmlId(CodeId)}"" name=""{HtmlEncode(CodeId)}""
                        value=""{HtmlEncode(CodeValue)}""
                        placeholder=""{HtmlEncode(CodePlaceholder)}""{rdAttr}{onclick}{xmAttr}
@@ -125,14 +96,13 @@ namespace Web_EIP_Csharp.Views.Components
                               focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors"">";
             }
 
-            // Name 欄（右側）
             string nameHtml = string.Empty;
             if (!string.IsNullOrEmpty(NameId))
             {
-                string rdAttr   = " readonly";
-                string xmAttr   = !string.IsNullOrEmpty(XModelName) ? $" x-model=\"{XModelName}\"" : string.Empty;
-                string hasCode  = !string.IsNullOrEmpty(CodeId) ? "rounded-l-none border-l-0" : "rounded-lg";
-                string hasBtn   = ShowButton ? "rounded-r-none" : string.Empty;
+                string rdAttr = " readonly";
+                string xmAttr = !string.IsNullOrEmpty(XModelName) ? $" x-model=\"{XModelName}\"" : string.Empty;
+                string hasCode = !string.IsNullOrEmpty(CodeId) ? "rounded-l-none border-l-0" : "rounded-lg";
+                string hasBtn = ShowButton ? "rounded-r-none" : string.Empty;
                 nameHtml = $@"<input type=""text"" id=""{HtmlId(NameId)}"" name=""{HtmlEncode(NameId)}""
                        value=""{HtmlEncode(NameValue)}""
                        placeholder=""{HtmlEncode(NamePlaceholder)}""{rdAttr}{onclick}{xmAttr}
@@ -141,7 +111,6 @@ namespace Web_EIP_Csharp.Views.Components
                               focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors"">";
             }
 
-            // 省略號按鈕
             string btnHtml = string.Empty;
             if (ShowButton)
             {
@@ -162,8 +131,105 @@ namespace Web_EIP_Csharp.Views.Components
             output.Content.SetHtmlContent(labelHtml + inputsHtml);
         }
 
-        private static string HtmlId(string s)    => System.Net.WebUtility.HtmlEncode(s);
+        private string BuildOnClick()
+        {
+            if (!string.IsNullOrWhiteSpace(LovFn))
+            {
+                return LovFn;
+            }
+
+            if (string.IsNullOrWhiteSpace(LovApi) ||
+                string.IsNullOrWhiteSpace(LovColumns) ||
+                string.IsNullOrWhiteSpace(LovFields))
+            {
+                return string.Empty;
+            }
+
+            var cols = SplitCsv(LovColumns);
+            var fields = SplitCsv(LovFields);
+            if (cols.Count == 0 || fields.Count == 0) return string.Empty;
+
+            var map = new StringBuilder();
+            map.Append("{");
+            bool first = true;
+
+            if (!string.IsNullOrWhiteSpace(LovKeyHidden) && !string.IsNullOrWhiteSpace(HiddenId))
+            {
+                map.Append($"'{EscapeJs(LovKeyHidden)}':'{EscapeJs(HiddenId)}'");
+                first = false;
+            }
+            if (!string.IsNullOrWhiteSpace(LovKeyCode) && !string.IsNullOrWhiteSpace(CodeId))
+            {
+                if (!first) map.Append(",");
+                map.Append($"'{EscapeJs(LovKeyCode)}':'{EscapeJs(CodeId)}'");
+                first = false;
+            }
+            if (!string.IsNullOrWhiteSpace(LovKeyName) && !string.IsNullOrWhiteSpace(NameId))
+            {
+                if (!first) map.Append(",");
+                map.Append($"'{EscapeJs(LovKeyName)}':'{EscapeJs(NameId)}'");
+                first = false;
+            }
+            if (!string.IsNullOrWhiteSpace(LovDisplayFormat) && !string.IsNullOrWhiteSpace(NameId))
+            {
+                if (!first) map.Append(",");
+                map.Append($"'FORMATTED_DISPLAY':'{EscapeJs(NameId)}'");
+            }
+            map.Append("}");
+
+            var title = string.IsNullOrWhiteSpace(LovTitle) ? Label : LovTitle;
+            var colsJs = "[" + string.Join(",", cols.Select(c => $"'{EscapeJs(c)}'")) + "]";
+            var fieldsJs = "[" + string.Join(",", fields.Select(f => $"'{EscapeJs(f)}'")) + "]";
+            var formatFn = BuildFormatFunction(LovDisplayFormat);
+            var callback = string.IsNullOrWhiteSpace(LovOnConfirm) ? "null" : LovOnConfirm;
+            var pageSize = LovPageSize <= 0 ? 50 : LovPageSize;
+            var options = $"{{ bufferView: {(LovBufferView ? "true" : "false")}, pageSize: {pageSize}, sortEnabled: {(LovSortEnabled ? "true" : "false")} }}";
+
+            return $"openGenericLov('{EscapeJs(title)}','{EscapeJs(LovApi)}',{colsJs},{fieldsJs},{map},{formatFn},{callback},{options})";
+        }
+
+        private static string BuildFormatFunction(string format)
+        {
+            if (string.IsNullOrWhiteSpace(format)) return "null";
+
+            var sb = new StringBuilder();
+            sb.Append("function(d){ return `");
+
+            var s = format;
+            int i = 0;
+            while (i < s.Length)
+            {
+                if (s[i] == '{')
+                {
+                    int end = s.IndexOf('}', i + 1);
+                    if (end > i + 1)
+                    {
+                        var key = s.Substring(i + 1, end - i - 1).Trim();
+                        sb.Append("${d.").Append(EscapeTemplateKey(key)).Append(" ?? ''}");
+                        i = end + 1;
+                        continue;
+                    }
+                }
+                if (s[i] == '`') sb.Append("\\`");
+                else sb.Append(s[i]);
+                i++;
+            }
+
+            sb.Append("`; }");
+            return sb.ToString();
+        }
+
+        private static List<string> SplitCsv(string s)
+            => s.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+        private static string EscapeJs(string s)
+            => (s ?? string.Empty).Replace("\\", "\\\\").Replace("'", "\\'");
+
+        private static string EscapeTemplateKey(string s)
+            => string.IsNullOrWhiteSpace(s) ? "" : s.Replace("`", "").Replace("{", "").Replace("}", "").Replace(" ", "");
+
+        private static string HtmlId(string s) => System.Net.WebUtility.HtmlEncode(s);
         private static string HtmlEncode(string s) => System.Net.WebUtility.HtmlEncode(s ?? string.Empty);
-        private static string HtmlAttr(string s)   => s?.Replace("\"", "&quot;") ?? string.Empty;
+        private static string HtmlAttr(string s) => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }

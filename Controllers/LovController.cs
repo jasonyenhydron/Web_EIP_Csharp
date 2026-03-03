@@ -20,7 +20,7 @@ namespace Web_EIP_Csharp.Controllers
         }
 
         [HttpGet("hrm/leave-types")]
-        public async Task<IActionResult> GetLeaveTypes([FromQuery] string query = "")
+        public async Task<IActionResult> GetLeaveTypes([FromQuery] string query = "", [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
             if (!CheckSession(out string username, out string password, out string tns))
             {
@@ -29,8 +29,10 @@ namespace Web_EIP_Csharp.Controllers
 
             try
             {
-                var types = await OracleDbHelper.GetLeaveTypesAsync(username, password, tns, query);
-                return Ok(new { status = "success", data = types });
+                page = page < 1 ? 1 : page;
+                pageSize = pageSize <= 0 ? 50 : Math.Min(pageSize, 200);
+                var types = await OracleDbHelper.GetLeaveTypesAsync(username, password, tns, query, page, pageSize);
+                return Ok(new { status = "success", data = types, page, pageSize, hasMore = types.Count >= pageSize });
             }
             catch (Exception ex)
             {
@@ -39,7 +41,7 @@ namespace Web_EIP_Csharp.Controllers
         }
 
         [HttpGet("hrm/employees")]
-        public async Task<IActionResult> GetEmployees([FromQuery] string query = "")
+        public async Task<IActionResult> GetEmployees([FromQuery] string query = "", [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
             if (!CheckSession(out string username, out string password, out string tns))
             {
@@ -48,8 +50,10 @@ namespace Web_EIP_Csharp.Controllers
 
             try
             {
-                var employees = await OracleDbHelper.GetEmployeesAsync(username, password, tns, query);
-                return Ok(new { status = "success", data = employees });
+                page = page < 1 ? 1 : page;
+                pageSize = pageSize <= 0 ? 50 : Math.Min(pageSize, 200);
+                var employees = await OracleDbHelper.GetEmployeesAsync(username, password, tns, query, page, pageSize);
+                return Ok(new { status = "success", data = employees, page, pageSize, hasMore = employees.Count >= pageSize });
             }
             catch (Exception ex)
             {
@@ -58,7 +62,7 @@ namespace Web_EIP_Csharp.Controllers
         }
 
         [HttpGet("cmm/departments")]
-        public async Task<IActionResult> GetDepartments([FromQuery] string query = "")
+        public async Task<IActionResult> GetDepartments([FromQuery] string query = "", [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
             if (!CheckSession(out string username, out string password, out string tns))
             {
@@ -67,8 +71,10 @@ namespace Web_EIP_Csharp.Controllers
 
             try
             {
-                var departments = await OracleDbHelper.GetDepartmentsAsync(username, password, tns, query);
-                return Ok(new { status = "success", data = departments });
+                page = page < 1 ? 1 : page;
+                pageSize = pageSize <= 0 ? 50 : Math.Min(pageSize, 200);
+                var departments = await OracleDbHelper.GetDepartmentsAsync(username, password, tns, query, page, pageSize);
+                return Ok(new { status = "success", data = departments, page, pageSize, hasMore = departments.Count >= pageSize });
             }
             catch (Exception ex)
             {
@@ -77,7 +83,7 @@ namespace Web_EIP_Csharp.Controllers
         }
 
         [HttpGet("hrm/booking-departments")]
-        public async Task<IActionResult> GetBookingDepartments([FromQuery] string query = "", [FromQuery] string employeeId = "")
+        public async Task<IActionResult> GetBookingDepartments([FromQuery] string query = "", [FromQuery] string employeeId = "", [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
             if (!CheckSession(out string username, out string password, out string tns))
             {
@@ -86,8 +92,10 @@ namespace Web_EIP_Csharp.Controllers
 
             try
             {
-                var departments = await OracleDbHelper.GetBookingDepartmentsAsync(username, password, tns, query, employeeId);
-                return Ok(new { status = "success", data = departments });
+                page = page < 1 ? 1 : page;
+                pageSize = pageSize <= 0 ? 50 : Math.Min(pageSize, 200);
+                var departments = await OracleDbHelper.GetBookingDepartmentsAsync(username, password, tns, query, employeeId, page, pageSize);
+                return Ok(new { status = "success", data = departments, page, pageSize, hasMore = departments.Count >= pageSize });
             }
             catch (Exception ex)
             {

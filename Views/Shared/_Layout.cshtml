@@ -13,13 +13,18 @@
         };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Local Main CSS -->
-    <link rel="stylesheet" href="~/css/main.css" asp-append-version="true">
+    <g-style profile="layout"></g-style>
     @RenderSection("Styles", required: false)
 </head>
 <body class="bg-gray-100">
+    @* SVG Icon Sprite（全站共用，放 body 最前，不佔版面）*@
+    <partial name="~/Views/Shared/_IconSprite.cshtml" />
+
     @RenderBody()
+
+    @* 全站共用：訊息彈窗 + Toast（放 body 底部）*@
+    <g-messager/>
+    <g-error-message />
 
     @RenderSection("Scripts", required: false)
 </body>

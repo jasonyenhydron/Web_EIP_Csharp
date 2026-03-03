@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -8,24 +8,115 @@
     <script>
         const originalWarn = console.warn;
         console.warn = function() {
-            if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].includes('cdn.tailwindcss.com should not be used in production')) return;
+            // ?脫迫 null/undefined arguments[0] ????TypeError
+            if (arguments.length > 0 && arguments[0] != null && typeof arguments[0] === 'string' &&
+                arguments[0].includes('cdn.tailwindcss.com should not be used in production')) return;
             originalWarn.apply(console, arguments);
         };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/main.css" asp-append-version="true">
+    <g-style profile="popup"></g-style>
     @RenderSection("Styles", required: false)
 </head>
 <body class="bg-slate-50 overflow-x-hidden">
+    @* SVG Icon Sprite *@
+    <partial name="~/Views/Shared/_IconSprite.cshtml" />
+
+    <button type="button"
+            onclick="gPopupTryClose()"
+            class="fixed bottom-3 right-3 z-[80] inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-300 bg-white/95 text-slate-500 hover:text-slate-700 hover:bg-white shadow-sm transition-colors"
+            title="關閉">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+    </button>
+
     @RenderBody()
 
-    <!-- SweetAlert2 for modern alerts -->
+    @* ?函??梁嚗??臬?蝒?+ Toast *@
+    <g-messager/>
+    <g-error-message />
+
+    @* SweetAlert2 *@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- LOV 共用模組 -->
+    @* LOV ?梁璅∠? *@
     <partial name="~/Views/Shared/_LovModal.cshtml" />
 
+
+    <script>
+        function gPopupHasUnsavedChanges() {
+            if (window.__hasUnsavedChanges === true) return true;
+
+            const stateSelectors = [
+                '[data-dataform-state="edit"]',
+                '[data-dataform-state="insert"]',
+                '[data-form-mode="edit"]',
+                '[data-form-mode="insert"]',
+                '[data-form-mode="create"]',
+                '[data-record-mode="edit"]',
+                '[data-record-mode="insert"]',
+                '[data-record-mode="create"]'
+            ];
+            if (document.querySelector(stateSelectors.join(','))) return true;
+
+            const grids = document.querySelectorAll('[id]');
+            for (const el of grids) {
+                const g = el.gDataGrid;
+                if (g && g.editingId !== null && g.editingId !== undefined && g.editingId !== '') {
+                    return true;
+                }
+            }
+
+            const appCandidates = [window._idmApp, window._hrmApp, window._app];
+            for (const app of appCandidates) {
+                const mode = app?.recordMode;
+                if (mode === 'edit' || mode === 'create' || mode === 'insert') {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function gPopupDoClose() {
+            if (window.opener) {
+                window.close();
+                return;
+            }
+            history.back();
+        }
+
+        function gPopupTryClose() {
+            if (!gPopupHasUnsavedChanges()) {
+                gPopupDoClose();
+                return;
+            }
+
+            const msg = '目前資料尚未存檔，確定要離開嗎？';
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                window.Swal.fire({
+                    title: '尚未存檔',
+                    text: msg,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '離開',
+                    cancelButtonText: '取消'
+                }).then((r) => {
+                    if (r.isConfirmed) gPopupDoClose();
+                });
+                return;
+            }
+
+            if (window.confirm(msg)) {
+                gPopupDoClose();
+            }
+        }
+    </script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>
+
+
+
+

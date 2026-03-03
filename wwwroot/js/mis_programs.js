@@ -71,7 +71,8 @@ function openProgramModal(input) {
     if (btnOpenProgram) {
         btnOpenProgram.onclick = function(e) {
             e.preventDefault();
-            openExecutionModal(`/mis/programs/${data.programNo || ''}`, `${data.programNo} ${data.programName}`);
+            const programNo = (data.programNo || '').toUpperCase();
+            openExecutionModal(resolveProgramUrl(programNo), `${programNo} ${data.programName || ''}`.trim());
         };
     }
 
@@ -140,7 +141,8 @@ function toggleMaximizeModal() {
 
 window.onclick = function(event) {
     const modal = document.getElementById('programModal');
-    if (event.target == modal) {
+    // null check: programModal は MisPrograms ページのみ存在
+    if (modal && event.target == modal) {
         closeProgramModal();
     }
 }
@@ -151,57 +153,83 @@ let currentFocus = -1;
 
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.querySelector('input[name="program_no"]');
-    const list = document.getElementById('suggestionList');
+    const list  = document.getElementById('suggestionList');
 
-    if (input && list) {
-        input.addEventListener('input', (e) => {
-            const val = e.target.value.trim();
-            clearTimeout(suggestionTimeout);
+    if (!input || !list) return;
 
-            if (val.length < 1) {
-                hideSuggestions();
-                return;
+    // 輸入事件
+    input.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        clearTimeout(suggestionTimeout);
+
+        if (val.length < 1) {
+            hideSuggestions();
+            return;
+        }
+
+        suggestionTimeout = setTimeout(() => fetchSuggestions(val), 280);
+    });
+
+    // 方向鍵 + Enter / Esc
+    input.addEventListener('keydown', (e) => {
+        const items = list.getElementsByClassName('suggestion-item');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentFocus++;
+            addActive(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentFocus--;
+            addActive(items);
+        } else if (e.key === 'Enter') {
+            if (currentFocus > -1 && items[currentFocus]) {
+                items[currentFocus].click();
+                e.preventDefault();
             }
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
 
-            suggestionTimeout = setTimeout(() => {
-                fetchSuggestions(val);
-            }, 300);
-        });
+    // 點擊外部關閉（list 內部點擊不關）
+    document.addEventListener('click', (e) => {
+        if (!list.contains(e.target) && e.target !== input) {
+            hideSuggestions();
+        }
+    });
 
-        input.addEventListener('keydown', (e) => {
-            const items = list.getElementsByClassName('suggestion-item');
-            if (e.keyCode === 40) { // Down
-                currentFocus++;
-                addActive(items);
-            } else if (e.keyCode === 38) { // Up
-                currentFocus--;
-                addActive(items);
-            } else if (e.keyCode === 13) { // Enter
-                if (currentFocus > -1) {
-                    if (items[currentFocus]) items[currentFocus].click();
-                    e.preventDefault();
-                }
-            } else if (e.keyCode === 27) { // Escape
-                hideSuggestions();
-            }
-        });
-
-        // Close when clicking outside
-        document.addEventListener('click', (e) => {
-            if (e.target !== input && e.target !== list) {
-                hideSuggestions();
-            }
-        });
-    }
+    // scroll / resize 時重新計算 fixed 定位（跟隨 input 位置）
+    const reposition = () => {
+        if (list.classList.contains('show')) positionSuggestions();
+    };
+    window.addEventListener('scroll', reposition, true);  // capture 模式捕捉所有 scroll
+    window.addEventListener('resize', reposition);
 });
 
 function fetchSuggestions(query) {
     fetch(`/api/mis/programs/suggestions?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
         .then(data => {
+            console.log('[Suggestion] API 回傳:', data);
             showSuggestions(data);
         })
-        .catch(err => console.error('Suggestion fetch error:', err));
+        .catch(err => console.error('[Suggestion] 請求失敗:', err));
+}
+
+/**
+ * 將 #suggestionList 對齊到 input 正下方（使用 fixed 定位避免 overflow:hidden 裁切）
+ */
+function positionSuggestions() {
+    const input = document.querySelector('input[name="program_no"]');
+    const list  = document.getElementById('suggestionList');
+    if (!input || !list) return;
+    const rect = input.getBoundingClientRect();
+    list.style.top   = (rect.bottom + 4) + 'px';   // input 下方 4px
+    list.style.left  = rect.left + 'px';
+    list.style.width = rect.width + 'px';            // 與 input 同寬
 }
 
 function showSuggestions(data) {
@@ -209,41 +237,40 @@ function showSuggestions(data) {
     list.innerHTML = '';
     currentFocus = -1;
 
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
         hideSuggestions();
         return;
     }
 
     data.forEach(item => {
+        const no   = item.program_no   ?? item.PROGRAM_NO   ?? '';
+        const name = item.program_name ?? item.PROGRAM_NAME ?? '';
+
         const div = document.createElement('div');
         div.className = 'suggestion-item';
         div.innerHTML = `
-            <span class="prog-no">${item.program_no}</span>
-            <span class="prog-name">${item.program_name}</span>
+            <span class="prog-no">${no}</span>
+            <span class="prog-name">${name || '—'}</span>
         `;
-        div.onclick = () => {
+        div.addEventListener('mousedown', (e) => {
+            e.preventDefault();
             const input = document.querySelector('input[name="program_no"]');
-            input.value = item.program_no;
+            input.value = no;
             hideSuggestions();
-            runProgram(); // Trigger immediate search/modal
-        };
+        });
         list.appendChild(div);
     });
 
+    // 先計算位置再顯示
+    positionSuggestions();
     list.classList.remove('hidden');
-    list.style.display = 'block';
-    setTimeout(() => {
-        list.classList.add('show');
-    }, 10);
+    list.classList.add('show');
 }
 
 function hideSuggestions() {
     const list = document.getElementById('suggestionList');
     list.classList.remove('show');
-    setTimeout(() => {
-        list.style.display = 'none';
-        list.classList.add('hidden');
-    }, 200);
+    setTimeout(() => list.classList.add('hidden'), 200);
 }
 
 function addActive(items) {
@@ -265,10 +292,28 @@ function runProgram() {
     const programNo = document.getElementsByName('program_no')[0].value.trim().toUpperCase();
     if (programNo) {
         // 使用者點選執行，直接跳出 iframe 浮動視窗
-        openExecutionModal(`/mis/programs/${programNo}`, programNo);
+        openExecutionModal(resolveProgramUrl(programNo), programNo);
     } else {
         alert('請先輸入程式代號');
     }
+}
+
+// Program No -> 程式頁面 URL
+// ex: IDMGD01 -> /Idm/IDMGD01, HRMGD47 -> /Hrm/HRMGD47
+function resolveProgramUrl(programNo) {
+    const code = String(programNo || '').trim().toUpperCase();
+    if (!code) return '/mis/programs';
+
+    // 若符合模組代碼 + 其餘程式代碼，優先走 /{Module}/{ProgramNo}
+    const moduleMatch = code.match(/^([A-Z]{3})[A-Z0-9_]+$/);
+    if (moduleMatch) {
+        const module = moduleMatch[1].toLowerCase();
+        const controller = module.charAt(0).toUpperCase() + module.slice(1);
+        return `/${controller}/${code}`;
+    }
+
+    // fallback（維持舊行為）
+    return `/mis/programs/${encodeURIComponent(code)}`;
 }
 
 // -------------------------------------------------------------

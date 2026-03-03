@@ -34,43 +34,43 @@ namespace Web_EIP_Csharp.Views.Components
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
-            var inputId  = string.IsNullOrEmpty(Id) ? $"gt_{Guid.NewGuid():N}" : Id;
-            var required = Required ? """<span class="text-red-500 ml-0.5 font-bold">*</span>""" : "";
-            var helpHtml = !string.IsNullOrEmpty(Help)
-                ? $"""<p class="text-xs text-slate-400 mt-1">{Help}</p>"""
+            var inputId   = string.IsNullOrEmpty(Id) ? $"gt_{Guid.NewGuid():N}" : Id;
+            var required  = Required ? @"<span class=""text-red-500 ml-0.5 font-bold"">*</span>" : "";
+            var helpHtml  = !string.IsNullOrEmpty(Help)
+                ? $@"<p class=""text-xs text-slate-400 mt-1"">{Help}</p>"
                 : "";
             var colClass  = ColSpan switch { 2 => "col-span-2", 3 => "col-span-3", 4 => "col-span-4", _ => "col-span-1" };
             var disAttr   = Disabled ? " disabled" : "";
             var rdoAttr   = Readonly ? " readonly" : "";
             var reqAttr   = Required ? " required" : "";
-            var xmodel    = !string.IsNullOrEmpty(AlpineModel) ? $""" x-model="{AlpineModel}" """ : "";
-            var minAttr   = !string.IsNullOrEmpty(Min) ? $""" min="{Min}" """ : "";
-            var maxAttr   = !string.IsNullOrEmpty(Max) ? $""" max="{Max}" """ : "";
-            var maxlenAttr= !string.IsNullOrEmpty(Maxlength) ? $""" maxlength="{Maxlength}" """ : "";
+            var xmodel    = !string.IsNullOrEmpty(AlpineModel) ? $@" x-model=""{AlpineModel}""" : "";
+            var minAttr   = !string.IsNullOrEmpty(Min) ? $@" min=""{Min}""" : "";
+            var maxAttr   = !string.IsNullOrEmpty(Max) ? $@" max=""{Max}""" : "";
+            var maxlenAttr= !string.IsNullOrEmpty(Maxlength) ? $@" maxlength=""{Maxlength}""" : "";
             var extraCls  = Readonly ? " bg-slate-50 text-slate-500 cursor-not-allowed" : "";
 
-            var inputHtml = Type switch
+            string inputHtml;
+            if (Type == "textarea")
             {
-                "textarea" => $"""
-                               <textarea id="{inputId}" name="{Name}" rows="{Rows}"
-                                   placeholder="{Placeholder}"{disAttr}{rdoAttr}{reqAttr}{xmodel}
-                                   class="g-input w-full resize-y{extraCls} {Class}">{Value}</textarea>
-                               """,
-                _ => $"""
-                      <input type="{Type}" id="{inputId}" name="{Name}"
-                          placeholder="{Placeholder}" value="{Value}"
-                          {disAttr}{rdoAttr}{reqAttr}{xmodel}{minAttr}{maxAttr}{maxlenAttr}
-                          class="g-input w-full{extraCls} {Class}">
-                      """
-            };
+                inputHtml = $@"<textarea id=""{inputId}"" name=""{Name}"" rows=""{Rows}""
+                    placeholder=""{Placeholder}""{disAttr}{rdoAttr}{reqAttr}{xmodel}
+                    class=""g-input w-full resize-y{extraCls} {Class}"">{Value}</textarea>";
+            }
+            else
+            {
+                inputHtml = $@"<input type=""{Type}"" id=""{inputId}"" name=""{Name}""
+                    placeholder=""{Placeholder}"" value=""{Value}""
+                    {disAttr}{rdoAttr}{reqAttr}{xmodel}{minAttr}{maxAttr}{maxlenAttr}
+                    class=""g-input w-full{extraCls} {Class}"">";
+            }
 
             output.TagName = "div";
             output.Attributes.SetAttribute("class", $"flex flex-col gap-1 {colClass}");
-            output.Content.SetHtmlContent($"""
-                <label for="{inputId}" class="block text-xs font-semibold text-slate-600">{Label}{required}</label>
+            output.Content.SetHtmlContent($@"
+                <label for=""{inputId}"" class=""block text-xs font-semibold text-slate-600"">{Label}{required}</label>
                 {inputHtml}
                 {helpHtml}
-            """);
+            ");
         }
     }
 }

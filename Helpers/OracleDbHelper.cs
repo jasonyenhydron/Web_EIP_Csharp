@@ -95,7 +95,7 @@ namespace Web_EIP_Csharp.Helpers
             return suggestions;
         }
 
-        public static async Task<List<Dictionary<string, string>>> GetLeaveTypesAsync(string username, string password, string tns, string query)
+        public static async Task<List<Dictionary<string, string>>> GetLeaveTypesAsync(string username, string password, string tns, string query, int page = 1, int pageSize = 50)
         {
             var suggestions = new List<Dictionary<string, string>>();
             using (var connection = GetConnection(username, password, tns))
@@ -104,15 +104,22 @@ namespace Web_EIP_Csharp.Helpers
 
                 using (var command = connection.CreateCommand())
                 {
-                    // Basic Query to HRM_LEAVE_L
+                    var offset = Math.Max(0, (page - 1) * pageSize);
+                    var endRow = offset + pageSize;
                     command.CommandText = @"
                         SELECT LEAVE_ID, LEAVE_NAME
-                        FROM HRM_LEAVE_L
-                        WHERE LANGUAGE_ID = 1
-                        AND (UPPER(TO_CHAR(LEAVE_ID)) LIKE :q OR UPPER(LEAVE_NAME) LIKE :q)
-                        ORDER BY LEAVE_ID ASC";
+                        FROM (
+                            SELECT LEAVE_ID, LEAVE_NAME,
+                                   ROW_NUMBER() OVER (ORDER BY LEAVE_ID ASC) AS RN
+                            FROM HRM_LEAVE_L
+                            WHERE LANGUAGE_ID = 1
+                              AND (UPPER(TO_CHAR(LEAVE_ID)) LIKE :q OR UPPER(LEAVE_NAME) LIKE :q)
+                        )
+                        WHERE RN > :offset AND RN <= :endRow";
                     command.BindByName = true;
                     command.Parameters.Add(new OracleParameter("q", $"%{query?.ToUpper()}%"));
+                    command.Parameters.Add(new OracleParameter("offset", offset));
+                    command.Parameters.Add(new OracleParameter("endRow", endRow));
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -130,7 +137,7 @@ namespace Web_EIP_Csharp.Helpers
             }
             return suggestions;
         }
-        public static async Task<List<Dictionary<string, string>>> GetEmployeesAsync(string username, string password, string tns, string query)
+        public static async Task<List<Dictionary<string, string>>> GetEmployeesAsync(string username, string password, string tns, string query, int page = 1, int pageSize = 50)
         {
             var suggestions = new List<Dictionary<string, string>>();
             using (var connection = GetConnection(username, password, tns))
@@ -139,14 +146,21 @@ namespace Web_EIP_Csharp.Helpers
 
                 using (var command = connection.CreateCommand())
                 {
+                    var offset = Math.Max(0, (page - 1) * pageSize);
+                    var endRow = offset + pageSize;
                     command.CommandText = @"
                         SELECT EMPLOYEE_ID, EMPLOYEE_NO, EMPLOYEE_NAME
-                        FROM hrm_employee_v
-                        WHERE (UPPER(EMPLOYEE_NO) LIKE :q OR UPPER(EMPLOYEE_NAME) LIKE :q)
-                        AND ROWNUM <= 50
-                        ORDER BY EMPLOYEE_NO ASC";
+                        FROM (
+                            SELECT EMPLOYEE_ID, EMPLOYEE_NO, EMPLOYEE_NAME,
+                                   ROW_NUMBER() OVER (ORDER BY EMPLOYEE_NO ASC) AS RN
+                            FROM hrm_employee_v
+                            WHERE (UPPER(EMPLOYEE_NO) LIKE :q OR UPPER(EMPLOYEE_NAME) LIKE :q)
+                        )
+                        WHERE RN > :offset AND RN <= :endRow";
                     command.BindByName = true;
                     command.Parameters.Add(new OracleParameter("q", $"%{query?.ToUpper()}%"));
+                    command.Parameters.Add(new OracleParameter("offset", offset));
+                    command.Parameters.Add(new OracleParameter("endRow", endRow));
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -166,7 +180,7 @@ namespace Web_EIP_Csharp.Helpers
             return suggestions;
         }
 
-        public static async Task<List<Dictionary<string, string>>> GetDepartmentsAsync(string username, string password, string tns, string query)
+        public static async Task<List<Dictionary<string, string>>> GetDepartmentsAsync(string username, string password, string tns, string query, int page = 1, int pageSize = 50)
         {
             var suggestions = new List<Dictionary<string, string>>();
             using (var connection = GetConnection(username, password, tns))
@@ -175,14 +189,22 @@ namespace Web_EIP_Csharp.Helpers
 
                 using (var command = connection.CreateCommand())
                 {
+                    var offset = Math.Max(0, (page - 1) * pageSize);
+                    var endRow = offset + pageSize;
                     command.CommandText = @"
                         SELECT DEPARTMENT_ID, DEPARTMENT_NO, DEPARTMENT_NAME
-                        FROM cmm_department_v
-                        WHERE LANGUAGE_ID = 1 AND (UPPER(DEPARTMENT_NO) LIKE :q OR UPPER(DEPARTMENT_NAME) LIKE :q)
-                        AND ROWNUM <= 50
-                        ORDER BY DEPARTMENT_NO ASC";
+                        FROM (
+                            SELECT DEPARTMENT_ID, DEPARTMENT_NO, DEPARTMENT_NAME,
+                                   ROW_NUMBER() OVER (ORDER BY DEPARTMENT_NO ASC) AS RN
+                            FROM cmm_department_v
+                            WHERE LANGUAGE_ID = 1
+                              AND (UPPER(DEPARTMENT_NO) LIKE :q OR UPPER(DEPARTMENT_NAME) LIKE :q)
+                        )
+                        WHERE RN > :offset AND RN <= :endRow";
                     command.BindByName = true;
                     command.Parameters.Add(new OracleParameter("q", $"%{query?.ToUpper()}%"));
+                    command.Parameters.Add(new OracleParameter("offset", offset));
+                    command.Parameters.Add(new OracleParameter("endRow", endRow));
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -202,7 +224,7 @@ namespace Web_EIP_Csharp.Helpers
             return suggestions;
         }
 
-        public static async Task<List<Dictionary<string, string>>> GetBookingDepartmentsAsync(string username, string password, string tns, string query, string employeeId = null)
+        public static async Task<List<Dictionary<string, string>>> GetBookingDepartmentsAsync(string username, string password, string tns, string query, string employeeId = null, int page = 1, int pageSize = 50)
         {
             var suggestions = new List<Dictionary<string, string>>();
             using (var connection = GetConnection(username, password, tns))
@@ -211,25 +233,34 @@ namespace Web_EIP_Csharp.Helpers
 
                 using (var command = connection.CreateCommand())
                 {
+                    var offset = Math.Max(0, (page - 1) * pageSize);
+                    var endRow = offset + pageSize;
                     string sql = @"
-                        SELECT BOOKING_DEPARTMENT_ID AS DEPARTMENT_ID,
-                               BOOKING_DEPARTMENT_NO AS DEPARTMENT_NO,
-                               BOOKING_DEPARTMENT_NAME AS DEPARTMENT_NAME
-                        FROM HRM_BOOKING_DEPARTMENT_V
-                        WHERE LANGUAGE_ID = 1
-                        AND (UPPER(BOOKING_DEPARTMENT_NO) LIKE :q OR UPPER(BOOKING_DEPARTMENT_NAME) LIKE :q)";
+                        SELECT DEPARTMENT_ID, DEPARTMENT_NO, DEPARTMENT_NAME
+                        FROM (
+                            SELECT BOOKING_DEPARTMENT_ID AS DEPARTMENT_ID,
+                                   BOOKING_DEPARTMENT_NO AS DEPARTMENT_NO,
+                                   BOOKING_DEPARTMENT_NAME AS DEPARTMENT_NAME,
+                                   ROW_NUMBER() OVER (ORDER BY BOOKING_DEPARTMENT_NO ASC) AS RN
+                            FROM HRM_BOOKING_DEPARTMENT_V
+                            WHERE LANGUAGE_ID = 1
+                              AND (UPPER(BOOKING_DEPARTMENT_NO) LIKE :q OR UPPER(BOOKING_DEPARTMENT_NAME) LIKE :q)";
 
-                    if (!string.IsNullOrEmpty(employeeId))
+                    var hasEmployeeIdFilter = long.TryParse(employeeId, out _);
+                    if (hasEmployeeIdFilter)
                     {
                         sql += " AND EMPLOYEE_ID = :empId";
                     }
-                    sql += " AND ROWNUM <= 50 ORDER BY BOOKING_DEPARTMENT_NO ASC";
+                    sql += @")
+                             WHERE RN > :offset AND RN <= :endRow";
 
                     command.CommandText = sql;
                     command.BindByName = true;
                     command.Parameters.Add(new OracleParameter("q", $"%{query?.ToUpper()}%"));
+                    command.Parameters.Add(new OracleParameter("offset", offset));
+                    command.Parameters.Add(new OracleParameter("endRow", endRow));
 
-                    if (!string.IsNullOrEmpty(employeeId))
+                    if (hasEmployeeIdFilter)
                     {
                         command.Parameters.Add(new OracleParameter("empId", employeeId));
                     }

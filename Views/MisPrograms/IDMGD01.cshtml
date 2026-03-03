@@ -1,4 +1,4 @@
-@{
+﻿@{
     var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
     ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
@@ -6,11 +6,8 @@
 
 <div class="absolute inset-0 flex flex-col bg-slate-50 overflow-hidden" x-data="idmgd01App()" x-init="init()">
 
-    <!-- ===== 搜尋列 (g-panel 收合式) ===== -->
     <div class="bg-white border-b border-slate-200 px-4 py-3 shrink-0">
         <div class="flex flex-wrap items-end gap-3">
-
-            <!-- 程式編號 -->
             <div class="flex flex-col gap-1">
                 <label class="text-xs font-bold text-slate-600">程式編號</label>
                 <input type="text" x-model="search.programNo"
@@ -18,603 +15,268 @@
                        @@keydown.enter="executeQuery()">
             </div>
 
-            <!-- 員工編號（g-lov-input；lov-fn 呼叫 Alpine openSearchEmployeeLov）-->
             <g-lov-input label="員工編號"
-                         hidden-id="searchEmployeeId"  x-model-hidden="search.employeeId"
-                         code-id="searchEmployeeNo"    code-placeholder="員工" code-width="w-20"
+                         hidden-id="searchEmployeeId" x-model-hidden="search.employeeId"
+                         code-id="searchEmployeeNo" code-placeholder="員工" code-width="w-20"
                          name-id="searchEmployeeName"
-                         lov-fn="openSearchEmployeeLov()">
+                         lov-title="尋找員工 (Employee)"
+                         lov-api="/api/lov/hrm/employees"
+                         lov-columns="編號,名稱,ID"
+                         lov-fields="employee_no,employee_name,employee_id"
+                         lov-key-hidden="employee_id"
+                         lov-key-code="employee_no"
+                         lov-key-name="employee_name">
             </g-lov-input>
 
-            <!-- 顯示碼 -->
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-slate-600">顯示碼</label>
-                <select x-model="search.displayCode"
-                        class="block w-20 px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">全部</option>
-                    <option value="Y">Y</option>
-                    <option value="N">N</option>
-                </select>
-            </div>
+            <g-combobox label="顯示碼"
+                        name="displayCode"
+                        x-model="search.displayCode"
+                        items="Y:Y,N:N"
+                        placeholder="全部"
+                        class=""
+                        input-class="block w-20 px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </g-combobox>
 
-            <!-- 查詢按鈕 -->
-            <g-button text="查詢" icon="search" type="primary" onclick=""></g-button>
+            <g-button text="查詢" icon="search" type="primary" onclick="window._idmApp?.executeQuery()"></g-button>
+            <g-button text="新增程式" icon="plus" type="success" onclick="window._idmApp?.openCreate()"></g-button>
 
-            <!-- 新增按鈕 -->
-            <g-button text="新增程式" icon="plus" type="success"
-                      onclick="gDialogOpen('dlgAdd')"></g-button>
-
-            <!-- 狀態欄 -->
-            <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
-                <span x-show="loading" class="flex items-center gap-1 text-blue-500">
-                    <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path>
-                    </svg>
-                    查詢中...
-                </span>
-                <span x-show="!loading && programs.length > 0">
-                    共 <b x-text="programs.length"></b> 筆，第 <b x-text="currentPage"></b>/<b x-text="totalPages"></b> 頁
-                </span>
-                <span x-show="editingRowId" class="text-amber-600 font-bold flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
-                    編輯中
-                </span>
-            </div>
+            <div class="ml-auto text-xs text-slate-500">操作欄支援 檢視 / 編輯 / 刪除</div>
         </div>
     </div>
 
-    <!-- ===== Tab 區 (g-tabs) ===== -->
-    <!-- 手動 Tab Bar：保留 Alpine.js 完整控制（activeTab 驅動），不使用 g-tabs 避免巢狀 x-data 衝突 -->
-    <div class="bg-white border-b border-slate-200 px-4 flex gap-1 shrink-0">
-        <button @@click="activeTab='list'"
-                :class="activeTab==='list' ? 'border-blue-600 text-blue-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
-                class="flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-            程式資料
-        </button>
-        <button @@click="activeTab='detail'"
-                :class="activeTab==='detail' ? 'border-blue-600 text-blue-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
-                class="flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            程式詳細資料
-        </button>
-        <button @@click="activeTab='maintenance'"
-                :class="activeTab==='maintenance' ? 'border-blue-600 text-blue-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
-                class="flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            程式維護
-        </button>
+    <div class="flex-1 flex flex-col min-h-0">
+        <g-datagrid id="idmGrid"
+                    api="/Idm/select?DataMember=IDMGD01"
+                    columns="PROGRAM_NO:程式編號:150:left:text::text,DISPLAY_CODE:顯示:80:center:select:Y=Y;N=N:select,EMPLOYEE_ID:員工編號:150:left:text::lov,PURPOSE:用途:220:left:text::text,PROGRAM_TYPE:程式型態:120:left:text::text,ENTRY_DATE:建檔日期:170:left:readonly::"
+                    pagination="true"
+                    page-list="20,50,100"
+                    page-size="20"
+                    always-close="false"
+                    not-init-grid="false"
+                    row-numbers="true"
+                    edit-mode="form"
+                    query-auto-column="true"
+                    allow-add="true"
+                    allow-update="true"
+                    allow-delete="true"
+                    view-command-visible="true"
+                    on-view="idmViewRecord"
+                    on-update="idmEditRecord"
+                    @@add="openCreate()"
+                    @@view="viewRecord($event.detail.row)"
+                    @@edit="editRecord($event.detail.row)"
+                    @@delete="confirmDelete($event.detail.row)"
+                    @@query="executeQueryFromGrid($event.detail.filters)"
+                    clean-style="true"></g-datagrid>
     </div>
 
-    <!-- ===== Tab 1：程式資料 ===== -->
-    <div x-show="activeTab==='list'" class="flex-1 flex flex-col min-h-0">
-
-        <!-- 表格主體 -->
-        <div class="flex-1 overflow-auto">
-            <table class="min-w-full border-collapse text-sm" id="idmTable">
-                <thead class="bg-slate-100 sticky top-0 z-10 shadow-sm">
-                    <tr>
-                        <th class="th-cell w-8 text-center px-2">#</th>
-                        <template x-for="col in columns" :key="col.key">
-                            <th class="th-cell cursor-pointer select-none whitespace-nowrap hover:bg-slate-200 active:bg-slate-300 transition-colors"
-                                @@dblclick="toggleSort(col.key)">
-                                <span x-text="col.label"></span>
-                                <span class="ml-1 inline-block w-3 text-slate-400"
-                                      x-text="sortKey===col.key ? (sortDir==='asc' ? '▲' : '▼') : ''"></span>
-                            </th>
-                        </template>
-                        <th class="th-cell w-28 text-center px-2">操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-for="(item, idx) in pagedPrograms" :key="item.ROWID">
-                        <tr @@click="selectRow(item)"
-                            :class="{
-                                'bg-blue-600 text-white': selectedRowId === item.ROWID && editingRowId !== item.ROWID,
-                                'bg-amber-50 ring-2 ring-inset ring-amber-400': editingRowId === item.ROWID,
-                                'bg-white': selectedRowId !== item.ROWID && editingRowId !== item.ROWID && idx % 2 === 0,
-                                'bg-slate-50': selectedRowId !== item.ROWID && editingRowId !== item.ROWID && idx % 2 !== 0
-                            }"
-                            class="border-b border-slate-200 transition-colors cursor-pointer group">
-
-                            <!-- 行號 -->
-                            <td class="px-2 py-1.5 text-center text-xs font-mono text-slate-400 w-8 border-r border-slate-200"
-                                :class="selectedRowId === item.ROWID ? 'text-white/70' : ''"
-                                x-text="(currentPage-1)*pageSize + idx + 1"></td>
-
-                            <!-- 程式編號 (唯讀) -->
-                            <td class="px-3 py-1.5 border-r border-slate-200 font-bold font-mono"
-                                :class="selectedRowId === item.ROWID ? 'text-white' : 'text-blue-600'">
-                                <span x-text="item.PROGRAM_NO"></span>
-                            </td>
-
-                            <!-- 顯示碼 -->
-                            <td class="px-3 py-1.5 border-r border-slate-200 text-center w-14">
-                                <template x-if="editingRowId === item.ROWID">
-                                    <select x-model="editRow.DISPLAY_CODE"
-                                            class="w-12 px-1 py-0.5 border border-amber-400 rounded text-slate-800 text-xs bg-white"
-                                            @@click.stop>
-                                        <option value="Y">Y</option>
-                                        <option value="N">N</option>
-                                    </select>
-                                </template>
-                                <template x-if="editingRowId !== item.ROWID">
-                                    <span x-text="item.DISPLAY_CODE"
-                                          :class="item.DISPLAY_CODE==='Y' ? (selectedRowId===item.ROWID ? 'text-green-200' : 'text-green-600 font-bold') : (selectedRowId===item.ROWID ? 'text-red-200' : 'text-red-500')">
-                                    </span>
-                                </template>
-                            </td>
-
-                            <!-- 員工編號 -->
-                            <td class="px-3 py-1.5 border-r border-slate-200"
-                                :class="selectedRowId === item.ROWID && editingRowId !== item.ROWID ? 'text-white' : 'text-slate-600'">
-                                <template x-if="editingRowId === item.ROWID">
-                                    <input type="text" x-model="editRow.EMPLOYEE_ID"
-                                           class="w-20 px-1.5 py-0.5 border border-amber-400 rounded text-slate-800 text-xs"
-                                           @@click.stop>
-                                </template>
-                                <template x-if="editingRowId !== item.ROWID">
-                                    <span x-text="item.EMPLOYEE_ID"></span>
-                                </template>
-                            </td>
-
-                            <!-- 用途 -->
-                            <td class="px-3 py-1.5 border-r border-slate-200 max-w-xs"
-                                :class="selectedRowId === item.ROWID && editingRowId !== item.ROWID ? 'text-white' : 'text-slate-700'">
-                                <template x-if="editingRowId === item.ROWID">
-                                    <input type="text" x-model="editRow.PURPOSE"
-                                           class="w-full px-1.5 py-0.5 border border-amber-400 rounded text-slate-800 text-xs"
-                                           @@click.stop>
-                                </template>
-                                <template x-if="editingRowId !== item.ROWID">
-                                    <span class="truncate block max-w-xs" x-text="item.PURPOSE"></span>
-                                </template>
-                            </td>
-
-                            <!-- 程式型態 -->
-                            <td class="px-3 py-1.5 border-r border-slate-200"
-                                :class="selectedRowId === item.ROWID && editingRowId !== item.ROWID ? 'text-white' : 'text-slate-600'">
-                                <template x-if="editingRowId === item.ROWID">
-                                    <input type="text" x-model="editRow.PROGRAM_TYPE"
-                                           class="w-20 px-1.5 py-0.5 border border-amber-400 rounded text-slate-800 text-xs"
-                                           @@click.stop>
-                                </template>
-                                <template x-if="editingRowId !== item.ROWID">
-                                    <span x-text="item.PROGRAM_TYPE"></span>
-                                </template>
-                            </td>
-
-                            <!-- 建檔日期 -->
-                            <td class="px-3 py-1.5 text-xs whitespace-nowrap"
-                                :class="selectedRowId === item.ROWID && editingRowId !== item.ROWID ? 'text-white/80' : 'text-slate-400'"
-                                x-text="formatDate(item.ENTRY_DATE)"></td>
-
-                            <!-- 操作欄 (g-button) -->
-                            <td class="px-2 py-1 text-center w-28" @@click.stop>
-                                <template x-if="editingRowId === item.ROWID">
-                                    <div class="flex gap-1 justify-center">
-                                        <button @@click="saveRow(item)"
-                                                class="px-2.5 py-0.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-bold shadow transition-colors">
-                                            儲存
-                                        </button>
-                                        <button @@click="cancelEdit()"
-                                                class="px-2 py-0.5 bg-slate-400 hover:bg-slate-500 text-white text-xs rounded transition-colors">
-                                            取消
-                                        </button>
-                                    </div>
-                                </template>
-                                <template x-if="editingRowId !== item.ROWID">
-                                    <div class="flex gap-1 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <!-- 檢視 icon：跳至 detail tab -->
-                                        <button @@click="selectRow(item); activeTab='detail'"
-                                                title="檢視詳細資料"
-                                                class="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 border border-slate-200 hover:border-indigo-300 transition-all">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        </button>
-                                        <!-- 編輯 icon：跳至 maintenance tab -->
-                                        <button @@click="startEdit(item); activeTab='maintenance'"
-                                                title="程式維護"
-                                                class="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-amber-100 text-slate-400 hover:text-amber-600 border border-slate-200 hover:border-amber-300 transition-all">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        </button>
-                                        <!-- 刪除 icon -->
-                                        <button @@click="confirmDelete(item)"
-                                                title="刪除"
-                                                class="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-red-100 text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-300 transition-all">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </div>
-                                </template>
-                            </td>
-                        </tr>
-                    </template>
-
-                    <!-- 無資料 -->
-                    <tr x-show="!loading && programs.length === 0">
-                        <td colspan="8" class="py-12 text-center text-slate-400">
-                            <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            無符合資料
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- 分頁列 (g-pagination) -->
-        <g-pagination alpine-total="totalPages"
-                      alpine-current="currentPage"
-                      alpine-prev="prevPage()"
-                      alpine-next="nextPage()"
-                      alpine-jump="jumpPage($event.target.value)"
-                      alpine-count="programs.length"
-                      alpine-page-size="pageSize"
-                      page-size-options="10,20,50">
-        </g-pagination>
-    </div>
-
-    <!-- ===== Tab 2：程式詳細資料 ===== -->
-    <div x-show="activeTab==='detail'" class="flex-1 overflow-auto p-5 bg-slate-50/50">
-        <div x-show="!selectedRecord" class="h-full flex items-center justify-center text-slate-400 text-sm">
-            請先從列表中點選一筆資料（點擊眼睛圖示）
-        </div>
-        <template x-if="selectedRecord">
-            <div class="max-w-3xl mx-auto space-y-4">
-                <!-- 程式編號標題列 -->
-                <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
-                    <div class="text-base font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded font-mono" x-text="selectedRecord.PROGRAM_NO"></div>
-                    <span class="text-xs text-slate-400">詳細資料檢視 / 編輯</span>
-                </div>
-
-                <!-- 表單 (g-form-group + g-textbox) -->
-                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <g-form-group label="顯示碼">
-                            <input type="text" x-model="selectedRecord.DISPLAY_CODE"
-                                   class="block w-24 px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 uppercase">
-                        </g-form-group>
-                        <g-form-group label="員工編號">
-                            <input type="text" x-model="selectedRecord.EMPLOYEE_ID"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 text-blue-700 font-bold">
-                        </g-form-group>
-                        <g-form-group label="程式型態">
-                            <input type="text" x-model="selectedRecord.PROGRAM_TYPE"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </g-form-group>
-                        <g-form-group label="用途" col-span="2">
-                            <input type="text" x-model="selectedRecord.PURPOSE"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 bg-yellow-50">
-                        </g-form-group>
-                        <g-form-group label="預計開發開始日">
-                            <input type="date" x-model="localPlanStart"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </g-form-group>
-                        <g-form-group label="實際開發開始日">
-                            <input type="date" x-model="localRealStart"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </g-form-group>
-                        <g-form-group label="預計開發完工日">
-                            <input type="date" x-model="localPlanFinish"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </g-form-group>
-                        <g-form-group label="實際開發完工日">
-                            <input type="date" x-model="localRealFinish"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </g-form-group>
-                        <g-form-group label="預計工時">
-                            <input type="number" x-model="selectedRecord.PLAN_WORK_HOURS"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 text-right">
-                        </g-form-group>
-                        <g-form-group label="實際工時">
-                            <input type="number" x-model="selectedRecord.REAL_WORK_HOURS"
-                                   class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 text-right">
-                        </g-form-group>
-                    </div>
-
-                    <!-- 儲存按鈕 -->
-                    <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
-                        <g-button text="返回列表" icon="list"  type="secondary" onclick="window._idmApp.activeTab='list'"></g-button>
-                        <g-button text="儲存"     icon="save"  type="success"  onclick="window._idmApp.saveSelectedRecord()"></g-button>
-                    </div>
-                </div>
-            </div>
-        </template>
-    </div>
-
-    <!-- ===== Tab 3：程式維護 ===== -->
-    <div x-show="activeTab==='maintenance'" class="flex-1 overflow-auto p-5 bg-slate-50/50">
-        <template x-if="selectedRecord && editingRowId">
-            <div class="max-w-3xl mx-auto space-y-4">
-                <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
-                    <div class="text-base font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded font-mono" x-text="selectedRecord.PROGRAM_NO"></div>
-                    <span class="text-xs text-amber-500 font-semibold flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
-                        維護模式－編輯中
-                    </span>
-                </div>
-
-                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <g-form-group label="顯示碼">
-                            <select x-model="editRow.DISPLAY_CODE"
-                                    class="block w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option value="Y">Y - 顯示</option>
-                                <option value="N">N - 隱藏</option>
-                            </select>
-                        </g-form-group>
-                        <g-form-group label="員工編號">
-                            <input type="text" x-model="editRow.EMPLOYEE_ID"
-                                   class="block w-full px-3 py-1.5 border border-amber-400 rounded-lg text-sm focus:ring-amber-400 focus:border-amber-400 bg-amber-50/30">
-                        </g-form-group>
-                        <g-form-group label="程式型態">
-                            <input type="text" x-model="editRow.PROGRAM_TYPE"
-                                   class="block w-full px-3 py-1.5 border border-amber-400 rounded-lg text-sm focus:ring-amber-400 focus:border-amber-400 bg-amber-50/30">
-                        </g-form-group>
-                        <g-form-group label="用途" col-span="2">
-                            <input type="text" x-model="editRow.PURPOSE"
-                                   class="block w-full px-3 py-1.5 border border-amber-400 rounded-lg text-sm focus:ring-amber-400 focus:border-amber-400 bg-amber-50/30">
-                        </g-form-group>
-                    </div>
-
-                    <!-- 操作按鈕 -->
-                    <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
-                        <g-button text="取消"         icon="close"   type="secondary" onclick="window._idmApp.cancelEdit(); window._idmApp.activeTab='list'"></g-button>
-                        <g-button text="儲存維護資料" icon="save"    type="success"  onclick="window._idmApp.saveRow(window._idmApp.selectedRecord)"></g-button>
-                    </div>
-                </div>
-            </div>
-        </template>
-        <div x-show="!selectedRecord || !editingRowId" class="h-full flex items-center justify-center text-slate-400 text-sm">
-            請先從列表中點擊編輯圖示（鉛筆）以進入維護模式
-        </div>
-    </div>
-
-    <!-- ===== Toast ===== -->
-    <div x-show="toast.show" x-transition.opacity
-         :class="toast.type==='success' ? 'bg-green-600' : 'bg-red-600'"
-         class="fixed bottom-5 right-5 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2">
-        <span x-text="toast.msg"></span>
-    </div>
-
-</div>
-
-<!-- ===== Dialog：新增程式 (g-dialog) ===== -->
-<g-dialog id="dlgAdd" title="新增程式資料" width="md">
-    <div class="grid grid-cols-1 gap-4">
+<g-dialog id="dlgRecord" title="程式資料" width="lg">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <g-form-group label="程式編號" required="true">
-            <input type="text" id="newProgramNo" maxlength="20"
-                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 uppercase"
-                   placeholder="例：HRMGD99">
+            <input type="text" x-model="formRecord.PROGRAM_NO" :readonly="recordMode!=='create'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm uppercase focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="例：IDMGD99">
         </g-form-group>
-        <g-form-group label="用途">
-            <input type="text" id="newPurpose"
-                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
-                   placeholder="程式用途說明">
-        </g-form-group>
-        <g-form-group label="程式型態">
-            <input type="text" id="newProgramType"
-                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
-                   placeholder="例：WEB">
-        </g-form-group>
+
         <g-form-group label="顯示碼">
-            <select id="newDisplayCode"
+            <select x-model="formRecord.DISPLAY_CODE" :disabled="recordMode==='view'"
                     class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
                 <option value="Y">Y - 顯示</option>
                 <option value="N">N - 隱藏</option>
             </select>
         </g-form-group>
+
+        <g-form-group label="員工編號">
+            <input type="text" x-model="formRecord.EMPLOYEE_ID" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
+
+        <g-form-group label="程式型態">
+            <input type="text" x-model="formRecord.PROGRAM_TYPE" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
+
+        <g-form-group label="用途" col-span="2">
+            <input type="text" x-model="formRecord.PURPOSE" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
+
+        <g-form-group label="預計開發開始日">
+            <input type="date" x-model="formRecord.PLAN_START_DEVELOP_DATE" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
+
+        <g-form-group label="實際開發開始日">
+            <input type="date" x-model="formRecord.REAL_START_DEVELOP_DATE" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
+
+        <g-form-group label="預計開發完工日">
+            <input type="date" x-model="formRecord.PLAN_FINISH_DEVELOP_DATE" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
+
+        <g-form-group label="實際開發完工日">
+            <input type="date" x-model="formRecord.REAL_FINISH_DEVELOP_DATE" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
+
+        <g-form-group label="預計工時">
+            <input type="number" step="0.1" x-model="formRecord.PLAN_WORK_HOURS" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-right focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
+
+        <g-form-group label="實際工時">
+            <input type="number" step="0.1" x-model="formRecord.REAL_WORK_HOURS" :readonly="recordMode==='view'"
+                   class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-right focus:ring-blue-500 focus:border-blue-500">
+        </g-form-group>
     </div>
-    <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-slate-100">
-        <g-button text="取消" icon="close" type="secondary" onclick="gDialogClose('dlgAdd')"></g-button>
-        <g-button text="新增" icon="plus"  type="primary"   onclick="window._idmApp?.addProgram()"></g-button>
+
+    <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
+        <g-button text="取消" icon="close" type="secondary" onclick="gDialogClose('dlgRecord')"></g-button>
+        <g-button text="儲存" icon="save" type="success" x-show="recordMode!=='view'" onclick="window._idmApp?.saveRecord()"></g-button>
     </div>
 </g-dialog>
+
+</div>
 
 @section Styles {
     <style>
         html, body { height: 100% !important; overflow: hidden !important; }
-        .th-cell {
-            padding: 10px 12px;
-            text-align: left;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-right: 1px solid #e2e8f0;
-        }
     </style>
 }
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="~/js/g-components.js" asp-append-version="true"></script>
+    <g-js profile="popup" include-alpine="true" alpine-version="3.x.x"></g-js>
     <script>
-        /* ===== 員工 LOV 回呼 ===== */
-        function updateAlpineSearchEmp() {
-            const el = document.getElementById('searchEmployeeId');
-            if (el && window._idmApp) window._idmApp.search.employeeId = el.value;
-        }
-        function openSearchEmployeeLov() {
-            openGenericLov(
-                '尋找員工 (Employee)', '/api/lov/hrm/employees',
-                ['編號', '名稱', 'ID'], ['employee_no', 'employee_name', 'employee_id'],
-                { 'employee_id': 'searchEmployeeId', 'employee_no': 'searchEmployeeNo', 'employee_name': 'searchEmployeeName' },
-                null, updateAlpineSearchEmp
-            );
+        function toDateInput(v) {
+            if (!v) return '';
+            const s = String(v);
+            return s.length >= 10 ? s.slice(0, 10) : '';
         }
 
-        /* ===== 日期工具 ===== */
-        function isoToDate(iso) {
-            if (!iso) return '';
-            try { return new Date(iso).toISOString().slice(0, 10); } catch { return ''; }
-        }
-
-        /* ===== Alpine 元件 ===== */
         document.addEventListener('alpine:init', () => {
             Alpine.data('idmgd01App', () => ({
+                search: { programNo: '', employeeId: '', displayCode: 'Y' },
+                programs: [],
+                recordMode: 'view', // view | edit | create
+                formRecord: {},
 
-                activeTab : 'list',
-                loading   : false,
-                toast     : { show: false, msg: '', type: 'success' },
-
-                search    : { programNo: '', employeeId: '', displayCode: 'Y' },
-
-                programs  : [],
-                columns   : [
-                    { key: 'PROGRAM_NO',   label: '程式編號' },
-                    { key: 'DISPLAY_CODE', label: '顯示' },
-                    { key: 'EMPLOYEE_ID',  label: '員工編號' },
-                    { key: 'PURPOSE',      label: '用途' },
-                    { key: 'PROGRAM_TYPE', label: '程式型態' },
-                    { key: 'ENTRY_DATE',   label: '建檔日期' },
-                ],
-
-                sortKey : '', sortDir: 'asc',
-                pageSize: 20, currentPage: 1, gotoPage: 1,
-
-                selectedRowId: null, selectedRecord: null,
-                editingRowId : null, editRow: {},
-
-                /* ── computed ── */
-                get sortedPrograms() {
-                    if (!this.sortKey) return this.programs;
-                    const dir = this.sortDir === 'asc' ? 1 : -1;
-                    return [...this.programs].sort((a, b) => {
-                        const av = a[this.sortKey] ?? '', bv = b[this.sortKey] ?? '';
-                        return av < bv ? -dir : av > bv ? dir : 0;
-                    });
-                },
-                get totalPages()    { return Math.max(1, Math.ceil(this.sortedPrograms.length / this.pageSize)); },
-                get pagedPrograms() { const s = (this.currentPage - 1) * this.pageSize; return this.sortedPrograms.slice(s, s + +this.pageSize); },
-
-                /* ── 日期 getter/setter ── */
-                get localPlanStart()   { return isoToDate(this.selectedRecord?.PLAN_START_DEVELOP_DATE); },
-                set localPlanStart(v)  { if (this.selectedRecord) this.selectedRecord.PLAN_START_DEVELOP_DATE = v; },
-                get localPlanFinish()  { return isoToDate(this.selectedRecord?.PLAN_FINISH_DEVELOP_DATE); },
-                set localPlanFinish(v) { if (this.selectedRecord) this.selectedRecord.PLAN_FINISH_DEVELOP_DATE = v; },
-                get localRealStart()   { return isoToDate(this.selectedRecord?.REAL_START_DEVELOP_DATE); },
-                set localRealStart(v)  { if (this.selectedRecord) this.selectedRecord.REAL_START_DEVELOP_DATE = v; },
-                get localRealFinish()  { return isoToDate(this.selectedRecord?.REAL_FINISH_DEVELOP_DATE); },
-                set localRealFinish(v) { if (this.selectedRecord) this.selectedRecord.REAL_FINISH_DEVELOP_DATE = v; },
-
-                /* ── 初始化 ── */
-                init() { window._idmApp = this; this.executeQuery(); },
-
-                formatDate(iso) {
-                    if (!iso) return '';
-                    return new Date(iso).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                init() {
+                    window._idmApp = this;
+                    window.idmViewRecord = (row) => window._idmApp?.viewRecord(row);
+                    window.idmEditRecord = (row) => window._idmApp?.editRecord(row);
+                    console.log('[IDMGD01] app initialized');
+                    this.executeQuery();
                 },
 
-                showToast(msg, type = 'success') {
-                    gToast(msg, type);   // 使用 g-components.js 的 gToast
-                    this.toast = { show: true, msg, type };
-                    setTimeout(() => this.toast.show = false, 2800);
+                showToast(msg, type = 'success') { gToast(msg, type); },
+
+                normalizeRecord(row) {
+                    return {
+                        ...row,
+                        PROGRAM_NO: row?.PROGRAM_NO ?? '',
+                        DISPLAY_CODE: row?.DISPLAY_CODE ?? 'Y',
+                        EMPLOYEE_ID: row?.EMPLOYEE_ID ?? '',
+                        PURPOSE: row?.PURPOSE ?? '',
+                        PROGRAM_TYPE: row?.PROGRAM_TYPE ?? '',
+                        PLAN_START_DEVELOP_DATE: toDateInput(row?.PLAN_START_DEVELOP_DATE),
+                        PLAN_FINISH_DEVELOP_DATE: toDateInput(row?.PLAN_FINISH_DEVELOP_DATE),
+                        REAL_START_DEVELOP_DATE: toDateInput(row?.REAL_START_DEVELOP_DATE),
+                        REAL_FINISH_DEVELOP_DATE: toDateInput(row?.REAL_FINISH_DEVELOP_DATE),
+                        PLAN_WORK_HOURS: row?.PLAN_WORK_HOURS ?? '',
+                        REAL_WORK_HOURS: row?.REAL_WORK_HOURS ?? ''
+                    };
                 },
 
-                /* ── 查詢 ── */
                 async executeQuery() {
-                    this.search.employeeId = document.getElementById('searchEmployeeId').value;
-                    this.loading = true; this.editingRowId = null;
+                    this.search.employeeId = document.getElementById('searchEmployeeId')?.value ?? this.search.employeeId;
+                    await this.executeQueryFromGrid({});
+                },
+
+                async executeQueryFromGrid(filters) {
                     try {
-                        const params = new URLSearchParams({
-                            programNo: this.search.programNo, employeeId: this.search.employeeId, displayCode: this.search.displayCode
-                        });
-                        const res    = await fetch('/api/mis/programs/IDMGD01/list?' + params);
-                        if (res.status === 401) { window.location.href = '/Account/Login'; return; }
-                        const result = await res.json();
-                        if (result.status === 'success') {
-                            this.programs = result.data; this.currentPage = 1; this.gotoPage = 1;
-                            this.selectedRowId = null; this.selectedRecord = null;
-                        } else this.showToast('查詢失敗: ' + result.message, 'error');
-                    } catch (e) { this.showToast('網路錯誤: ' + e, 'error'); }
-                    finally { this.loading = false; }
+                        const grid = document.getElementById('idmGrid')?.gDataGrid;
+                        if (!grid) return;
+                        const query = {
+                            programNo: this.search.programNo,
+                            employeeId: this.search.employeeId,
+                            displayCode: this.search.displayCode,
+                            ...(filters || {})
+                        };
+                        await grid.fetchData(query);
+                        this.programs = grid.rows || [];
+                    } catch (e) {
+                        this.showToast('查詢失敗: ' + e, 'error');
+                    }
                 },
 
-                /* ── 選擇列 ── */
-                selectRow(item) {
-                    if (this.editingRowId) return;
-                    this.selectedRowId  = item.ROWID;
-                    this.selectedRecord = JSON.parse(JSON.stringify(item));
+                openCreate() {
+                    this.recordMode = 'create';
+                    this.formRecord = this.normalizeRecord({ DISPLAY_CODE: 'Y' });
+                    gDialogOpen('dlgRecord');
+                },
+                viewRecord(row) {
+                    console.log('[IDMGD01] viewRecord()', row);
+                    this.recordMode = 'view';
+                    this.formRecord = this.normalizeRecord(JSON.parse(JSON.stringify(row)));
+                    gDialogOpen('dlgRecord');
+                },
+                editRecord(row) {
+                    console.log('[IDMGD01] editRecord()', row);
+                    this.recordMode = 'edit';
+                    this.formRecord = this.normalizeRecord(JSON.parse(JSON.stringify(row)));
+                    gDialogOpen('dlgRecord');
                 },
 
-                /* ── inline 編輯 ── */
-                startEdit(item) {
-                    this.selectRow(item);
-                    this.editingRowId = item.ROWID;
-                    this.editRow = JSON.parse(JSON.stringify(item));
-                },
-                cancelEdit() { this.editingRowId = null; this.editRow = {}; },
+                async saveRecord() {
+                    const payload = { ...this.formRecord };
+                    if (!payload.PROGRAM_NO) {
+                        this.showToast('程式編號為必填', 'warning');
+                        return;
+                    }
 
-                /* ── 確認刪除 ── */
-                async confirmDelete(item) {
-                    if (!(await gConfirm(`確定刪除程式 ${item.PROGRAM_NO}？\n此操作無法還原。`, '刪除確認'))) return;
-                    this.showToast(`已刪除 ${item.PROGRAM_NO}（示範）`, 'success');
-                    // 實際刪除：await fetch('/api/mis/programs/IDMGD01/delete', { method:'DELETE', ... })
-                },
-
-                /* ── 新增程式 ── */
-                async addProgram() {
-                    const no   = document.getElementById('newProgramNo')?.value.trim();
-                    if (!no) { gToast('程式編號為必填', 'warning'); return; }
-                    gDialogClose('dlgAdd');
-                    gToast(`新增程式 ${no}（示範）`, 'info');
-                    // 實際新增：await fetch('/api/mis/programs/IDMGD01/add', { method:'POST', ... })
-                },
-
-                /* ── inline 儲存 ── */
-                async saveRow(item) {
-                    const payload = { ...this.editRow };
                     try {
-                        const res    = await fetch('/api/mis/programs/IDMGD01/save', {
-                            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-                        });
-                        const result = await res.json();
-                        if (result.status === 'success') {
-                            const idx = this.programs.findIndex(p => p.ROWID === item.ROWID);
-                            if (idx >= 0) {
-                                Object.assign(this.programs[idx], this.editRow);
-                                if (this.selectedRecord?.ROWID === item.ROWID)
-                                    this.selectedRecord = JSON.parse(JSON.stringify(this.programs[idx]));
-                            }
-                            this.editingRowId = null; this.editRow = {};
-                            this.showToast('✓ 儲存成功', 'success');
-                        } else this.showToast('儲存失敗: ' + result.message, 'error');
-                    } catch (e) { this.showToast('網路錯誤: ' + e, 'error'); }
-                },
-
-                /* ── detail tab 儲存 ── */
-                async saveSelectedRecord() {
-                    if (!this.selectedRecord) return;
-                    const payload = { ...this.selectedRecord };
-                    try {
-                        const res    = await fetch('/api/mis/programs/IDMGD01/save', {
-                            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        const isCreate = this.recordMode === 'create';
+                        const api = isCreate ? '/Idm/insert?DataMember=IDMGD01' : '/Idm/update?DataMember=IDMGD01';
+                        const res = await fetch(api, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
                         });
                         const result = await res.json();
-                        if (result.status === 'success') {
-                            const idx = this.programs.findIndex(p => p.ROWID === this.selectedRecord.ROWID);
-                            if (idx >= 0) Object.assign(this.programs[idx], this.selectedRecord);
-                            this.showToast('✓ 儲存成功', 'success');
-                        } else this.showToast('儲存失敗: ' + result.message, 'error');
-                    } catch (e) { this.showToast('網路錯誤: ' + e, 'error'); }
+                        if (!res.ok || result.status !== 'success') {
+                            this.showToast('儲存失敗: ' + (result.message || res.statusText), 'error');
+                            return;
+                        }
+
+                        gDialogClose('dlgRecord');
+                        this.showToast(isCreate ? '新增成功' : '更新成功', 'success');
+                        await this.executeQuery();
+                    } catch (e) {
+                        this.showToast('儲存失敗: ' + e, 'error');
+                    }
                 },
 
-                /* ── 排序 ── */
-                toggleSort(key) {
-                    if (this.sortKey === key) this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-                    else { this.sortKey = key; this.sortDir = 'asc'; }
-                    this.currentPage = 1;
-                },
-
-                /* ── 分頁 ── */
-                prevPage() { if (this.currentPage > 1) { this.currentPage--; this.gotoPage = this.currentPage; } },
-                nextPage() { if (this.currentPage < this.totalPages) { this.currentPage++; this.gotoPage = this.currentPage; } },
-                jumpPage(v)  {
-                    const p = Math.min(Math.max(1, parseInt(v)), this.totalPages);
-                    this.currentPage = p; this.gotoPage = p;
+                async confirmDelete(row) {
+                    const ok = await gConfirm(`確定刪除程式 ${row.PROGRAM_NO}？\n此操作無法還原。`, '刪除確認');
+                    if (!ok) return;
+                    try {
+                        const res = await fetch('/Idm/delete?DataMember=IDMGD01', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(row)
+                        });
+                        const result = await res.json();
+                        if (!res.ok || result.status !== 'success') {
+                            this.showToast('刪除失敗: ' + (result.message || res.statusText), 'error');
+                            return;
+                        }
+                        this.showToast('刪除成功', 'success');
+                        await this.executeQuery();
+                    } catch (e) {
+                        this.showToast('刪除失敗: ' + e, 'error');
+                    }
                 }
             }));
         });
