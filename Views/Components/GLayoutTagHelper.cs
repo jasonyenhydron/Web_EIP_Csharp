@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GLayoutTagHelper â€” å°æ‡‰ jeasyui BorderLayout (North/West/Center/East/South)
+ * GLayoutTagHelper ??å°æ? jeasyui BorderLayout (North/West/Center/East/South)
  *
- * ç”¨æ³•ï¼š
+ * ?¨æ?ï¼?
  *   <g-layout style="height:100vh">
  *       <g-north  height="50px">...Header...</g-north>
  *       <g-west   width="220px" collapsible="true">...Sidebar...</g-west>
@@ -106,7 +106,7 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     // =============================================
-    // ---- çˆ¶å…ƒä»¶ <g-layout> ----
+    // ---- ?¶å?ä»?<g-layout> ----
     // =============================================
     [HtmlTargetElement("g-layout")]
     [RestrictChildren("g-north", "g-south", "g-west", "g-east", "g-center")]
@@ -170,7 +170,7 @@ namespace Web_EIP_Csharp.Views.Components
             // ---- Center ----
             var centerHtml = $@"<div class=""g-layout-center flex-1 overflow-auto min-w-0"">{lc.CenterHtml}</div>";
 
-            // ---- ä¸­é–“æ©«æ’ï¼ˆwest + center + eastï¼‰----
+            // ---- ä¸­é?æ©«æ?ï¼ˆwest + center + eastï¼?---
             var middleRow  = $@"<div class=""flex flex-1 min-h-0 overflow-hidden"">{westHtml}{centerHtml}{eastHtml}</div>";
 
             output.TagName = "div";
@@ -179,3 +179,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+

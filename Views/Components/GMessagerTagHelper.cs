@@ -1,16 +1,15 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-messager — 對應 jEasyUI Messager（訊息彈窗）
-    /// 提供全域 JS 方法：
-    ///   gMsg.alert('標題','內容','icon') — icon: success|error|warning|info
+    /// g-messager：提供全站訊息視窗與 Toast。
+    /// 用法：
+    ///   gMsg.alert('標題','內容','icon')，icon: success|error|warning|info
     ///   gMsg.confirm('標題','內容', onOk, onCancel)
     ///   gMsg.prompt('標題','預設值', onOk)
     ///   gMsg.toast('訊息', 'type', 3000)
-    ///
-    /// 在 Layout/_Layout.cshtml 放置一次即可：
+    /// 於 Layout 直接放：
     ///   <g-messager/>
     /// </summary>
     [HtmlTargetElement("g-messager", TagStructure = TagStructure.WithoutEndTag)]
@@ -21,7 +20,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("id", "gMessagerRoot");
             output.Content.SetHtmlContent($@"
-                <!-- g-messager: Alert/Confirm/Prompt/Toast 容器 -->
+                <!-- g-messager: Alert/Confirm/Prompt/Toast -->
                 <div id=""gMsgOverlay"" class=""fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[900] hidden items-center justify-center"">
                     <div id=""gMsgBox"" class=""bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 transform transition-all"">
                         <div class=""flex items-start gap-3 mb-4"">
@@ -35,7 +34,7 @@ namespace Web_EIP_Csharp.Views.Components
                         <div id=""gMsgBtns"" class=""flex justify-end gap-2""></div>
                     </div>
                 </div>
-                <!-- Toast 容器 -->
+                <!-- Toast -->
                 <div id=""gToastContainer"" class=""fixed bottom-4 right-4 z-[950] flex flex-col gap-2 pointer-events-none""></div>
 
                 <script>
@@ -113,8 +112,7 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     /// <summary>
-    /// g-datalist — 對應 jEasyUI DataList（純清單顯示，不分頁）
-    /// <g-datalist id="myList" api-url="/api/items" template="name:名稱:font-bold,code:代號:text-slate-400"/>
+    /// g-datalist ??撠? jEasyUI DataList嚗?皜憿舐內嚗???嚗?    /// <g-datalist id="myList" api-url="/api/items" template="name:?迂:font-bold,code:隞??:text-slate-400"/>
     /// template: "field:label:class,..."
     /// </summary>
     [HtmlTargetElement("g-datalist")]
@@ -131,7 +129,7 @@ namespace Web_EIP_Csharp.Views.Components
             var compId = string.IsNullOrEmpty(Id) ? $"gdl_{Guid.NewGuid():N}" : Id;
             var fn     = $"gDataList_{compId}";
 
-            // 解析樣板欄位
+            // 閫??璅?甈?
             var fields = Template.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(f => { var p = f.Trim().Split(':'); return (Field: p[0].Trim(), Label: p.Length > 1 ? p[1].Trim() : p[0].Trim(), Cls: p.Length > 2 ? p[2].Trim() : ""); })
                 .ToList();
@@ -162,9 +160,9 @@ namespace Web_EIP_Csharp.Views.Components
                         <circle class=""opacity-25"" cx=""12"" cy=""12"" r=""10"" stroke=""currentColor"" stroke-width=""4""/>
                         <path class=""opacity-75"" fill=""currentColor"" d=""M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z""/>
                     </svg>
-                    <span class=""text-sm"">載入中...</span>
+                    <span class=""text-sm"">頛銝?..</span>
                 </div>
-                <div x-show=""!loading && rows.length===0"" class=""py-8 text-center text-sm text-slate-400"">無資料</div>
+                <div x-show=""!loading && rows.length===0"" class=""py-8 text-center text-sm text-slate-400"">?∟???/div>
                 <ul x-show=""!loading && rows.length>0"" class=""divide-y divide-slate-100"">
                     <template x-for=""(row, idx) in rows"" :key=""idx"">
                         <li class=""px-4 py-3 hover:bg-slate-50 transition-colors {rowClick}"" {(!string.IsNullOrEmpty(OnClick) ? $@"@click=""({OnClick})(row)""" : "")}>
@@ -194,10 +192,9 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     /// <summary>
-    /// g-property-grid — 對應 jEasyUI PropertyGrid（屬性格顯示）
-    /// <g-property-grid title="員工資訊">
-    ///   <g-property name="員工編號" value="E001"/>
-    ///   <g-property name="姓名" value="Jason Yen"/>
+    /// g-property-grid ??撠? jEasyUI PropertyGrid嚗惇?扳憿舐內嚗?    /// <g-property-grid title="?∪極鞈?">
+    ///   <g-property name="?∪極蝺刻?" value="E001"/>
+    ///   <g-property name="憪?" value="Jason Yen"/>
     /// </g-property-grid>
     /// </summary>
     public class GPropertyGridContext
@@ -266,9 +263,8 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     /// <summary>
-    /// g-treegrid — 對應 jEasyUI TreeGrid（樹狀表格）
-    /// <g-treegrid id="tg" api-url="/api/org/tree" id-field="id" pid-field="pid"
-    ///             columns="name:名稱:200,code:代號:100,active:啟用:80:center"/>
+    /// g-treegrid ??撠? jEasyUI TreeGrid嚗邦?銵冽嚗?    /// <g-treegrid id="tg" api-url="/api/org/tree" id-field="id" pid-field="pid"
+    ///             columns="name:?迂:200,code:隞??:100,active:?:80:center"/>
     /// </summary>
     [HtmlTargetElement("g-treegrid")]
     public class GTreeGridTagHelper : TagHelper
@@ -278,7 +274,7 @@ namespace Web_EIP_Csharp.Views.Components
         public string Columns  { get; set; } = "";  // "field:title:width:align,..."
         public string IdField  { get; set; } = "id";
         public string PidField { get; set; } = "pid";
-        public int    PageSize { get; set; } = 0;   // 0=不分頁
+        public int    PageSize { get; set; } = 0;
         public bool   Striped  { get; set; } = true;
         public string OnRowClick { get; set; } = "";
         public string Class    { get; set; } = "";
@@ -356,7 +352,7 @@ namespace Web_EIP_Csharp.Views.Components
                             </template>
                         </tbody>
                     </table>
-                    <div x-show=""!loading && visibleRows.length===0"" class=""text-center py-8 text-sm text-slate-400"">無資料</div>
+                    <div x-show=""!loading && visibleRows.length===0"" class=""text-center py-8 text-sm text-slate-400"">?∟???/div>
                 </div>
                 <script>
                 function {fn}() {{
@@ -409,3 +405,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+

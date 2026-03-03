@@ -1,8 +1,7 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Encodings.Web;
-using Microsoft.AspNetCore.Http;
+using System.Data;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using Oracle.ManagedDataAccess.Client;
 using Web_EIP_Csharp.Helpers;
 
 namespace Web_EIP_Csharp.Views.Components
@@ -10,28 +9,24 @@ namespace Web_EIP_Csharp.Views.Components
     [HtmlTargetElement("g-combobox")]
     public class GComboBoxDataTagHelper : TagHelper
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public GComboBoxDataTagHelper(IHttpContextAccessor httpContextAccessor)
-        {
-            _httpContextAccessor = httpContextAccessor;
-        }
-
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string Label { get; set; } = "";
         public string Value { get; set; } = "";
-        public string Placeholder { get; set; } = "全部";
+        public string Placeholder { get; set; } = "?券";
         public string Items { get; set; } = ""; // value:text,value:text
         public string Sql { get; set; } = "";   // SELECT value,text FROM ...
         public string ValueField { get; set; } = "";
         public string TextField { get; set; } = "";
         [HtmlAttributeName("x-model")]
         public string AlpineModel { get; set; } = "";
+        [HtmlAttributeName("x-bind-disabled")]
+        public string XBindDisabled { get; set; } = "";
         public bool Required { get; set; } = false;
         public bool Disabled { get; set; } = false;
         public int ColSpan { get; set; } = 1;
         public string Class { get; set; } = "";
+        public string ExtraClass { get; set; } = "";
         public string InputClass { get; set; } = "block w-20 px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500";
         public string Onchange { get; set; } = "";
 
@@ -43,6 +38,7 @@ namespace Web_EIP_Csharp.Views.Components
             var disAttr = Disabled ? " disabled" : "";
             var reqAttr = Required ? " required" : "";
             var xmodel = string.IsNullOrWhiteSpace(AlpineModel) ? "" : $@" x-model=""{HtmlEncoder.Default.Encode(AlpineModel)}""";
+            var bindDisabled = string.IsNullOrWhiteSpace(XBindDisabled) ? "" : $@" :disabled=""{HtmlEncoder.Default.Encode(XBindDisabled)}""";
             var onchange = string.IsNullOrWhiteSpace(Onchange) ? "" : $@" onchange=""{HtmlEncoder.Default.Encode(Onchange)}""";
 
             var optionHtml = new StringBuilder();
@@ -55,10 +51,12 @@ namespace Web_EIP_Csharp.Views.Components
                 : $@"<label for=""{inputId}"" class=""text-xs font-bold text-slate-600"">{HtmlEncoder.Default.Encode(Label)}{requiredMark}</label>";
 
             output.TagName = "div";
-            output.Attributes.SetAttribute("class", $"flex flex-col gap-1 {colClass} {Class}".Trim());
+            var defaultClass = $"flex flex-col gap-1 {colClass}";
+            var finalWrapperClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
+            output.Attributes.SetAttribute("class", finalWrapperClass);
             output.Content.SetHtmlContent($@"
                 {labelHtml}
-                <select id=""{inputId}"" name=""{Name}"" class=""{InputClass}""{disAttr}{reqAttr}{xmodel}{onchange}>
+                <select id=""{inputId}"" name=""{Name}"" class=""{InputClass}""{disAttr}{reqAttr}{xmodel}{bindDisabled}{onchange}>
                     {optionHtml}
                 </select>
             ");
@@ -84,23 +82,8 @@ namespace Web_EIP_Csharp.Views.Components
 
             try
             {
-                var ctx = _httpContextAccessor.HttpContext;
-                var username = ctx?.Session.GetString("username");
-                var password = ctx?.Session.GetString("password");
-                var tns = ctx?.Session.GetString("tns");
-                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(tns))
-                {
-                    return;
-                }
-
-                using var connection = OracleDbHelper.GetConnection(username, password, tns);
-                connection.Open();
-
-                using var command = connection.CreateCommand();
-                command.CommandText = Sql;
-                command.BindByName = true;
-
-                using var reader = command.ExecuteReader();
+                var dt = DbHelper.GetDataTable(CommandType.Text, Sql);
+                using var reader = dt.CreateDataReader();
                 while (reader.Read())
                 {
                     var rawValue = ResolveColumn(reader, ValueField, 0);
@@ -117,7 +100,7 @@ namespace Web_EIP_Csharp.Views.Components
             }
         }
 
-        private static object ResolveColumn(OracleDataReader reader, string fieldName, int fallbackIndex)
+        private static object ResolveColumn(IDataReader reader, string fieldName, int fallbackIndex)
         {
             if (!string.IsNullOrWhiteSpace(fieldName))
             {
@@ -130,4 +113,5 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 

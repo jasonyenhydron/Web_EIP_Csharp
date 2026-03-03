@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GFormGroupTagHelper — 對應 jeasyui Form field
- * <g-form-group label="員工姓名" required="true" col-span="2">
+ * GFormGroupTagHelper ??對�? jeasyui Form field
+ * <g-form-group label="?�工姓�?" required="true" col-span="2">
  *     <input type="text" class="g-input">
  * </g-form-group>
  */
@@ -16,6 +16,8 @@ namespace Web_EIP_Csharp.Views.Components
         public string Help    { get; set; } = "";
         public string Error   { get; set; } = "";
         public int    ColSpan { get; set; } = 1;
+        public string Class   { get; set; } = "";
+        public string ExtraClass { get; set; } = "";
 
         public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
         {
@@ -33,7 +35,9 @@ namespace Web_EIP_Csharp.Views.Components
             };
 
             output.TagName = "div";
-            output.Attributes.SetAttribute("class", $"flex flex-col gap-1 {colClass}");
+            var defaultClass = $"flex flex-col gap-1 {colClass}";
+            var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
+            output.Attributes.SetAttribute("class", finalClass);
             output.Content.SetHtmlContent($"""
                 <label class="block text-xs font-semibold text-slate-600">{Label}{required}</label>
                 {content}
@@ -42,3 +46,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+

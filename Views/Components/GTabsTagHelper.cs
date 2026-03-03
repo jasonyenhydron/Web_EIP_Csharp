@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GTabsTagHelper / GTabTagHelper — 對應 jeasyui Tabs
- * 用法：
- *   <g-tabs active-tab="0">
+ * GTabsTagHelper / GTabTagHelper ??對�? jeasyui Tabs
+ * ?��?�? *   <g-tabs active-tab="0">
  *       <g-tab title="清單" icon="list">...content...</g-tab>
  *       <g-tab title="維護" icon="edit">...content...</g-tab>
  *   </g-tabs>
@@ -15,7 +14,7 @@ namespace Web_EIP_Csharp.Views.Components
         public List<(string Title, string Icon, string Content)> Tabs { get; } = new();
     }
 
-    // ---- 子元件 <g-tab> ----
+    // ---- 子�?�?<g-tab> ----
     [HtmlTargetElement("g-tab", ParentTag = "g-tabs")]
     public class GTabTagHelper : TagHelper
     {
@@ -31,7 +30,7 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 
-    // ---- 父元件 <g-tabs> ----
+    // ---- ?��?�?<g-tabs> ----
     [HtmlTargetElement("g-tabs")]
     [RestrictChildren("g-tab")]
     public class GTabsTagHelper : TagHelper
@@ -97,3 +96,4 @@ namespace Web_EIP_Csharp.Views.Components
         };
     }
 }
+

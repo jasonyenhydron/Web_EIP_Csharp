@@ -1,30 +1,27 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-status-bar：程式底部狀態列元件
-    /// 深色背景、訊息輸入欄、右側記錄計數，仿 Oracle Forms 操作列。
+    /// g-status-bar嚗?撘??函????辣
+    /// 瘛梯????航撓?交???渲????賂?隞?Oracle Forms ????    ///
+    /// 雿輻?孵?嚗?    ///   <g-status-bar msg-id="statusBarMsg" record-info="1/1" default-msg="Ready." />
     ///
-    /// 使用方式：
-    ///   <g-status-bar msg-id="statusBarMsg" record-info="1/1" default-msg="Ready." />
-    ///
-    /// JS 更新訊息：
-    ///   document.getElementById('statusBarMsg').value = '資料已儲存';
+    /// JS ?湔閮嚗?    ///   document.getElementById('statusBarMsg').value = '鞈?撌脣摮?;
     /// </summary>
     [HtmlTargetElement("g-status-bar")]
     public class GStatusBarTagHelper : TagHelper
     {
-        /// <summary>訊息 input 的 HTML id（供 JS 更新）</summary>
+        /// <summary>閮 input ??HTML id嚗? JS ?湔嚗?/summary>
         public string MsgId { get; set; } = "statusBarMsg";
 
-        /// <summary>右側記錄計數文字，例如 "1/1" 或 "0 筆"</summary>
+        /// <summary>?喳閮?閮??嚗?憒?"1/1" ??"0 蝑?</summary>
         public string RecordInfo { get; set; } = string.Empty;
 
-        /// <summary>訊息欄預設文字</summary>
+        /// <summary>閮甈?閮剜?摮?/summary>
         public string DefaultMsg { get; set; } = "Ready.";
 
-        /// <summary>Alpine.js 動態記錄計數表達式（啟用時取代 record-info 靜態值）</summary>
+        /// <summary>Alpine.js ??閮?閮銵券?撘????隞?record-info ???潘?</summary>
         public string AlpineRecordInfo { get; set; } = string.Empty;
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
@@ -34,25 +31,24 @@ namespace Web_EIP_Csharp.Views.Components
                 "bg-slate-800 rounded-lg p-3 text-white shadow-inner " +
                 "flex items-center justify-between font-mono text-sm");
 
-            // ── 右側記錄資訊 ──
+            // ?? ?喳閮?鞈? ??
             string infoHtml;
             if (!string.IsNullOrEmpty(AlpineRecordInfo))
             {
-                // Alpine.js 動態表達式
                 infoHtml = $"<div class=\"text-xs text-slate-500 ml-4 shrink-0\" x-text=\"{HtmlAttr(AlpineRecordInfo)}\"></div>";
             }
             else if (!string.IsNullOrEmpty(RecordInfo))
             {
-                infoHtml = $"<div class=\"text-xs text-slate-500 ml-4 shrink-0\">記錄: {HtmlEncode(RecordInfo)}</div>";
+                infoHtml = $"<div class=\"text-xs text-slate-500 ml-4 shrink-0\">閮?: {HtmlEncode(RecordInfo)}</div>";
             }
             else
             {
-                infoHtml = "<div class=\"text-xs text-slate-400 ml-4 shrink-0\">記錄: -</div>";
+                infoHtml = "<div class=\"text-xs text-slate-400 ml-4 shrink-0\">閮?: -</div>";
             }
 
             string html = $@"
 <div class=""flex items-center gap-3 w-full"">
-    <span class=""text-emerald-400 font-bold shrink-0"">訊息 &gt;</span>
+    <span class=""text-emerald-400 font-bold shrink-0"">閮 &gt;</span>
     <input type=""text""
            id=""{HtmlEncode(MsgId)}""
            class=""bg-slate-900 border border-slate-700 rounded px-3 py-1 flex-1
@@ -68,3 +64,4 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string? s)   => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
+

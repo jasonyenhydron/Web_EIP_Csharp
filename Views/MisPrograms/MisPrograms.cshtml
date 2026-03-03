@@ -1,101 +1,82 @@
 ﻿@{
-    ViewData["Title"] = "MIS 蝟餌絞 - 蝔??";
-    ViewBag.HeaderTitle = "MIS 蝟餌絞 - 蝔??";
+    ViewData["Title"] = "MIS 系統 - 程式項目";
+    ViewBag.HeaderTitle = "MIS 系統 - 程式項目";
     ViewBag.HeaderIcon = @"<svg class=""w-6 h-6"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4""></path></svg>";
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/mis_programs.css" asp-append-version="true">
+    <g-style profile="mis-programs"></g-style>
 }
 
 <div class="flex h-screen bg-slate-50 overflow-hidden">
-
-    <!-- Sidebar -->
     <partial name="Components/_Sidebar" />
 
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-
-        <!-- Header -->
         <partial name="Components/_Header" />
 
-        <!-- Main Content -->
         <main class="flex-1 overflow-auto p-6">
-
-            <!-- ===== ?璅?嚗-page-title嚗?==== -->
-            <g-page-title title="MIS 蝔???”"
-                          subtitle="?亦??恣?頂蝯梁?撘???
+            <g-page-title title="MIS 程式項目列表"
+                          subtitle="查看和管理系統程式項目"
                           icon="database">
             </g-page-title>
 
-            <!-- ===== ?航炊閮嚗-alert嚗?==== -->
             @if (ViewBag.Error != null)
             {
                 <g-alert type="error" message="@ViewBag.Error" dismissible="true"></g-alert>
             }
 
-            <!-- ===== 蝭拚璇辣嚗-panel嚗?==== -->
-            <g-panel title="蝭拚璇辣" icon="filter" class="mb-6">
+            <g-panel title="篩選條件" icon="filter" extra-class="mb-6" allow-overflow="true">
                 <form method="get" action="/mis/programs" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-                    <!-- 蝔?隞??嚗 Suggestion Dropdown嚗?->
                     <div class="flex flex-col gap-1">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">蝔?隞??</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">程式代號</label>
                         <div class="relative">
                             <input type="text" name="program_no" id="inputProgramNo"
                                    value="@ViewBag.ProgramNoFilter"
                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   placeholder="頛詨蝔?隞??..." autocomplete="off">
-                            <!-- JS 瘜典 Suggestion dropdown -->
-                            <div id="suggestionList"
-                                 class="absolute z-[60] w-full mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 hidden overflow-hidden transition-all duration-200 opacity-0 transform -translate-y-2">
-                            </div>
+                                   placeholder="輸入程式代號..." autocomplete="off">
+                            <div id="suggestionList" class="hidden"></div>
                         </div>
                     </div>
 
-                    <!-- 負責人員（LOV） -->
                     <g-lov-input label="負責人員"
-                                 code-id="employee_id"
-                                 code-value="@ViewBag.EmployeeIdFilter"
+                                 hidden-id="employee_id"
+                                 hidden-value="@ViewBag.EmployeeIdFilter"
+                                 code-id="employee_display"
                                  code-placeholder="員工編號..."
                                  lov-title="尋找員工 (Employee)"
                                  lov-api="/api/lov/hrm/employees"
                                  lov-columns="編號,名稱,ID"
                                  lov-fields="employee_no,employee_name,employee_id"
+                                 lov-key-hidden="employee_id"
                                  lov-key-code="employee_id"
+                                 lov-display-format="{employee_id} {employee_name}"
+                                 readonly="false"
                                  lov-sort-enabled="true"
                                  lov-buffer-view="true"
                                  lov-page-size="50">
                     </g-lov-input>
 
-                    <!-- 憿舐內???-->
-                    <div class="flex flex-col gap-1">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">憿舐內???/label>
-                        <select name="display_code"
-                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">?券</option>
-                            <option value="Y" @(ViewBag.DisplayCodeFilter == "Y" ? "selected" : "")>憿舐內</option>
-                            <option value="N" @(ViewBag.DisplayCodeFilter == "N" ? "selected" : "")>?梯?</option>
-                        </select>
-                    </div>
+                    <g-combobox label="顯示狀態"
+                                name="display_code"
+                                value="@ViewBag.DisplayCodeFilter"
+                                items="Y:顯示,N:隱藏"
+                                placeholder="全部"
+                                input-class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </g-combobox>
 
-                    <!-- ???? -->
                     <div class="flex items-end gap-2">
-                        <g-button text="?亥岷" icon="search"  type="primary" submit="true"           class="flex-1"></g-button>
-                        <g-button text="?瑁?" icon="play"    type="success" onclick="runProgram()"  class="flex-1"></g-button>
-                        <g-button text="?蔭" icon="refresh" type="ghost"   href="/mis/programs"    class="flex-1"></g-button>
+                        <g-button text="查詢" icon="search" type="primary" submit="true" extra-class="flex-1"></g-button>
+                        <g-button text="執行" icon="play" type="success" onclick="runProgram()" extra-class="flex-1"></g-button>
+                        <g-button text="重置" icon="refresh" type="ghost" href="/mis/programs" extra-class="flex-1"></g-button>
                     </div>
                 </form>
             </g-panel>
 
-            <!-- ===== 蝔??璅寧??”嚗-panel嚗?==== -->
             <g-panel icon="list">
-                <!-- 璅??局雿輻?芾? slot ?批捆 -->
                 <div slot="title" class="flex justify-between items-center w-full">
                     <span class="font-bold text-slate-700">
-                        蝔??
-                        <span class="text-sm font-normal text-slate-500">
-                            嚗 @(ViewBag.Programs?.Count ?? 0) 蝑?
-                        </span>
+                        程式項目
+                        <span class="text-sm font-normal text-slate-500">（共 @(ViewBag.Programs?.Count ?? 0) 筆）</span>
                     </span>
                 </div>
 
@@ -105,17 +86,13 @@
                         @foreach (var category in ViewBag.Categories)
                         {
                             string systemName = category.Key;
-                            var programs = category.Value as List<Dictionary<string, object>>;
+                            var programs = category.Value as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
 
-                            <!-- System Level -->
                             <div class="tree-node">
                                 <div class="tree-item system-level" onclick="toggleNode(this)">
-                                    <svg class="arrow" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                        <path d="M6 4l4 4-4 4V4z" />
-                                    </svg>
+                                    <svg class="arrow" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4V4z" /></svg>
                                     <svg class="folder-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                                     </svg>
                                     <span class="tree-label">@systemName (@programs.Count)</span>
                                 </div>
@@ -123,20 +100,19 @@
                                 <div class="tree-children" style="display: none;">
                                     @foreach (var program in programs)
                                     {
-                                        string pNo          = program.ContainsKey("PROGRAM_NO")                ? program["PROGRAM_NO"]?.ToString()                ?? "" : "";
-                                        string pName        = program.ContainsKey("PROGRAM_NAME")              ? program["PROGRAM_NAME"]?.ToString()              ?? "" : "";
-                                        string pPurpose     = program.ContainsKey("PURPOSE")                   ? program["PURPOSE"]?.ToString()                   ?? "" : "";
-                                        string eId          = program.ContainsKey("EMPLOYEE_ID")               ? program["EMPLOYEE_ID"]?.ToString()               ?? "" : "";
-                                        string pStart       = program.ContainsKey("PLAN_START_DEVELOP_DATE")   ? program["PLAN_START_DEVELOP_DATE"]?.ToString()   ?? "" : "";
-                                        string pFinish      = program.ContainsKey("PLAN_FINISH_DEVELOP_DATE")  ? program["PLAN_FINISH_DEVELOP_DATE"]?.ToString()  ?? "" : "";
-                                        string rStart       = program.ContainsKey("REAL_START_DEVELOP_DATE")   ? program["REAL_START_DEVELOP_DATE"]?.ToString()   ?? "" : "";
-                                        string rFinish      = program.ContainsKey("REAL_FINISH_DEVELOP_DATE")  ? program["REAL_FINISH_DEVELOP_DATE"]?.ToString()  ?? "" : "";
-                                        string pHours       = program.ContainsKey("PLAN_WORK_HOURS")           ? program["PLAN_WORK_HOURS"]?.ToString()           ?? "" : "";
-                                        string rHours       = program.ContainsKey("REAL_WORK_HOURS")           ? program["REAL_WORK_HOURS"]?.ToString()           ?? "" : "";
-                                        string pType        = program.ContainsKey("PROGRAM_TYPE")              ? program["PROGRAM_TYPE"]?.ToString()              ?? "" : "";
-                                        string displayCode  = program.ContainsKey("DISPLAY_CODE")              ? program["DISPLAY_CODE"]?.ToString()              ?? "" : "";
+                                        string pNo = program.ContainsKey("PROGRAM_NO") ? program["PROGRAM_NO"]?.ToString() ?? "" : "";
+                                        string pName = program.ContainsKey("PROGRAM_NAME") ? program["PROGRAM_NAME"]?.ToString() ?? "" : "";
+                                        string pPurpose = program.ContainsKey("PURPOSE") ? program["PURPOSE"]?.ToString() ?? "" : "";
+                                        string eId = program.ContainsKey("EMPLOYEE_ID") ? program["EMPLOYEE_ID"]?.ToString() ?? "" : "";
+                                        string pStart = program.ContainsKey("PLAN_START_DEVELOP_DATE") ? program["PLAN_START_DEVELOP_DATE"]?.ToString() ?? "" : "";
+                                        string pFinish = program.ContainsKey("PLAN_FINISH_DEVELOP_DATE") ? program["PLAN_FINISH_DEVELOP_DATE"]?.ToString() ?? "" : "";
+                                        string rStart = program.ContainsKey("REAL_START_DEVELOP_DATE") ? program["REAL_START_DEVELOP_DATE"]?.ToString() ?? "" : "";
+                                        string rFinish = program.ContainsKey("REAL_FINISH_DEVELOP_DATE") ? program["REAL_FINISH_DEVELOP_DATE"]?.ToString() ?? "" : "";
+                                        string pHours = program.ContainsKey("PLAN_WORK_HOURS") ? program["PLAN_WORK_HOURS"]?.ToString() ?? "" : "";
+                                        string rHours = program.ContainsKey("REAL_WORK_HOURS") ? program["REAL_WORK_HOURS"]?.ToString() ?? "" : "";
+                                        string pType = program.ContainsKey("PROGRAM_TYPE") ? program["PROGRAM_TYPE"]?.ToString() ?? "" : "";
+                                        string displayCode = program.ContainsKey("DISPLAY_CODE") ? program["DISPLAY_CODE"]?.ToString() ?? "" : "";
 
-                                        <!-- Program Level -->
                                         <div class="tree-item program-level"
                                              onclick="openProgramModal(this)"
                                              data-program-no="@pNo"
@@ -151,19 +127,18 @@
                                              data-real-hours="@rHours"
                                              data-program-type="@pType">
                                             <svg class="file-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                             <span class="program-no font-mono">@pNo</span>
                                             <span class="program-name font-medium text-slate-700 ml-4">@(string.IsNullOrEmpty(pName) ? "-" : pName)</span>
                                             <span class="program-purpose text-sm text-slate-500 ml-4 hidden md:inline">@pPurpose</span>
                                             @if (displayCode == "Y")
                                             {
-                                                <span class="status-badge active ml-auto">憿舐內</span>
+                                                <span class="status-badge active ml-auto">顯示</span>
                                             }
                                             else
                                             {
-                                                <span class="status-badge inactive ml-auto">?梯?</span>
+                                                <span class="status-badge inactive ml-auto">隱藏</span>
                                             }
                                         </div>
                                     }
@@ -174,9 +149,8 @@
                 }
                 else
                 {
-                    <!-- ?∟???g-empty-state嚗?->
-                    <g-empty-state title="?∠泵??隞嗥?鞈?"
-                                   subtitle="隢矽?渡祟?豢?隞嗅???亥岷"
+                    <g-empty-state title="目前查無程式資料"
+                                   subtitle="請調整查詢條件後再試一次"
                                    icon="search">
                     </g-empty-state>
                 }
@@ -186,69 +160,46 @@
     </div>
 </div>
 
-<!-- ===== 蝔?閰喟敦鞈? Modal嚗??祆???200+ 銵?靽? JS 鈭?銝?嚗?==== -->
-<div id="programModal"
-     class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 items-center justify-center p-4 transition-all duration-300">
-    <div id="modalContent"
-         class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 transform scale-95 transition-transform duration-300">
-
-        <!-- Modal Header -->
+<div id="programModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 items-center justify-center p-4 transition-all duration-300">
+    <div id="modalContent" class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 transform scale-95 transition-transform duration-300">
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5 flex items-center justify-between shadow-lg">
             <h2 class="text-xl font-bold flex items-center gap-3">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-                </svg>
-                蝔?閰喟敦鞈?
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" /></svg>
+                程式詳細資訊
             </h2>
             <div class="flex items-center gap-1">
-                <button type="button" id="maximizeBtn" onclick="toggleMaximizeModal()"
-                        class="text-blue-100 hover:text-white hover:bg-white/10 w-8 h-8 flex items-center justify-center rounded-lg transition-all relative">
-                    <svg id="maximizeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                    </svg>
-                    <svg id="restoreIcon" class="w-[85%] h-[85%] hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9L4 4m0 0v4m0-4h4m12 12l-5-5m5 5v-4m0 4h-4M9 15l-5 5m0 0v-4m0 4h4m11-11l-5 5m5-5v4m0-4h-4"></path>
-                    </svg>
+                <button type="button" id="maximizeBtn" onclick="toggleMaximizeModal()" class="text-blue-100 hover:text-white hover:bg-white/10 w-8 h-8 flex items-center justify-center rounded-lg transition-all relative">
+                    <svg id="maximizeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                    <svg id="restoreIcon" class="w-[85%] h-[85%] hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9L4 4m0 0v4m0-4h4m12 12l-5-5m5 5v-4m0 4h-4M9 15l-5 5m0 0v-4m0 4h4m11-11l-5 5m5-5v4m0-4h-4"></path></svg>
                 </button>
-                <button type="button" onclick="closeProgramModal()"
-                        class="text-blue-100 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                <button type="button" onclick="closeProgramModal()" class="text-blue-100 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
         </div>
 
-        <!-- Modal Body -->
         <div class="flex-1 overflow-y-auto bg-slate-50 p-8">
-            <!-- 蝔?蝺刻? + ?迂 -->
             <div class="mb-8 flex flex-col md:flex-row md:items-center border-b border-slate-200 pb-6 gap-4">
                 <span id="modal-program-no" class="text-4xl font-black text-blue-600 font-mono tracking-tighter"></span>
                 <span id="modal-program-name" class="text-2xl text-slate-700 font-semibold md:ml-2"></span>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- 撌行?嚗?祈?閮?-->
                 <div class="space-y-6">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            ?箸鞈?
-                        </h4>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">基本資訊</h4>
                         <div class="space-y-5">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">?券牧??/label>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">用途說明</label>
                                 <p id="modal-purpose" class="text-lg text-slate-800 leading-relaxed font-medium"></p>
                             </div>
                             <div class="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-400 mb-1">鞎痊鈭箏</label>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">負責人員</label>
                                     <span id="modal-employee-id" class="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg font-mono text-sm font-bold border border-blue-100 inline-block"></span>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-400 mb-1">蝔?憿?</label>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">程式型態</label>
                                     <p id="modal-program-type" class="text-sm text-slate-700 font-medium"></p>
                                 </div>
                             </div>
@@ -256,50 +207,24 @@
                     </div>
                 </div>
 
-                <!-- ?單?嚗?蝔?撌交? -->
                 <div class="space-y-6">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            ???極??
-                        </h4>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">時程與工時</h4>
                         <div class="grid grid-cols-2 gap-8">
-                            <!-- 閮?? -->
                             <div class="space-y-4">
-                                <h5 class="text-xs font-black text-slate-500 border-b border-slate-100 pb-2">閮??</h5>
+                                <h5 class="text-xs font-black text-slate-500 border-b border-slate-100 pb-2">計畫時程</h5>
                                 <div class="space-y-3">
-                                    <div>
-                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">???交?</label>
-                                        <p id="modal-plan-start" class="text-sm font-mono text-slate-600">-</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">??摰?</label>
-                                        <p id="modal-plan-finish" class="text-sm font-mono text-slate-600">-</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] text-slate-400 uppercase font-bold">?摯撌交?</label>
-                                        <p id="modal-plan-hours" class="text-sm font-mono text-slate-600">-</p>
-                                    </div>
+                                    <div><label class="block text-[10px] text-slate-400 uppercase font-bold">開始日期</label><p id="modal-plan-start" class="text-sm font-mono text-slate-600">-</p></div>
+                                    <div><label class="block text-[10px] text-slate-400 uppercase font-bold">預計完成</label><p id="modal-plan-finish" class="text-sm font-mono text-slate-600">-</p></div>
+                                    <div><label class="block text-[10px] text-slate-400 uppercase font-bold">預估工時</label><p id="modal-plan-hours" class="text-sm font-mono text-slate-600">-</p></div>
                                 </div>
                             </div>
-                            <!-- 撖阡??瑁? -->
                             <div class="space-y-4">
-                                <h5 class="text-xs font-black text-blue-600 border-b border-blue-100 pb-2">撖阡??瑁?</h5>
+                                <h5 class="text-xs font-black text-blue-600 border-b border-blue-100 pb-2">實際執行</h5>
                                 <div class="space-y-3">
-                                    <div>
-                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">撖阡???</label>
-                                        <p id="modal-real-start" class="text-sm font-mono text-blue-700 font-bold">-</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">撖阡?摰?</label>
-                                        <p id="modal-real-finish" class="text-sm font-mono text-blue-700 font-bold">-</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] text-blue-400 uppercase font-bold">蝝航?撌交?</label>
-                                        <p id="modal-real-hours" class="text-sm font-mono text-blue-700 font-bold">-</p>
-                                    </div>
+                                    <div><label class="block text-[10px] text-blue-400 uppercase font-bold">實際開始</label><p id="modal-real-start" class="text-sm font-mono text-blue-700 font-bold">-</p></div>
+                                    <div><label class="block text-[10px] text-blue-400 uppercase font-bold">實際完成</label><p id="modal-real-finish" class="text-sm font-mono text-blue-700 font-bold">-</p></div>
+                                    <div><label class="block text-[10px] text-blue-400 uppercase font-bold">累計工時</label><p id="modal-real-hours" class="text-sm font-mono text-blue-700 font-bold">-</p></div>
                                 </div>
                             </div>
                         </div>
@@ -308,33 +233,25 @@
             </div>
         </div>
 
-        <!-- Modal Footer -->
         <div class="bg-white border-t border-slate-200 px-8 py-6 flex justify-end items-center gap-4">
-            <a href="#" id="btnOpenProgram"
-               class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full font-bold flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                </svg>
-                ?脣蝔?
+            <a href="#" id="btnOpenProgram" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full font-bold flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                進入程式
             </a>
-            <button type="button" onclick="closeProgramModal()"
-                    class="px-8 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-full font-bold flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                ??閰喟敦鞈?
+            <button type="button" onclick="closeProgramModal()" class="px-8 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-full font-bold flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                關閉詳細資訊
             </button>
         </div>
     </div>
 </div>
 
-<!-- ===== 蝔??瑁?閬?嚗-iframe-modal嚗?==== -->
 <g-iframe-modal
     id="executionModal"
     modal-content-id="executionModalContent"
     iframe-id="executionIframe"
     title-id="executionModalTitle"
-    title="蝔??瑁?"
+    title="程式執行"
     gradient="indigo"
     maximize-btn-id="execMaximizeBtn"
     maximize-icon-id="execMaximizeIcon"
@@ -345,6 +262,5 @@
 </g-iframe-modal>
 
 @section Scripts {
-    <script src="~/js/sidebar.js" asp-append-version="true"></script>
-    <script src="~/js/mis_programs.js" asp-append-version="true"></script>
+    <g-js profile="mis-programs"></g-js>
 }

@@ -3,8 +3,11 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Text.RegularExpressions;
+using Web_EIP_Csharp.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+DbHelper.Configure(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -45,7 +48,7 @@ app.UseExceptionHandler(errorApp =>
         var (lineNumber, fileName) = ParseLine(ex?.StackTrace);
 
         var isApi = context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)
-                    || context.Request.Headers.Accept.Any(h => h.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+                    || context.Request.Headers.Accept.Any(h => (h?.Contains("application/json", StringComparison.OrdinalIgnoreCase)).GetValueOrDefault())
                     || string.Equals(context.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
         if (isApi)
@@ -99,3 +102,4 @@ app.MapControllerRoute(
     pattern: "{controller=Account}/{action=Login}/{id?}");
 
 app.Run();
+

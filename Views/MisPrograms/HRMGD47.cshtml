@@ -1,4 +1,4 @@
-@{
+﻿@{
     var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
     ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
@@ -66,9 +66,9 @@
 
             <!-- 查詢按鈕列 -->
             <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100">
-                <g-button text="查詢部門"  icon="search"  type="primary"  ></g-button>
+                <g-button text="查詢部門"  icon="search"  type="primary"></g-button>
                 <g-button text="進階查詢"  icon="filter"  type="secondary"></g-button>
-                <g-button text="清除條件"  icon="refresh" type="ghost"    ></g-button>
+                <g-button text="清除條件"  icon="refresh" type="ghost"></g-button>
             </div>
         </g-panel>
 
@@ -118,9 +118,9 @@
                             <label class="text-xs font-semibold text-slate-600">時數 / 日數</label>
                             <div class="flex">
                                 <input type="number" id="leaveHours" placeholder="時數"
-                                       class="g-input w-1/2 rounded-r-none text-right bg-yellow-50">
+                                       class="block w-1/2 px-3 py-2 border border-slate-300 rounded-l-lg rounded-r-none text-sm text-right bg-yellow-50 focus:ring-blue-500 focus:border-blue-500">
                                 <input type="number" id="leaveDays"  placeholder="日數" readonly
-                                       class="g-input w-1/2 rounded-l-none border-l-0 bg-slate-100 text-slate-500 text-right">
+                                       class="block w-1/2 px-3 py-2 border border-slate-300 rounded-r-lg rounded-l-none border-l-0 text-sm bg-slate-100 text-slate-500 text-right">
                             </div>
                         </div>
 
@@ -142,12 +142,12 @@
                         <!-- 出差區塊 -->
                         <div class="md:col-span-6 bg-slate-50 rounded-xl p-4 border border-slate-200/70 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <g-textbox label="公出地點" name="destinationPlace" type="text" col-span="1"></g-textbox>
-                            <g-textbox label="接洽對象" name="talkingAbout"      type="text" col-span="1"></g-textbox>
+                            <g-textbox label="接洽對象" name="talkingAbout" type="text" col-span="1"></g-textbox>
                             <div class="flex flex-col gap-1">
                                 <label class="text-xs font-semibold text-slate-600">交通工具</label>
                                 <div class="flex">
-                                    <input type="text" class="g-input w-1/3 rounded-r-none bg-slate-200/50">
-                                    <input type="text" readonly class="g-input flex-1 rounded-l-none border-l-0 bg-slate-200/50">
+                                    <input type="text" class="block w-1/3 px-3 py-2 border border-slate-300 rounded-l-lg rounded-r-none text-sm bg-slate-200/50 focus:ring-blue-500 focus:border-blue-500">
+                                    <input type="text" readonly class="block flex-1 px-3 py-2 border border-slate-300 rounded-r-lg rounded-l-none border-l-0 text-sm bg-slate-200/50 text-slate-500">
                                 </div>
                             </div>
                             <div class="md:col-span-3 flex flex-wrap items-center gap-6 pt-3 border-t border-slate-200">
@@ -178,8 +178,8 @@
                     <!-- 操作按鈕 -->
                     <div class="mt-6 flex flex-wrap justify-center gap-3 pt-5 border-t border-slate-100">
                         <g-button id="btnSubmit" text="送出申請" icon="check" type="primary" size="lg"></g-button>
-                        <g-button                 text="刪除簽核" icon="trash" type="danger"  size="lg"></g-button>
-                        <g-button                 text="不准後重申請"          type="ghost"   size="lg" disabled="true"></g-button>
+                        <g-button text="刪除簽核" icon="trash" type="danger" size="lg"></g-button>
+                        <g-button text="不准後重申請" type="ghost" size="lg" disabled="true"></g-button>
                     </div>
                 </div>
             </g-tab>
@@ -187,7 +187,7 @@
             <!-- Tab 2：附件檔案 -->
             <g-tab title="附件檔案" icon="upload">
                 <g-panel title="附件上傳" icon="upload">
-                    <p class="text-xs text-red-500 mb-3 font-medium">使用說明：瀏覽 → 存檔 → 上傳檔案</p>
+                    <p class="text-xs text-red-500 mb-3 font-medium">使用說明：瀏覽 -> 存檔 -> 上傳檔案</p>
                     <div class="overflow-x-auto rounded-lg border border-slate-200">
                         <table class="min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50">
@@ -207,11 +207,11 @@
                                             <input type="file" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
                                         </td>
                                         <td class="px-3 py-2">
-                                            <input type="text" class="g-input w-full text-xs" placeholder="說明...">
+                                            <input type="text" class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-blue-500 focus:border-blue-500" placeholder="說明...">
                                         </td>
                                         <td class="px-3 py-2 text-center space-x-1">
                                             <g-button text="上傳" icon="upload" type="success" size="sm"></g-button>
-                                            <g-button text="閱讀" icon="eye"    type="info"    size="sm" disabled="true"></g-button>
+                                            <g-button text="閱讀" icon="eye" type="info" size="sm" disabled="true"></g-button>
                                         </td>
                                     </tr>
                                 }
@@ -292,25 +292,8 @@
     </div>
 </div>
 
-<style>
-    .g-input {
-        display: block;
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        outline: none;
-        transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .g-input:focus {
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
-    }
-</style>
-
 @section Scripts {
-    <script src="~/js/g-components.js" asp-append-version="true"></script>
+    <g-js profile="popup"></g-js>
     <script>
         // ---- LOV 開啟函式 ----
         function openLeaveTypeLov() {
@@ -339,14 +322,14 @@
 
         // ---- 送出申請 ----
         document.addEventListener('DOMContentLoaded', function () {
-            const btnSubmit    = document.getElementById('btnSubmit');
+            const btnSubmit = document.getElementById('btnSubmit');
             const statusBarMsg = document.getElementById('statusBarMsg');
 
             btnSubmit.addEventListener('click', async function () {
-                const employeeId        = document.getElementById('employeeId').value;
-                const leaveId           = document.getElementById('leaveId').value;
-                const startTime         = document.querySelector('[name=startTime]').value;
-                const endTime           = document.querySelector('[name=endTime]').value;
+                const employeeId = document.getElementById('employeeId').value;
+                const leaveId = document.getElementById('leaveId').value;
+                const startTime = document.querySelector('[name=startTime]').value;
+                const endTime = document.querySelector('[name=endTime]').value;
                 const askForLeaveReason = document.querySelector('[name=askForLeaveReason]').value;
 
                 if (!employeeId || !leaveId || !startTime || !endTime || !askForLeaveReason) {
@@ -360,22 +343,22 @@
                 }
 
                 const payload = {
-                    employeeId        : parseInt(employeeId, 10),
-                    leaveId           : parseInt(leaveId, 10),
+                    employeeId: parseInt(employeeId, 10),
+                    leaveId: parseInt(leaveId, 10),
                     startTime, endTime, askForLeaveReason,
-                    leaveHours        : document.getElementById('leaveHours').value ? parseFloat(document.getElementById('leaveHours').value) : null,
-                    leaveDays         : document.getElementById('leaveDays').value  ? parseFloat(document.getElementById('leaveDays').value)  : null,
-                    agentEmployeeId   : document.getElementById('agentEmployeeId').value ? parseInt(document.getElementById('agentEmployeeId').value, 10) : null,
-                    destinationPlace  : document.querySelector('[name=destinationPlace]').value || null,
-                    talkingAbout      : document.querySelector('[name=talkingAbout]').value || null,
-                    returnYn          : document.querySelector('input[name="return_workplace"]:checked')?.value || 'N',
-                    overseasYn        : document.getElementById('overseasYn').checked ? 'Y' : 'N'
+                    leaveHours: document.getElementById('leaveHours').value ? parseFloat(document.getElementById('leaveHours').value) : null,
+                    leaveDays: document.getElementById('leaveDays').value ? parseFloat(document.getElementById('leaveDays').value) : null,
+                    agentEmployeeId: document.getElementById('agentEmployeeId').value ? parseInt(document.getElementById('agentEmployeeId').value, 10) : null,
+                    destinationPlace: document.querySelector('[name=destinationPlace]').value || null,
+                    talkingAbout: document.querySelector('[name=talkingAbout]').value || null,
+                    returnYn: document.querySelector('input[name="return_workplace"]:checked')?.value || 'N',
+                    overseasYn: document.getElementById('overseasYn').checked ? 'Y' : 'N'
                 };
 
                 try {
                     statusBarMsg.value = '資料庫寫入中...';
                     btnSubmit.disabled = true;
-                    const res  = await fetch('/api/mis/programs/HRMGD47/submit', {
+                    const res = await fetch('/Hrm/submit', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });

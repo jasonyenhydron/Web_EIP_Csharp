@@ -13,6 +13,7 @@ namespace Web_EIP_Csharp.Views.Components
         public int HorizontalColumnsCount { get; set; } = 2;
         public bool AlwaysReadOnly { get; set; } = true;
         public string Class { get; set; } = "";
+        public string ExtraClass { get; set; } = "";
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
@@ -39,7 +40,9 @@ namespace Web_EIP_Csharp.Views.Components
 
             output.TagName = "div";
             output.Attributes.SetAttribute("id", formId);
-            output.Attributes.SetAttribute("class", $"bg-white rounded-xl border border-slate-200 shadow-sm {Class}".Trim());
+            var defaultClass = "bg-white rounded-xl border border-slate-200 shadow-sm";
+            var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
+            output.Attributes.SetAttribute("class", finalClass);
             output.Content.SetHtmlContent($@"
                 {titleHtml}
                 <div class=""p-4 grid gap-4"" style=""grid-template-columns: repeat({gridCols}, minmax(0, 1fr));"">
@@ -69,3 +72,4 @@ namespace Web_EIP_Csharp.Views.Components
             => (input ?? string.Empty).Replace("\\", "\\\\").Replace("'", "\\'");
     }
 }
+

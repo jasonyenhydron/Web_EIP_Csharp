@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Web_EIP_Csharp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4784216f101bc40b13c7805b2498005611223051")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+36fe4c2b713161cfddde85c7398dbc14cfe40921")]
 [assembly: System.Reflection.AssemblyProductAttribute("Web_EIP_Csharp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Web_EIP_Csharp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

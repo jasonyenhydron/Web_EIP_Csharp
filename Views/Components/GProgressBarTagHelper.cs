@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-progress-bar — 對應 jEasyUI ProgressBar
-    /// <g-progress-bar value="60" label="上傳中..." show-label="true" type="primary"/>
+    /// g-progress-bar ??對�? jEasyUI ProgressBar
+    /// <g-progress-bar value="60" label="上傳�?.." show-label="true" type="primary"/>
     /// type: primary | success | warning | danger
     /// value: 0~100
     /// </summary>
@@ -52,9 +52,9 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     /// <summary>
-    /// g-tooltip — 對應 jEasyUI Tooltip
-    /// <g-tooltip text="這是提示文字" position="top">滑鼠移入</g-tooltip>
-    /// position: top(預設) | bottom | left | right
+    /// g-tooltip ??對�? jEasyUI Tooltip
+    /// <g-tooltip text="?�是?�示?��?" position="top">滑�?移入</g-tooltip>
+    /// position: top(?�設) | bottom | left | right
     /// </summary>
     [HtmlTargetElement("g-tooltip")]
     public class GTooltipTagHelper : TagHelper
@@ -85,3 +85,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+

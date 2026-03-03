@@ -5,7 +5,7 @@ namespace Web_EIP_Csharp.Views.Components
     [HtmlTargetElement("g-error-message", TagStructure = TagStructure.WithoutEndTag)]
     public class GErrorMessageTagHelper : TagHelper
     {
-        public string Title { get; set; } = "系統錯誤";
+        public string Title { get; set; } = "系統?�誤";
         public bool AutoCapture { get; set; } = true;
         public bool CaptureFetch { get; set; } = true;
         public bool CaptureWindowError { get; set; } = true;
@@ -19,23 +19,23 @@ namespace Web_EIP_Csharp.Views.Components
   <div class=""w-full max-w-3xl bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden"">
     <div class=""px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between"">
       <div class=""text-sm font-bold text-slate-800"">{System.Net.WebUtility.HtmlEncode(Title)}</div>
-      <button type=""button"" class=""p-1.5 rounded hover:bg-slate-200 text-slate-500"" onclick=""gHideErrorMessage()"" title=""關閉"">
+      <button type=""button"" class=""p-1.5 rounded hover:bg-slate-200 text-slate-500"" onclick=""gHideErrorMessage()"" title=""?��?"">
         <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""></path></svg>
       </button>
     </div>
     <div class=""p-4 space-y-3"">
       <div class=""text-sm text-slate-700"">
-        <div><span class=""font-semibold"">訊息：</span><span id=""gErrMsgText""></span></div>
-        <div><span class=""font-semibold"">來源：</span><span id=""gErrMsgSource""></span></div>
-        <div><span class=""font-semibold"">行號：</span><span id=""gErrMsgLine""></span></div>
+        <div><span class=""font-semibold"">訊息�?/span><span id=""gErrMsgText""></span></div>
+        <div><span class=""font-semibold"">來�?�?/span><span id=""gErrMsgSource""></span></div>
+        <div><span class=""font-semibold"">行�?�?/span><span id=""gErrMsgLine""></span></div>
       </div>
       <div>
-        <label class=""block text-xs text-slate-500 mb-1"">詳細內容</label>
+        <label class=""block text-xs text-slate-500 mb-1"">詳細?�容</label>
         <pre id=""gErrMsgDetail"" class=""max-h-72 overflow-auto text-xs bg-slate-900 text-slate-100 rounded-lg p-3 border border-slate-700 whitespace-pre-wrap""></pre>
       </div>
       <div class=""flex justify-end gap-2"">
         <button type=""button"" onclick=""gCopyErrorMessage()"" class=""px-3 py-1.5 text-xs rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700"">複製</button>
-        <button type=""button"" onclick=""gHideErrorMessage()"" class=""px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"">關閉</button>
+        <button type=""button"" onclick=""gHideErrorMessage()"" class=""px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"">?��?</button>
       </div>
     </div>
   </div>
@@ -67,10 +67,10 @@ namespace Web_EIP_Csharp.Views.Components
     }}
     if (!input || typeof input !== 'object') {{
       const t = toText(input);
-      return {{ message: t || '未知錯誤', source: '', lineNumber: '', detail: t }};
+      return {{ message: t || '?�知?�誤', source: '', lineNumber: '', detail: t }};
     }}
     return {{
-      message: input.message || input.title || '系統發生錯誤',
+      message: input.message || input.title || '系統?��??�誤',
       source: input.source || input.fileName || input.url || '',
       lineNumber: input.lineNumber || input.lineno || input.line || '',
       detail: input.detail || input.stack || toText(input)
@@ -87,7 +87,7 @@ namespace Web_EIP_Csharp.Views.Components
     document.getElementById('gErrMsgDetail').textContent = e.detail || e.message || '';
 
     currentErrorText =
-      `訊息: ${{e.message || ''}}\\n來源: ${{e.source || '-'}}\\n行號: ${{e.lineNumber || '-'}}\\n\\n${{e.detail || e.message || ''}}`;
+      `訊息: ${{e.message || ''}}\\n來�?: ${{e.source || '-'}}\\n行�?: ${{e.lineNumber || '-'}}\\n\\n${{e.detail || e.message || ''}}`;
 
     root.classList.remove('hidden');
     root.classList.add('flex');
@@ -104,7 +104,7 @@ namespace Web_EIP_Csharp.Views.Components
     if (!currentErrorText) return;
     try {{
       await navigator.clipboard.writeText(currentErrorText);
-      if (window.gToast) window.gToast('錯誤內容已複製', 'success');
+      if (window.gToast) window.gToast('?�誤?�容已�?�?, 'success');
     }} catch {{
       const ta = document.createElement('textarea');
       ta.value = currentErrorText;
@@ -112,7 +112,7 @@ namespace Web_EIP_Csharp.Views.Components
       ta.select();
       document.execCommand('copy');
       ta.remove();
-      if (window.gToast) window.gToast('錯誤內容已複製', 'success');
+      if (window.gToast) window.gToast('?�誤?�容已�?�?, 'success');
     }}
   }};
 
@@ -121,7 +121,7 @@ namespace Web_EIP_Csharp.Views.Components
   if (cfg.captureWindowError) {{
     window.addEventListener('error', function(ev) {{
       window.gShowErrorMessage({{
-        message: ev.message || '前端執行錯誤',
+        message: ev.message || '?�端?��??�誤',
         source: ev.filename || '',
         lineNumber: ev.lineno || '',
         detail: ev.error?.stack || ev.message || ''
@@ -133,7 +133,7 @@ namespace Web_EIP_Csharp.Views.Components
     window.addEventListener('unhandledrejection', function(ev) {{
       const reason = ev.reason || {{}};
       window.gShowErrorMessage({{
-        message: reason.message || '非預期 Promise 錯誤',
+        message: reason.message || '?��???Promise ?�誤',
         source: '',
         lineNumber: '',
         detail: reason.stack || toText(reason)
@@ -165,7 +165,7 @@ namespace Web_EIP_Csharp.Views.Components
         return res;
       }} catch (err) {{
         window.gShowErrorMessage({{
-          message: err?.message || '網路錯誤',
+          message: err?.message || '網路?�誤',
           source: args?.[0]?.toString?.() || '',
           lineNumber: '',
           detail: err?.stack || toText(err)
@@ -179,4 +179,5 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 

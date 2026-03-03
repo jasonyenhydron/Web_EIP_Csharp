@@ -1,38 +1,35 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-status-badge：單筆記錄狀態徽章元件
-    /// 顯示閃爍小圓點 + 狀態代碼 + 狀態文字，用於表單右上角。
+    /// g-status-badge嚗蝑????噬蝡?隞?    /// 憿舐內??撠?暺?+ ??誨蝣?+ ???摮??冽銵典?喃?閫?    ///
+    /// 雿輻?孵?嚗???嚗?    ///   <g-status-badge code="00" label="?萄銝? color="amber" />
     ///
-    /// 使用方式（靜態）：
-    ///   <g-status-badge code="00" label="鍵入中" color="amber" />
-    ///
-    /// 使用方式（Alpine.js 動態）：
+    /// 雿輻?孵?嚗lpine.js ??嚗?
     ///   <g-status-badge alpine-code="record.statusCode" alpine-label="record.statusName" />
     ///
-    /// color 可選：amber（預設）| green | blue | red | slate
+    /// color ?舫嚗mber嚗?閮哨?| green | blue | red | slate
     /// </summary>
     [HtmlTargetElement("g-status-badge")]
     public class GStatusBadgeTagHelper : TagHelper
     {
-        /// <summary>狀態代碼（靜態）</summary>
+        /// <summary>??誨蝣潘???嚗?/summary>
         public string Code { get; set; } = string.Empty;
 
-        /// <summary>狀態文字（靜態）</summary>
+        /// <summary>???摮???嚗?/summary>
         public string Label { get; set; } = string.Empty;
 
-        /// <summary>狀態代碼（Alpine.js 動態 x-text 表達式）</summary>
+        /// <summary>??誨蝣潘?Alpine.js ?? x-text 銵券?撘?</summary>
         public string AlpineCode { get; set; } = string.Empty;
 
-        /// <summary>狀態文字（Alpine.js 動態 x-text 表達式）</summary>
+        /// <summary>???摮?Alpine.js ?? x-text 銵券?撘?</summary>
         public string AlpineLabel { get; set; } = string.Empty;
 
-        /// <summary>顏色主題：amber | green | blue | red | slate</summary>
+        /// <summary>憿銝駁?嚗mber | green | blue | red | slate</summary>
         public string Color { get; set; } = "amber";
 
-        /// <summary>隱藏閃爍效果（靜態模式建議設 false，動態模式設 true）</summary>
+        /// <summary>?梯?????嚗??芋撘遣霅啗身 false嚗??芋撘身 true嚗?/summary>
         public bool NoPing { get; set; } = false;
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
@@ -40,7 +37,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("class", "inline-flex items-center gap-2");
 
-            // 顏色對應
+            // 憿撠?
             (string pingColor, string dotColor, string textColor, string bgColor, string borderColor) = Color?.ToLower() switch
             {
                 "green" => ("bg-green-400",  "bg-green-500",  "text-green-700",  "bg-green-50",  "border-green-200"),
@@ -50,7 +47,6 @@ namespace Web_EIP_Csharp.Views.Components
                 _       => ("bg-amber-400",  "bg-amber-500",  "text-amber-600",  "bg-amber-50",  "border-amber-200"),
             };
 
-            // 閃爍點
             string pingHtml = NoPing
                 ? string.Empty
                 : $@"<span class=""relative flex h-2.5 w-2.5"">
@@ -58,7 +54,6 @@ namespace Web_EIP_Csharp.Views.Components
                     <span class=""relative inline-flex rounded-full h-2.5 w-2.5 {dotColor}""></span>
                 </span>";
 
-            // 文字內容（靜態 or Alpine）
             string codeText, labelText;
             if (!string.IsNullOrEmpty(AlpineCode))
             {
@@ -75,7 +70,7 @@ namespace Web_EIP_Csharp.Views.Components
 
             string badgeContent = string.IsNullOrEmpty(codeText)
                 ? labelText
-                : $"狀態: {codeText} {labelText}";
+                : $"?? {codeText} {labelText}";
 
             string badgeHtml = $@"<span class=""text-xs font-bold {textColor} {bgColor} px-2.5 py-1 rounded-full border {borderColor}"">{badgeContent}</span>";
 
@@ -86,3 +81,4 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string? s)   => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
+

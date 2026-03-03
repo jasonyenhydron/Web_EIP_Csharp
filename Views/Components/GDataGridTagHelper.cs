@@ -1,33 +1,33 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GDataGridTagHelper — 對應 jeasyui DataGrid
- * 自包含 Alpine.js 元件，自動呼叫 API 並渲染表格 + 分頁 + 排序
+ * GDataGridTagHelper ????? jeasyui DataGrid
+ * ?????Alpine.js ??渲麾???????API ?????兩??+ ??? + ???
  *
- * 用法：
+ * ?????
  *   <g-datagrid id="programGrid"
  *               api-url="/api/mis/programs/IDMGD01/list"
- *               columns="PROGRAM_NO:程式代號:120,DISPLAY_CODE:顯示:60:center,PURPOSE:用途"
+ *               columns="PROGRAM_NO:??????:120,DISPLAY_CODE:?輯???60:center,PURPOSE:??蜃?
  *               page-size="20"
  *               striped="true"
  *               on-row-click="onRowSelected(row)"/>
  *
- * columns 格式（逗號分隔，每欄用冒號）：
- *   field:標題:寬度px:對齊(left|center|right)
+ * columns ?瞉????謅??????????????
+ *   field:???:??瞍犁x:???(left|center|right)
  */
 namespace Web_EIP_Csharp.Views.Components
 {
     [HtmlTargetElement("g-datagrid")]
     public class GDataGridTagHelper : TagHelper
     {
-        // --- 基本屬性保留原樣，搭配新屬性 ---
+        // --- ?蝞賃秧??????謕?????????????---
         public string Id           { get; set; } = "";
         [HtmlAttributeName("api")]
         public string Api          { get; set; } = "";
         public string ApiUrl       { get; set; } = "";
-        public string RemoteName   { get; set; } = ""; // 取代 controller name
+        public string RemoteName   { get; set; } = ""; // ?謘餉爸 controller name
         [HtmlAttributeName("member-id")]
-        public string DataMember   { get; set; } = ""; // 取代 action name
+        public string DataMember   { get; set; } = ""; // ?謘餉爸 action name
 
         public string Columns      { get; set; } = "";
         public int    PageSize     { get; set; } = 20;
@@ -40,6 +40,7 @@ namespace Web_EIP_Csharp.Views.Components
         public string OnRowDblClick{ get; set; } = "";
         public string ToolbarHtml  { get; set; } = "";
         public string Class        { get; set; } = "";
+        public string ExtraClass   { get; set; } = "";
         [HtmlAttributeName("clean-style")]
         public bool CleanStyle     { get; set; } = false;
         public string EditMode     { get; set; } = "";
@@ -51,7 +52,7 @@ namespace Web_EIP_Csharp.Views.Components
         public bool   QueryAutoColumn { get; set; } = false;
         public bool   TitleFilterEnabled { get; set; } = true;
 
-        //  --- 屬性 ---
+        //  --- ????---
         public bool   AllowAdd     { get; set; } = true;
         public bool   AllowDelete  { get; set; } = true;
         public bool   AllowUpdate  { get; set; } = true;
@@ -66,7 +67,7 @@ namespace Web_EIP_Csharp.Views.Components
         public bool   Pagination   { get; set; } = true;
         public string PageList     { get; set; } = "10,20,50,100";
         public string QueryMode    { get; set; } = "Panel";
-        public string QueryTitle   { get; set; } = "查詢";
+        public string QueryTitle   { get; set; } = "?鈭亙眺";
         public int    QueryLeft    { get; set; } = 0;
         public int    QueryTop     { get; set; } = 0;
         public string QueryColumns { get; set; } = "";
@@ -77,7 +78,7 @@ namespace Web_EIP_Csharp.Views.Components
         public string SortableColumns { get; set; } = "";
         public bool   MultiSortEnabled { get; set; } = false;
 
-        // --- 未實作/保留屬性 ---
+        // --- ??貊????踐??????---
         public bool   BufferView   { get; set; } = false;
         public bool   CheckOnSelect{ get; set; } = true;
         public string CloudReportName{ get; set; } = "";
@@ -96,18 +97,18 @@ namespace Web_EIP_Csharp.Views.Components
         public bool   DeleteCommandVisible { get; set; } = true;
         public bool   ViewCommandVisible   { get; set; } = true;
 
-        // --- JS 事件 Callback (Alpine.js integration) ---
-        public string OnLoadSuccess{ get; set; } = ""; // 資料載入成功
-        public string OnSelect     { get; set; } = ""; // 點擊列
-        public string OnInsert     { get; set; } = ""; // 新增列
-        public string OnInserted   { get; set; } = ""; // 新增列後
-        public string OnUpdate     { get; set; } = ""; // 編輯列
-        public string OnUpdated    { get; set; } = ""; // 編輯列後
-        public string OnDelete     { get; set; } = ""; // 刪除列
-        public string OnDeleted    { get; set; } = ""; // 刪除列後
-        public string OnDeleting   { get; set; } = ""; // 刪除列前
-        public string OnFilter     { get; set; } = ""; // 篩選
-        public string OnView       { get; set; } = ""; // 檢視
+        // --- JS ?哨?颲?Callback (Alpine.js integration) ---
+        public string OnLoadSuccess{ get; set; } = ""; // ???????
+        public string OnSelect     { get; set; } = ""; // ?綜等???
+        public string OnInsert     { get; set; } = ""; // ?????
+        public string OnInserted   { get; set; } = ""; // ????謅?
+        public string OnUpdate     { get; set; } = ""; // ?箏???
+        public string OnUpdated    { get; set; } = ""; // ?箏??謅?
+        public string OnDelete     { get; set; } = ""; // ??畸???
+        public string OnDeleted    { get; set; } = ""; // ??畸??謅?
+        public string OnDeleting   { get; set; } = ""; // ??畸??謅?
+        public string OnFilter     { get; set; } = ""; // ?剜?蹓?
+        public string OnView       { get; set; } = ""; // ?潘撩?
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
@@ -123,7 +124,7 @@ namespace Web_EIP_Csharp.Views.Components
             var rowCursor = (!string.IsNullOrEmpty(OnRowClick) || !string.IsNullOrEmpty(OnRowDblClick))
                 ? "cursor-pointer" : "";
 
-            // 解析 columns
+            // ??? columns
             var cols = ParseColumns(Columns);
             var sortableFieldSet = ParseSortableFields(SortableColumns, cols);
             var sortableFields = cols
@@ -142,7 +143,7 @@ namespace Web_EIP_Csharp.Views.Components
             var actualApiUrl = !string.IsNullOrEmpty(ApiUrl) ? ApiUrl : Api;
             if (string.IsNullOrEmpty(actualApiUrl) && !string.IsNullOrEmpty(RemoteName))
             {
-                // mvc 模式 由controller action crud select update insert delete 組成url
+                // mvc ?? ?撣搗ntroller action crud select update insert delete ?荔??url
                 var tableParam = !string.IsNullOrEmpty(DataMember) ? $"?DataMember={DataMember}" : "";
                 actualApiUrl = $"/{RemoteName}/select{tableParam}".Replace("//", "/");
             }
@@ -200,9 +201,9 @@ namespace Web_EIP_Csharp.Views.Components
                 var isSortable = sortableFieldSet.Contains(col.Field);
                 var sortableHeaderClass = isSortable ? "cursor-pointer hover:bg-slate-200" : "cursor-default";
 
-                // --- 1. 表頭 (Header) ---
+                // --- 1. ?萄赯?(Header) ---
                 var filterIconBtn = actualTitleFilterEnabled
-                    ? $@"<button type=""button"" @click.stop=""openHeaderFilter('{col.Field}', $event)"" title=""欄位過濾""
+                    ? $@"<button type=""button"" @click.stop=""openHeaderFilter('{col.Field}', $event)"" title=""欄位篩選""
                                class=""ml-1 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-blue-100 text-blue-600 transition-colors"">
                             <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><use href=""#icon-filter""></use></svg>
                        </button>"
@@ -231,14 +232,14 @@ namespace Web_EIP_Csharp.Views.Components
                         <span class=""inline-flex items-center gap-1"">
                             {col.Title}
                             <span x-show=""multiSortEnabled && getSortOrder('{col.Field}') > 0""
-                                  x-text=""`↑${{getSortOrder('{col.Field}')}}`""
+                                  x-text=""`#${{getSortOrder('{col.Field}')}}`""
                                   class=""text-[10px] text-slate-600 font-semibold""></span>
                             {sortIconBtns}
                             {filterIconBtn}
                         </span>
                     </th>");
 
-                // --- 2. 過濾列 (Filter) ---
+                // --- 2. ????(Filter) ---
                 if (ShowFilter)
                 {
                     filterHtml.Append($@"<th class=""px-2 py-1.5 bg-indigo-50/50 border-b border-slate-200"">");
@@ -274,7 +275,7 @@ namespace Web_EIP_Csharp.Views.Components
                     filterHtml.Append("</th>");
                 }
 
-                // --- 3. 內容列 (Td) ---
+                // --- 3. ??寞???(Td) ---
                 tdHtml.Append($@"<td class=""px-3 py-2 {tdAlign} text-sm text-slate-700 border-b border-slate-100 whitespace-nowrap"">");
 
                 if (EditMode == "row" && (col.EditorType == "text" || col.EditorType == "select"))
@@ -311,14 +312,14 @@ namespace Web_EIP_Csharp.Views.Components
                 tdHtml.Append("</td>");
             }
 
-            // --- 4. 操作 (Action) 欄位 ---
+            // --- 4. ??? (Action) ??? ---
             if (!string.IsNullOrEmpty(EditMode) && (AllowUpdate || AllowDelete || UpdateCommandVisible || DeleteCommandVisible || ViewCommandVisible))
             {
                 thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 w-24 shrink-0 sticky right-0"">操作</th>");
                 if (actualShowFilter)
                 {
                     filterHtml.Append(@"<th class=""px-3 py-2 bg-indigo-50/50 border-b-2 border-slate-200 sticky right-0 text-center"">
-                        <button type=""button"" @click=""applyFilter()"" title=""套用過濾""
+                        <button type=""button"" @click=""applyFilter()"" title=""套用欄位篩選""
                                 class=""inline-flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><use href=""#icon-filter""></use></svg>
                         </button>
@@ -425,7 +426,9 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("id", compId);
             var cleanStyleClass = CleanStyle ? "flex-1 border-0 rounded-none w-full shadow-none" : "";
-            output.Attributes.SetAttribute("class", $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative {cleanStyleClass} {Class}");
+            var defaultClass = $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative {cleanStyleClass}".Trim();
+            var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
+            output.Attributes.SetAttribute("class", finalClass);
             output.Attributes.SetAttribute("x-data", $"{fnName}()");
             output.Attributes.SetAttribute("x-init", "init()");
 
@@ -441,7 +444,7 @@ namespace Web_EIP_Csharp.Views.Components
                             新增
                         </button>
                         " : "")}
-                        <button type=""button"" @click=""fetchData()"" title=""重新整理""
+                        <button type=""button"" @click=""fetchData()"" title=""重新載入""
                                 class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg border border-slate-200 bg-white transition-colors font-medium"">
                             <svg class=""w-3.5 h-3.5"" :class=""loading?'animate-spin':''"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15""/>
@@ -459,7 +462,7 @@ namespace Web_EIP_Csharp.Views.Components
                      :style=""`left:${{headerFilter.x}}px; top:${{headerFilter.y}}px;`""
                      style=""display:none;"">
                     <div class=""px-3 py-2 border-b border-slate-100 text-sm font-semibold text-slate-700 flex items-center justify-between"">
-                        <span x-text=""headerFilter.title || '過濾'""></span>
+                        <span x-text=""headerFilter.title || '篩選'""></span>
                         <button type=""button"" @click=""cancelHeaderFilter()"" class=""p-1 text-slate-400 hover:text-slate-600"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/></svg>
                         </button>
@@ -521,7 +524,7 @@ namespace Web_EIP_Csharp.Views.Components
                         <svg class=""w-10 h-10 mb-2 text-slate-300"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                             <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""1.5"" d=""M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z""/>
                         </svg>
-                        <p class=""text-sm"">無資料</p>
+                        <p class=""text-sm"">目前無資料</p>
                     </div>
                     <table x-show=""rows.length>0"" class=""min-w-full border-collapse"">
                         <thead class=""sticky top-0 z-10"">{theadHtml}</thead>
@@ -556,7 +559,7 @@ namespace Web_EIP_Csharp.Views.Components
                         pageSize   : {PageSize},
                         selectedRow: null,
                         currentParams: '',
-                        selectedIds: [], // 用於 MultiSelect
+                        selectedIds: [], // ??踐? MultiSelect
 
                         // Editor / Filter states
                         editingId  : null,
@@ -847,10 +850,10 @@ namespace Web_EIP_Csharp.Views.Components
                         async confirmSave() {{
                             if(!this.editingId) return;
 
-                            // MVC CRUD Auto Apply Update/Insert (假設 editingId 代表 row id，若無則為 insert)
-                            // 這裡由於未實作 native row add，主要是 update
+                            // MVC CRUD Auto Apply Update/Insert (??祈澈 editingId ????row id???????insert)
+                            // ?謕??????貊???native row add??蹓澗? update
                             if ('{AutoApply}'.toLowerCase() === 'true' && '{RemoteName}') {{
-                                const action = 'update'; // 如果有 insert 情境可判斷 editingId !== 'new' 來決定
+                                const action = 'update'; // ?????insert ?????穿???editingId !== 'new' ???望?
                                 const tableParam = '{DataMember}' ? '?DataMember={DataMember}' : '';
                                 const url = `/{RemoteName}/${{action}}${{tableParam}}`.replace('//', '/');
                                 try {{
@@ -976,3 +979,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
+
+

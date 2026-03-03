@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GButtonTagHelper — 對應 jeasyui LinkButton
- * 用法：<g-button text="儲存" type="primary" icon="save" onclick="save()"/>
- *       <g-button text="返回" type="ghost" icon="close" href="/mis/programs"/>
+ * GButtonTagHelper ??對�? jeasyui LinkButton
+ * ?��?�?g-button text="?��?" type="primary" icon="save" onclick="save()"/>
+ *       <g-button text="返�?" type="ghost" icon="close" href="/mis/programs"/>
  * type : primary | secondary | danger | warning | success | info | ghost
  * icon : save | trash | edit | search | plus | close | check | refresh |
  *        upload | download | print | eye | list | play | filter
@@ -18,10 +18,11 @@ namespace Web_EIP_Csharp.Views.Components
         public string Type     { get; set; } = "primary";
         public string Icon     { get; set; } = "";
         public string Class    { get; set; } = "";
+        public string ExtraClass { get; set; } = "";
         public string Onclick  { get; set; } = "";
-        /// <summary>設定後輸出 &lt;a&gt; 標籤（連結按鈕），否則輸出 &lt;button&gt;</summary>
+        /// <summary>設�?後輸??&lt;a&gt; 標籤（�???��?）�??��?輸出 &lt;button&gt;</summary>
         public string Href     { get; set; } = "";
-        /// <summary>a 標籤的 target 屬性，如 "_blank"</summary>
+        /// <summary>a 標籤??target 屬性�?�?"_blank"</summary>
         public string Target   { get; set; } = "";
         public string Id       { get; set; } = "";
         public string Size     { get; set; } = "md";
@@ -51,7 +52,7 @@ namespace Web_EIP_Csharp.Views.Components
             var disabledC = Disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "hover:scale-[1.02] active:scale-95";
             var iconHtml  = GetIconSvg(Icon);
 
-            // 有 href 時輸出 <a>，否則輸出 <button>
+            // ??href ?�輸??<a>，否?�輸??<button>
             bool isLink = !string.IsNullOrEmpty(Href);
             output.TagName = isLink ? "a" : "button";
 
@@ -66,8 +67,9 @@ namespace Web_EIP_Csharp.Views.Components
                 if (Disabled) output.Attributes.SetAttribute("disabled", "disabled");
             }
 
-            output.Attributes.SetAttribute("class",
-                $"inline-flex items-center font-semibold rounded-lg border shadow-sm transition-all duration-150 {colorClass} {sizeClass} {disabledC} {Class}".Trim());
+            var defaultClass = $"inline-flex items-center font-semibold rounded-lg border shadow-sm transition-all duration-150 {colorClass} {sizeClass} {disabledC}";
+            var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
+            output.Attributes.SetAttribute("class", finalClass);
 
             if (!string.IsNullOrEmpty(Id))      output.Attributes.SetAttribute("id", Id);
             if (!string.IsNullOrEmpty(Onclick)) output.Attributes.SetAttribute("onclick", Onclick);
@@ -100,3 +102,4 @@ namespace Web_EIP_Csharp.Views.Components
         };
     }
 }
+

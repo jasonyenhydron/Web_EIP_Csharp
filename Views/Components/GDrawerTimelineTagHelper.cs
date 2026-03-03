@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-drawer — 對應 jEasyUI Drawer（側邊抽屜面板）
-    /// <g-drawer id="myDrawer" title="詳細資訊" position="right" width="400px">content</g-drawer>
-    /// 開啟：gDrawerOpen('myDrawer')  關閉：gDrawerClose('myDrawer')
-    /// position: right(預設) | left | top | bottom
+    /// g-drawer ??撠? jEasyUI Drawer嚗?撅?選?
+    /// <g-drawer id="myDrawer" title="閰喟敦鞈?" position="right" width="400px">content</g-drawer>
+    /// ??嚗DrawerOpen('myDrawer')  ??嚗DrawerClose('myDrawer')
+    /// position: right(?身) | left | top | bottom
     /// </summary>
     [HtmlTargetElement("g-drawer")]
     public class GDrawerTagHelper : TagHelper
@@ -16,8 +16,8 @@ namespace Web_EIP_Csharp.Views.Components
         public string Title    { get; set; } = "";
         public string Position { get; set; } = "right";  // right | left | top | bottom
         public string Width    { get; set; } = "380px";
-        public string Height   { get; set; } = "300px";  // top/bottom 用
-        public bool   Overlay  { get; set; } = true;     // 是否顯示遮罩
+        public string Height   { get; set; } = "300px";  // top/bottom ??
+        public bool   Overlay  { get; set; } = true;
         public string Class    { get; set; } = "";
 
         public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
@@ -92,10 +92,9 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     /// <summary>
-    /// g-timeline — 對應 jEasyUI Timeline（時間軸）
-    /// <g-timeline>
-    ///   <g-timeline-item date="2024-01-15" title="訂單建立" icon="plus" type="success">內容</g-timeline-item>
-    ///   <g-timeline-item date="2024-01-16" title="審核通過" icon="check" type="primary">內容</g-timeline-item>
+    /// g-timeline ??撠? jEasyUI Timeline嚗??遘嚗?    /// <g-timeline>
+    ///   <g-timeline-item date="2024-01-15" title="閮撱箇?" icon="plus" type="success">?批捆</g-timeline-item>
+    ///   <g-timeline-item date="2024-01-16" title="撖拇??" icon="check" type="primary">?批捆</g-timeline-item>
     /// </g-timeline>
     /// </summary>
     public class GTimelineContext
@@ -170,3 +169,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+

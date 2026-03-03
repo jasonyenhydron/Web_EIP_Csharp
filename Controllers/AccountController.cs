@@ -1,16 +1,20 @@
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Threading.Tasks;
-using Oracle.ManagedDataAccess.Client;
 using Web_EIP_Csharp.Helpers;
 
 namespace Web_EIP_Csharp.Controllers
 {
     public class AccountController : Controller
     {
-        private static readonly List<string> TNS_LIST = new List<string> { "MIS", "TEST" };
+        private static readonly List<string> TNS_LIST = new() { "MIS", "TEST" };
+
+        private static string BuildDbConnectionString(string tns) =>
+            DbHelper.DefaultConnectionString;
 
         [HttpGet]
         public IActionResult Login()
@@ -28,58 +32,51 @@ namespace Web_EIP_Csharp.Controllers
 
             if (string.IsNullOrEmpty(tns) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                ViewBag.Error = "登入資訊不完整 / Incomplete login information";
+                ViewBag.Error = "隢撓?亙??渡?亥?閮?/ Incomplete login information";
                 return View();
             }
 
             try
             {
-                Console.WriteLine($"Attempting Oracle Connection and Validation: User={username}, TNS={tns}");
+                var conn = BuildDbConnectionString(tns);
+                var valid = await DbHelper.ExecuteScalarAsync(
+                    conn,
+                    CommandType.Text,
+                    "SELECT IDM.f_idm_check_mis_password(:account, :pwd) FROM DUAL",
+                    new DbParameter[]
+                    {
+                        DbHelper.CreateParameter("account", username.ToUpperInvariant()),
+                        DbHelper.CreateParameter("pwd", password)
+                    });
 
-                // Validate Connection and User Login using IDM.f_idm_check_mis_password
-                bool isValidUser = await OracleDbHelper.ValidateUserLoginAsync(username, password, tns);
-                if (!isValidUser)
+                if (!string.Equals(valid?.ToString(), "Y", StringComparison.OrdinalIgnoreCase))
                 {
-                    ViewBag.Error = "登入失敗: 帳號或密碼錯誤 (Invalid username or password)";
+                    ViewBag.Error = "?餃憭望?: 撣唾???蝣潮隤?(Invalid username or password)";
                     ViewBag.Username = username;
                     ViewBag.Tns = tns;
                     return View();
                 }
 
-                // If connection works and user is valid, attempt to fetch user name
-                string userName = null;
-                try
-                {
-                    userName = await OracleDbHelper.GetUserNameAsync(username, password, tns);
-                    if (!string.IsNullOrEmpty(userName))
-                        Console.WriteLine($"Fetched User Name: {userName}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error fetching user name: {ex.Message}");
-                }
+                var userNameObj = await DbHelper.ExecuteScalarAsync(
+                    conn,
+                    CommandType.Text,
+                    "SELECT USER_NAME FROM IDM_USER WHERE USER_NO = :user_no",
+                    new DbParameter[]
+                    {
+                        DbHelper.CreateParameter("user_no", username.ToUpperInvariant())
+                    });
 
-                Console.WriteLine($"Oracle Connection Successful: User={username}");
+                var userName = userNameObj?.ToString();
 
-                // Store credentials in Session
                 HttpContext.Session.SetString("username", username);
                 HttpContext.Session.SetString("password", password);
                 HttpContext.Session.SetString("tns", tns);
-                HttpContext.Session.SetString("user_name", userName ?? username); // Fallback to username
+                HttpContext.Session.SetString("user_name", string.IsNullOrWhiteSpace(userName) ? username : userName);
 
                 return RedirectToAction("Index", "Dashboard");
             }
-            catch (OracleException dbEx)
-            {
-                Console.WriteLine($"Login Failed (Oracle Error): {dbEx.Message}");
-                ViewBag.Error = $"資料庫連線失敗: {dbEx.Message}";
-                ViewBag.Username = username;
-                ViewBag.Tns = tns;
-                return View();
-            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Login Failed: {ex.Message}");
                 ViewBag.Error = $"Connection Failed: {ex.Message}";
                 ViewBag.Username = username;
                 ViewBag.Tns = tns;
@@ -95,3 +92,6 @@ namespace Web_EIP_Csharp.Controllers
         }
     }
 }
+
+
+

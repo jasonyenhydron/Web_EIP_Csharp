@@ -1,286 +1,443 @@
-using Oracle.ManagedDataAccess.Client;
 using System.Data;
-using System.Threading.Tasks;
+using System.Data.Common;
+using System.Collections.Concurrent;
+using Oracle.ManagedDataAccess.Client;
 
 namespace Web_EIP_Csharp.Helpers
 {
+    /// <summary>
+    /// General ADO.NET helper for SQL execution.
+    /// Default provider is Oracle.ManagedDataAccess.
+    /// </summary>
     public static class OracleDbHelper
     {
-        public static OracleConnection GetConnection(string username, string password, string tns)
-        {
-            // The system now connects using the service account prg / prg7695
-            // instead of individual user credentials to the database.
-            string connString = $"User Id=prg;Password=prg7695;Data Source={tns};Pooling=false;";
-            return new OracleConnection(connString);
-        }
+        private static readonly object SyncRoot = new();
+        private static readonly ConcurrentDictionary<string, DbParameter[]> ParameterCache = new(StringComparer.OrdinalIgnoreCase);
+        private static DbProviderFactory _providerFactory = OracleClientFactory.Instance;
+        private static string _defaultConnectionString = string.Empty;
 
-        public static async Task<bool> ValidateUserLoginAsync(string username, string password, string tns)
+        /// <summary>Retry count upper bound for retry methods.</summary>
+        public static int MaxRetryCount { get; set; } = 10;
+
+        /// <summary>Retry wait milliseconds from 2nd attempt.</summary>
+        public static int RetryWaitMilliseconds { get; set; } = 6000;
+
+        /// <summary>Default command timeout in seconds. 0 = no timeout.</summary>
+        public static int DefaultCommandTimeout { get; set; } = 0;
+
+        public static string DefaultConnectionString => _defaultConnectionString;
+
+        public static void Configure(string defaultConnectionString, DbProviderFactory? providerFactory = null)
         {
-            using (var connection = GetConnection(username, password, tns))
+            lock (SyncRoot)
             {
-                await connection.OpenAsync();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT IDM.f_idm_check_mis_password(:account, :pwd) FROM DUAL";
-                    command.BindByName = true;
-                    command.Parameters.Add(new OracleParameter("account", username.ToUpper()));
-                    command.Parameters.Add(new OracleParameter("pwd", password));
-
-                    var result = await command.ExecuteScalarAsync();
-                    return result != null && result.ToString() == "Y";
-                }
+                _defaultConnectionString = defaultConnectionString?.Trim() ?? string.Empty;
+                _providerFactory = providerFactory ?? OracleClientFactory.Instance;
             }
         }
 
-        public static async Task<string> GetUserNameAsync(string username, string password, string tns)
+        public static DbConnection CreateConnection(string connectionString)
         {
-            string userName = null;
-            using (var connection = GetConnection(username, password, tns))
-            {
-                await connection.OpenAsync();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT USER_NAME FROM IDM_USER WHERE USER_NO = :user_no";
-                    command.BindByName = true;
-                    command.Parameters.Add(new OracleParameter("user_no", username.ToUpper()));
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            userName = reader["USER_NAME"].ToString();
-                        }
-                    }
-                }
-            }
-            return userName;
+            var conn = _providerFactory.CreateConnection() ?? throw new InvalidOperationException("Cannot create DbConnection.");
+            conn.ConnectionString = connectionString;
+            return conn;
         }
 
-        public static async Task<List<Dictionary<string, string>>> GetProgramSuggestionsAsync(string username, string password, string tns, string query)
+        /// <summary>
+        /// Create an OracleConnection using default connection string from appsettings.
+        /// </summary>
+        public static OracleConnection GetConnection()
         {
-            var suggestions = new List<Dictionary<string, string>>();
-            using (var connection = GetConnection(username, password, tns))
-            {
-                await connection.OpenAsync();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-                        SELECT PROGRAM_NO, PROGRAM_NAME
-                        FROM idm_program_v
-                        WHERE (UPPER(PROGRAM_NO) LIKE :q OR UPPER(PROGRAM_NAME) LIKE :q)
-                        AND LANGUAGE_ID = 1
-                        AND ROWNUM <= 10
-                        ORDER BY PROGRAM_NO ASC";
-                    command.BindByName = true;
-
-                    command.Parameters.Add(new OracleParameter("q", $"%{query.ToUpper()}%"));
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var dict = new Dictionary<string, string>
-                            {
-                                { "program_no", reader["PROGRAM_NO"].ToString() },
-                                { "program_name", reader["PROGRAM_NAME"].ToString() }
-                            };
-                            suggestions.Add(dict);
-                        }
-                    }
-                }
-            }
-            return suggestions;
+            return new OracleConnection(GetDefaultConnectionString());
         }
 
-        public static async Task<List<Dictionary<string, string>>> GetLeaveTypesAsync(string username, string password, string tns, string query, int page = 1, int pageSize = 50)
+        /// <summary>
+        /// Create an OracleConnection using custom connection string.
+        /// </summary>
+        public static OracleConnection GetConnection(string connectionString)
         {
-            var suggestions = new List<Dictionary<string, string>>();
-            using (var connection = GetConnection(username, password, tns))
-            {
-                await connection.OpenAsync();
-
-                using (var command = connection.CreateCommand())
-                {
-                    var offset = Math.Max(0, (page - 1) * pageSize);
-                    var endRow = offset + pageSize;
-                    command.CommandText = @"
-                        SELECT LEAVE_ID, LEAVE_NAME
-                        FROM (
-                            SELECT LEAVE_ID, LEAVE_NAME,
-                                   ROW_NUMBER() OVER (ORDER BY LEAVE_ID ASC) AS RN
-                            FROM HRM_LEAVE_L
-                            WHERE LANGUAGE_ID = 1
-                              AND (UPPER(TO_CHAR(LEAVE_ID)) LIKE :q OR UPPER(LEAVE_NAME) LIKE :q)
-                        )
-                        WHERE RN > :offset AND RN <= :endRow";
-                    command.BindByName = true;
-                    command.Parameters.Add(new OracleParameter("q", $"%{query?.ToUpper()}%"));
-                    command.Parameters.Add(new OracleParameter("offset", offset));
-                    command.Parameters.Add(new OracleParameter("endRow", endRow));
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var dict = new Dictionary<string, string>
-                            {
-                                { "leave_id", reader["LEAVE_ID"].ToString() },
-                                { "leave_name", reader["LEAVE_NAME"].ToString() }
-                            };
-                            suggestions.Add(dict);
-                        }
-                    }
-                }
-            }
-            return suggestions;
-        }
-        public static async Task<List<Dictionary<string, string>>> GetEmployeesAsync(string username, string password, string tns, string query, int page = 1, int pageSize = 50)
-        {
-            var suggestions = new List<Dictionary<string, string>>();
-            using (var connection = GetConnection(username, password, tns))
-            {
-                await connection.OpenAsync();
-
-                using (var command = connection.CreateCommand())
-                {
-                    var offset = Math.Max(0, (page - 1) * pageSize);
-                    var endRow = offset + pageSize;
-                    command.CommandText = @"
-                        SELECT EMPLOYEE_ID, EMPLOYEE_NO, EMPLOYEE_NAME
-                        FROM (
-                            SELECT EMPLOYEE_ID, EMPLOYEE_NO, EMPLOYEE_NAME,
-                                   ROW_NUMBER() OVER (ORDER BY EMPLOYEE_NO ASC) AS RN
-                            FROM hrm_employee_v
-                            WHERE (UPPER(EMPLOYEE_NO) LIKE :q OR UPPER(EMPLOYEE_NAME) LIKE :q)
-                        )
-                        WHERE RN > :offset AND RN <= :endRow";
-                    command.BindByName = true;
-                    command.Parameters.Add(new OracleParameter("q", $"%{query?.ToUpper()}%"));
-                    command.Parameters.Add(new OracleParameter("offset", offset));
-                    command.Parameters.Add(new OracleParameter("endRow", endRow));
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var dict = new Dictionary<string, string>
-                            {
-                                { "employee_id", reader["EMPLOYEE_ID"].ToString() },
-                                { "employee_no", reader["EMPLOYEE_NO"].ToString() },
-                                { "employee_name", reader["EMPLOYEE_NAME"]?.ToString() ?? "" }
-                            };
-                            suggestions.Add(dict);
-                        }
-                    }
-                }
-            }
-            return suggestions;
+            return new OracleConnection(connectionString);
         }
 
-        public static async Task<List<Dictionary<string, string>>> GetDepartmentsAsync(string username, string password, string tns, string query, int page = 1, int pageSize = 50)
+        public static DbParameter CreateParameter(
+            string name,
+            object? value,
+            DbType? dbType = null,
+            ParameterDirection direction = ParameterDirection.Input,
+            int? size = null)
         {
-            var suggestions = new List<Dictionary<string, string>>();
-            using (var connection = GetConnection(username, password, tns))
-            {
-                await connection.OpenAsync();
-
-                using (var command = connection.CreateCommand())
-                {
-                    var offset = Math.Max(0, (page - 1) * pageSize);
-                    var endRow = offset + pageSize;
-                    command.CommandText = @"
-                        SELECT DEPARTMENT_ID, DEPARTMENT_NO, DEPARTMENT_NAME
-                        FROM (
-                            SELECT DEPARTMENT_ID, DEPARTMENT_NO, DEPARTMENT_NAME,
-                                   ROW_NUMBER() OVER (ORDER BY DEPARTMENT_NO ASC) AS RN
-                            FROM cmm_department_v
-                            WHERE LANGUAGE_ID = 1
-                              AND (UPPER(DEPARTMENT_NO) LIKE :q OR UPPER(DEPARTMENT_NAME) LIKE :q)
-                        )
-                        WHERE RN > :offset AND RN <= :endRow";
-                    command.BindByName = true;
-                    command.Parameters.Add(new OracleParameter("q", $"%{query?.ToUpper()}%"));
-                    command.Parameters.Add(new OracleParameter("offset", offset));
-                    command.Parameters.Add(new OracleParameter("endRow", endRow));
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var dict = new Dictionary<string, string>
-                            {
-                                { "department_id", reader["DEPARTMENT_ID"].ToString() },
-                                { "department_no", reader["DEPARTMENT_NO"].ToString() },
-                                { "department_name", reader["DEPARTMENT_NAME"]?.ToString() ?? "" }
-                            };
-                            suggestions.Add(dict);
-                        }
-                    }
-                }
-            }
-            return suggestions;
+            var p = _providerFactory.CreateParameter() ?? throw new InvalidOperationException("Cannot create DbParameter.");
+            p.ParameterName = name;
+            p.Value = value ?? DBNull.Value;
+            p.Direction = direction;
+            if (dbType.HasValue) p.DbType = dbType.Value;
+            if (size.HasValue) p.Size = size.Value;
+            return p;
         }
 
-        public static async Task<List<Dictionary<string, string>>> GetBookingDepartmentsAsync(string username, string password, string tns, string query, string employeeId = null, int page = 1, int pageSize = 50)
+        public static void CacheParameters(string cacheKey, params DbParameter[]? parameters)
         {
-            var suggestions = new List<Dictionary<string, string>>();
-            using (var connection = GetConnection(username, password, tns))
+            if (string.IsNullOrWhiteSpace(cacheKey) || parameters == null)
+                return;
+
+            ParameterCache[cacheKey] = CloneParameters(parameters);
+        }
+
+        public static DbParameter[]? GetCachedParameters(string cacheKey)
+        {
+            if (string.IsNullOrWhiteSpace(cacheKey))
+                return null;
+
+            return ParameterCache.TryGetValue(cacheKey, out var cached)
+                ? CloneParameters(cached)
+                : null;
+        }
+
+        public static int ExecuteNonQuery(CommandType cmdType, string cmdText, params DbParameter[]? commandParameters) =>
+            ExecuteNonQuery(GetDefaultConnectionString(), cmdType, cmdText, commandParameters);
+
+        public static int ExecuteNonQueryText(string cmdText, params DbParameter[]? commandParameters) =>
+            ExecuteNonQuery(GetDefaultConnectionString(), CommandType.Text, cmdText, commandParameters);
+
+        public static int ExecuteNonQuery(string connectionString, CommandType cmdType, string cmdText, params DbParameter[]? commandParameters)
+        {
+            using var conn = CreateConnection(connectionString);
+            using var cmd = conn.CreateCommand();
+            PrepareCommand(cmd, conn, null, cmdType, cmdText, commandParameters);
+            var val = cmd.ExecuteNonQuery();
+            cmd.Parameters.Clear();
+            return val;
+        }
+
+        public static async Task<int> ExecuteNonQueryAsync(string connectionString, CommandType cmdType, string cmdText, DbParameter[]? commandParameters = null, CancellationToken cancellationToken = default)
+        {
+            await using var conn = CreateConnection(connectionString);
+            await using var cmd = conn.CreateCommand();
+            await PrepareCommandAsync(cmd, conn, null, cmdType, cmdText, commandParameters, cancellationToken);
+            var val = await cmd.ExecuteNonQueryAsync(cancellationToken);
+            cmd.Parameters.Clear();
+            return val;
+        }
+
+        public static int ExecuteNonQueryRetry(string connectionString, CommandType cmdType, string cmdText, params DbParameter[]? commandParameters)
+        {
+            return Retry(() => ExecuteNonQuery(connectionString, cmdType, cmdText, commandParameters));
+        }
+
+        public static object? ExecuteScalar(CommandType cmdType, string cmdText, params DbParameter[]? commandParameters) =>
+            ExecuteScalar(GetDefaultConnectionString(), cmdType, cmdText, commandParameters);
+
+        public static object? ExecuteScalarText(string cmdText, params DbParameter[]? commandParameters) =>
+            ExecuteScalar(GetDefaultConnectionString(), CommandType.Text, cmdText, commandParameters);
+
+        public static object? ExecuteScalar(string connectionString, CommandType cmdType, string cmdText, params DbParameter[]? commandParameters)
+        {
+            using var conn = CreateConnection(connectionString);
+            using var cmd = conn.CreateCommand();
+            PrepareCommand(cmd, conn, null, cmdType, cmdText, commandParameters);
+            var val = cmd.ExecuteScalar();
+            cmd.Parameters.Clear();
+            return val;
+        }
+
+        public static async Task<object?> ExecuteScalarAsync(string connectionString, CommandType cmdType, string cmdText, DbParameter[]? commandParameters = null, CancellationToken cancellationToken = default)
+        {
+            await using var conn = CreateConnection(connectionString);
+            await using var cmd = conn.CreateCommand();
+            await PrepareCommandAsync(cmd, conn, null, cmdType, cmdText, commandParameters, cancellationToken);
+            var val = await cmd.ExecuteScalarAsync(cancellationToken);
+            cmd.Parameters.Clear();
+            return val;
+        }
+
+        public static object? ExecuteScalarRetry(string connectionString, CommandType cmdType, string cmdText, params DbParameter[]? commandParameters)
+        {
+            return Retry(() => ExecuteScalar(connectionString, cmdType, cmdText, commandParameters));
+        }
+
+        public static DbDataReader ExecuteReader(CommandType cmdType, string cmdText, params DbParameter[]? commandParameters) =>
+            ExecuteReader(GetDefaultConnectionString(), cmdType, cmdText, commandParameters);
+
+        public static DbDataReader ExecuteReaderText(string cmdText, params DbParameter[]? commandParameters) =>
+            ExecuteReader(GetDefaultConnectionString(), CommandType.Text, cmdText, commandParameters);
+
+        public static DbDataReader ExecuteReader(string connectionString, CommandType cmdType, string cmdText, params DbParameter[]? commandParameters)
+        {
+            var conn = CreateConnection(connectionString);
+            var cmd = conn.CreateCommand();
+            try
             {
-                await connection.OpenAsync();
+                PrepareCommand(cmd, conn, null, cmdType, cmdText, commandParameters);
+                var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+                cmd.Parameters.Clear();
+                return reader;
+            }
+            catch
+            {
+                conn.Close();
+                conn.Dispose();
+                cmd.Dispose();
+                throw;
+            }
+        }
 
-                using (var command = connection.CreateCommand())
+        public static DataTable GetDataTable(CommandType cmdType, string cmdText, params DbParameter[]? commandParameters) =>
+            GetDataTable(GetDefaultConnectionString(), cmdType, cmdText, commandParameters);
+
+        public static DataTable GetDataTableText(string cmdText, params DbParameter[]? commandParameters) =>
+            GetDataTable(GetDefaultConnectionString(), CommandType.Text, cmdText, commandParameters);
+
+        public static DataTable GetDataTable(string connectionString, CommandType cmdType, string cmdText, params DbParameter[]? commandParameters)
+        {
+            var dt = new DataTable();
+            using var conn = CreateConnection(connectionString);
+            using var cmd = conn.CreateCommand();
+            cmd.CommandTimeout = 0;
+            PrepareCommand(cmd, conn, null, cmdType, cmdText, commandParameters);
+            using var adapter = _providerFactory.CreateDataAdapter() ?? throw new InvalidOperationException("Cannot create DbDataAdapter.");
+            adapter.SelectCommand = cmd;
+            adapter.Fill(dt);
+            cmd.Parameters.Clear();
+            return dt;
+        }
+
+        public static async Task<DataTable> GetDataTableAsync(string connectionString, CommandType cmdType, string cmdText, DbParameter[]? commandParameters = null, CancellationToken cancellationToken = default)
+        {
+            var dt = new DataTable();
+            await using var conn = CreateConnection(connectionString);
+            await using var cmd = conn.CreateCommand();
+            await PrepareCommandAsync(cmd, conn, null, cmdType, cmdText, commandParameters, cancellationToken);
+            using var adapter = _providerFactory.CreateDataAdapter() ?? throw new InvalidOperationException("Cannot create DbDataAdapter.");
+            adapter.SelectCommand = cmd;
+            adapter.Fill(dt);
+            cmd.Parameters.Clear();
+            return dt;
+        }
+
+        public static DataTable GetDataTableRetry(string connectionString, CommandType cmdType, string cmdText, params DbParameter[]? commandParameters)
+        {
+            return Retry(() => GetDataTable(connectionString, cmdType, cmdText, commandParameters));
+        }
+
+        public static void ExecuteSqlTran(Dictionary<string, DbParameter[]?> sqlStringList) =>
+            ExecuteSqlTran(GetDefaultConnectionString(), CommandType.Text, sqlStringList);
+
+        public static void ExecuteSqlTran(string connectionString, CommandType cmdType, Dictionary<string, DbParameter[]?> sqlStringList)
+        {
+            using var conn = CreateConnection(connectionString);
+            conn.Open();
+            using var trans = conn.BeginTransaction();
+            using var cmd = conn.CreateCommand();
+            try
+            {
+                foreach (var item in sqlStringList)
                 {
-                    var offset = Math.Max(0, (page - 1) * pageSize);
-                    var endRow = offset + pageSize;
-                    string sql = @"
-                        SELECT DEPARTMENT_ID, DEPARTMENT_NO, DEPARTMENT_NAME
-                        FROM (
-                            SELECT BOOKING_DEPARTMENT_ID AS DEPARTMENT_ID,
-                                   BOOKING_DEPARTMENT_NO AS DEPARTMENT_NO,
-                                   BOOKING_DEPARTMENT_NAME AS DEPARTMENT_NAME,
-                                   ROW_NUMBER() OVER (ORDER BY BOOKING_DEPARTMENT_NO ASC) AS RN
-                            FROM HRM_BOOKING_DEPARTMENT_V
-                            WHERE LANGUAGE_ID = 1
-                              AND (UPPER(BOOKING_DEPARTMENT_NO) LIKE :q OR UPPER(BOOKING_DEPARTMENT_NAME) LIKE :q)";
+                    PrepareCommand(cmd, conn, trans, cmdType, item.Key, item.Value);
+                    cmd.ExecuteNonQuery();
+                    cmd.Parameters.Clear();
+                }
+                trans.Commit();
+            }
+            catch
+            {
+                trans.Rollback();
+                throw;
+            }
+        }
 
-                    var hasEmployeeIdFilter = long.TryParse(employeeId, out _);
-                    if (hasEmployeeIdFilter)
-                    {
-                        sql += " AND EMPLOYEE_ID = :empId";
-                    }
-                    sql += @")
-                             WHERE RN > :offset AND RN <= :endRow";
+        public static void ExecuteSqlTran(string connectionString, CommandType cmdType, IEnumerable<SqlBatchItem> items)
+        {
+            using var conn = CreateConnection(connectionString);
+            conn.Open();
+            using var trans = conn.BeginTransaction();
+            using var cmd = conn.CreateCommand();
+            try
+            {
+                foreach (var item in items)
+                {
+                    PrepareCommand(cmd, conn, trans, cmdType, item.CommandText, item.Parameters);
+                    cmd.ExecuteNonQuery();
+                    cmd.Parameters.Clear();
+                }
+                trans.Commit();
+            }
+            catch
+            {
+                trans.Rollback();
+                throw;
+            }
+        }
 
-                    command.CommandText = sql;
-                    command.BindByName = true;
-                    command.Parameters.Add(new OracleParameter("q", $"%{query?.ToUpper()}%"));
-                    command.Parameters.Add(new OracleParameter("offset", offset));
-                    command.Parameters.Add(new OracleParameter("endRow", endRow));
+        public static bool Exists(string connectionString, string sql, params DbParameter[]? commandParameters)
+        {
+            var scalar = ExecuteScalar(connectionString, CommandType.Text, sql, commandParameters);
+            if (scalar == null || scalar == DBNull.Value) return false;
+            return Convert.ToInt64(scalar) > 0;
+        }
 
-                    if (hasEmployeeIdFilter)
-                    {
-                        command.Parameters.Add(new OracleParameter("empId", employeeId));
-                    }
+        public static bool Exists(string sql, params DbParameter[]? commandParameters) =>
+            Exists(GetDefaultConnectionString(), sql, commandParameters);
 
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var dict = new Dictionary<string, string>
-                            {
-                                { "department_id", reader["DEPARTMENT_ID"].ToString() },
-                                { "department_no", reader["DEPARTMENT_NO"].ToString() },
-                                { "department_name", reader["DEPARTMENT_NAME"]?.ToString() ?? "" }
-                            };
-                            suggestions.Add(dict);
-                        }
-                    }
+        private static void PrepareCommand(
+            DbCommand cmd,
+            DbConnection conn,
+            DbTransaction? trans,
+            CommandType cmdType,
+            string cmdText,
+            params DbParameter[]? cmdParams)
+        {
+            if (conn.State != ConnectionState.Open) conn.Open();
+            if (trans != null) cmd.Transaction = trans;
+            cmd.Connection = conn;
+            cmd.CommandText = cmdText;
+            cmd.CommandType = cmdType;
+            cmd.CommandTimeout = DefaultCommandTimeout;
+            if (cmd is OracleCommand oracleCmd)
+                oracleCmd.BindByName = true;
+            if (cmdParams != null && cmdParams.Length > 0)
+            {
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddRange(cmdParams);
+            }
+        }
+
+        private static async Task PrepareCommandAsync(
+            DbCommand cmd,
+            DbConnection conn,
+            DbTransaction? trans,
+            CommandType cmdType,
+            string cmdText,
+            DbParameter[]? cmdParams,
+            CancellationToken cancellationToken)
+        {
+            if (conn.State != ConnectionState.Open) await conn.OpenAsync(cancellationToken);
+            if (trans != null) cmd.Transaction = trans;
+            cmd.Connection = conn;
+            cmd.CommandText = cmdText;
+            cmd.CommandType = cmdType;
+            cmd.CommandTimeout = DefaultCommandTimeout;
+            if (cmd is OracleCommand oracleCmd)
+                oracleCmd.BindByName = true;
+            if (cmdParams != null && cmdParams.Length > 0)
+            {
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddRange(cmdParams);
+            }
+        }
+
+        private static string GetDefaultConnectionString()
+        {
+            if (string.IsNullOrWhiteSpace(_defaultConnectionString))
+                throw new InvalidOperationException("OracleDbHelper default connection string not configured.");
+            return _defaultConnectionString;
+        }
+
+        private static T Retry<T>(Func<T> action)
+        {
+            Exception? last = null;
+            for (var attempt = 1; attempt <= MaxRetryCount; attempt++)
+            {
+                try
+                {
+                    return action();
+                }
+                catch (Exception ex)
+                {
+                    last = ex;
+                    if (attempt >= MaxRetryCount) break;
+                    if (attempt >= 2) Thread.Sleep(RetryWaitMilliseconds);
                 }
             }
-            return suggestions;
+
+            throw last ?? new InvalidOperationException("Retry failed with unknown error.");
+        }
+
+        private static DbParameter[] CloneParameters(DbParameter[] source)
+        {
+            var clones = new DbParameter[source.Length];
+            for (var i = 0; i < source.Length; i++)
+            {
+                var p = source[i];
+                if (p is ICloneable cloneable)
+                {
+                    clones[i] = (DbParameter)cloneable.Clone();
+                    continue;
+                }
+
+                var np = _providerFactory.CreateParameter() ?? throw new InvalidOperationException("Cannot create DbParameter.");
+                np.ParameterName = p.ParameterName;
+                np.DbType = p.DbType;
+                np.Direction = p.Direction;
+                np.Size = p.Size;
+                np.Precision = p.Precision;
+                np.Scale = p.Scale;
+                np.SourceColumn = p.SourceColumn;
+                np.SourceVersion = p.SourceVersion;
+                np.IsNullable = p.IsNullable;
+                np.Value = p.Value;
+                clones[i] = np;
+            }
+            return clones;
+        }
+    }
+
+    public sealed class SqlBatchItem
+    {
+        public string CommandText { get; set; } = string.Empty;
+        public DbParameter[]? Parameters { get; set; }
+    }
+
+    /// <summary>
+    /// Oracle executor wrapper with IDisposable lifecycle.
+    /// Connection string defaults to OracleDbHelper configured value (appsettings.json).
+    /// </summary>
+    public sealed class OracleSqlExecutor : IDisposable
+    {
+        private readonly OracleConnection _connection;
+
+        public OracleSqlExecutor(string? connectionString = null)
+        {
+            var conn = string.IsNullOrWhiteSpace(connectionString)
+                ? OracleDbHelper.DefaultConnectionString
+                : connectionString;
+            if (string.IsNullOrWhiteSpace(conn))
+                throw new InvalidOperationException("OracleDbHelper default connection string not configured.");
+            _connection = new OracleConnection(conn);
+        }
+
+        private void EnsureConnectionOpen()
+        {
+            if (_connection.State != ConnectionState.Open)
+                _connection.Open();
+        }
+
+        public int ExecuteNonQuery(string sql, OracleParameter[]? parameters = null)
+        {
+            EnsureConnectionOpen();
+            using var cmd = new OracleCommand(sql, _connection) { BindByName = true };
+            if (parameters != null && parameters.Length > 0)
+                cmd.Parameters.AddRange(parameters);
+            return cmd.ExecuteNonQuery();
+        }
+
+        public DataTable GetDataTable(string sql, OracleParameter[]? parameters = null)
+        {
+            EnsureConnectionOpen();
+            using var cmd = new OracleCommand(sql, _connection) { BindByName = true };
+            if (parameters != null && parameters.Length > 0)
+                cmd.Parameters.AddRange(parameters);
+            using var adapter = new OracleDataAdapter(cmd);
+            var dt = new DataTable();
+            adapter.Fill(dt);
+            return dt;
+        }
+
+        public void Dispose()
+        {
+            if (_connection.State != ConnectionState.Closed)
+                _connection.Close();
+            _connection.Dispose();
         }
     }
 }
+

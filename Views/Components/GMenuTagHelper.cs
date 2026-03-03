@@ -1,13 +1,13 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-menu — 對應 jEasyUI Menu（下拉選單）
+    /// g-menu ??撠? jEasyUI Menu嚗???殷?
     /// <g-menu id="actMenu" trigger-id="actBtn">
-    ///   <g-menu-item text="編輯" icon="edit" onclick="edit()"/>
+    ///   <g-menu-item text="蝺刻摩" icon="edit" onclick="edit()"/>
     ///   <g-menu-divider/>
-    ///   <g-menu-item text="刪除" icon="trash" onclick="del()" type="danger"/>
+    ///   <g-menu-item text="?芷" icon="trash" onclick="del()" type="danger"/>
     /// </g-menu>
     /// </summary>
     public class GMenuContext
@@ -70,7 +70,7 @@ namespace Web_EIP_Csharp.Views.Components
     {
         [HtmlAttributeName("id")]
         public string Id        { get; set; } = "";
-        public string TriggerId { get; set; } = "";  // 點擊哪個按鈕時顯示選單
+        public string TriggerId { get; set; } = "";  // 暺??芸???憿舐內?詨
         public string Position  { get; set; } = "bottom-left";  // bottom-left|bottom-right|top-left|top-right
         public string Class     { get; set; } = "";
 
@@ -122,16 +122,16 @@ namespace Web_EIP_Csharp.Views.Components
     }
 
     /// <summary>
-    /// g-switch-button — 對應 jEasyUI SwitchButton（開關按鈕）
-    /// <g-switch-button name="isActive" label="啟用" checked="true" alpine-model="form.active"/>
+    /// g-switch-button ??撠? jEasyUI SwitchButton嚗?????
+    /// <g-switch-button name="isActive" label="?" checked="true" alpine-model="form.active"/>
     /// </summary>
     [HtmlTargetElement("g-switch-button")]
     public class GSwitchButtonTagHelper : TagHelper
     {
         public string Name        { get; set; } = "";
         public string Label       { get; set; } = "";
-        public string LabelOn     { get; set; } = "是";
-        public string LabelOff    { get; set; } = "否";
+        public string LabelOn     { get; set; } = "?";
+        public string LabelOff    { get; set; } = "?";
         public bool   Checked     { get; set; } = false;
         public string AlpineModel { get; set; } = "";
         public bool   Disabled    { get; set; } = false;
@@ -162,3 +162,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+

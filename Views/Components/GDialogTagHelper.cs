@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 /*
- * GDialogTagHelper — 對應 jeasyui Dialog / Modal
- * <g-dialog id="dlgAdd" title="新增程式" width="lg">content</g-dialog>
+ * GDialogTagHelper ??對�? jeasyui Dialog / Modal
+ * <g-dialog id="dlgAdd" title="?��?程�?" width="lg">content</g-dialog>
  * JS: gDialogOpen('dlgAdd') / gDialogClose('dlgAdd')
  */
 namespace Web_EIP_Csharp.Views.Components
@@ -58,3 +58,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+

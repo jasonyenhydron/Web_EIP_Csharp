@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-accordion — 對應 jEasyUI Accordion（可折疊面板群）
+    /// g-accordion ??撠? jEasyUI Accordion嚗???Ｘ蝢歹?
     /// <g-accordion>
-    ///   <g-accordion-panel title="基本資訊" icon="info" active="true">...content...</g-accordion-panel>
-    ///   <g-accordion-panel title="詳細設定" icon="setting">...content...</g-accordion-panel>
+    ///   <g-accordion-panel title="?箸鞈?" icon="info" active="true">...content...</g-accordion-panel>
+    ///   <g-accordion-panel title="閰喟敦閮剖?" icon="setting">...content...</g-accordion-panel>
     /// </g-accordion>
     /// </summary>
     public class GAccordionContext
@@ -34,7 +34,7 @@ namespace Web_EIP_Csharp.Views.Components
     [RestrictChildren("g-accordion-panel")]
     public class GAccordionTagHelper : TagHelper
     {
-        public bool   Exclusive { get; set; } = true;  // true=只開一個, false=多個可同時開
+        public bool   Exclusive { get; set; } = true;
         public string Class     { get; set; } = "";
 
         public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
@@ -70,7 +70,7 @@ namespace Web_EIP_Csharp.Views.Components
                 </div>");
             }
 
-            // 交互邏輯
+            // 鈭支??摩
             sb.Append($@"
             <script>
             function gAccordionToggle(accId, panelId, exclusive) {{
@@ -94,7 +94,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Content.SetHtmlContent(sb.ToString());
         }
 
-        // 取得 icon SVG（複用 GPanelTagHelper 的邏輯）
+        // ?? icon SVG嚗???GPanelTagHelper ??頛荔?
         private static string GPanelTagHelper_GetIcon(string icon) => icon switch
         {
             "info"     => @"<svg class=""w-4 h-4 text-blue-500 shrink-0"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z""/></svg>",
@@ -105,3 +105,4 @@ namespace Web_EIP_Csharp.Views.Components
         };
     }
 }
+

@@ -3,31 +3,27 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace Web_EIP_Csharp.Views.Components
 {
     /// <summary>
-    /// g-page-title：主內容區頁面標題列元件
-    /// 顯示 SVG icon + h1 標題 + 副標說明文字。
-    /// 注意：區別於 g-page-header（g-page-header 用於 Popup 視窗頁首；
-    ///       g-page-title 用於主版面 main 區的頁面標題）
+    /// g-page-title：主?�容?�?�面標�??��?�?    /// 顯示 SVG icon + h1 標�? + ?��?說�??��???    /// 注�?：�??�於 g-page-header（g-page-header ?�於 Popup 視�??��?�?    ///       g-page-title ?�於主�???main ?�?��??��?題�?
     ///
-    /// 使用方式：
-    ///   <g-page-title title="MIS 程式項目列表"
-    ///                 subtitle="查看和管理系統程式項目"
+    /// 使用?��?�?    ///   <g-page-title title="MIS 程�??�目?�表"
+    ///                 subtitle="?��??�管?�系統�?式�???
     ///                 icon="document" />
     ///
-    /// icon 支援：document, list, user, calendar, chart, cog, check, search, shield, database
+    /// icon ?�援：document, list, user, calendar, chart, cog, check, search, shield, database
     /// </summary>
     [HtmlTargetElement("g-page-title")]
     public class GPageTitleTagHelper : TagHelper
     {
-        /// <summary>H1 標題文字</summary>
+        /// <summary>H1 標�??��?</summary>
         public string Title { get; set; } = string.Empty;
 
-        /// <summary>副標說明文字（可選）</summary>
+        /// <summary>?��?說�??��?（可?��?</summary>
         public string Subtitle { get; set; } = string.Empty;
 
-        /// <summary>圖示名稱（與 GPageHeaderTagHelper 一致的圖示庫）</summary>
+        /// <summary>?�示?�稱（�? GPageHeaderTagHelper 一?��??�示庫�?</summary>
         public string Icon { get; set; } = "document";
 
-        /// <summary>外部額外 CSS class（用於調整 margin）</summary>
+        /// <summary>外部額�? CSS class（用?�調??margin�?/summary>
         public string Class { get; set; } = "mb-6";
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
@@ -64,3 +60,4 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlEncode(string? s) => System.Net.WebUtility.HtmlEncode(s ?? string.Empty);
     }
 }
+

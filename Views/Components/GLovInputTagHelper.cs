@@ -14,11 +14,11 @@ namespace Web_EIP_Csharp.Views.Components
         public string HiddenValue { get; set; } = string.Empty;
         public string CodeId { get; set; } = string.Empty;
         public string CodeValue { get; set; } = string.Empty;
-        public string CodePlaceholder { get; set; } = "代碼";
+        public string CodePlaceholder { get; set; } = "請輸入代碼...";
         public string CodeWidth { get; set; } = "w-1/3";
         public string NameId { get; set; } = string.Empty;
         public string NameValue { get; set; } = string.Empty;
-        public string NamePlaceholder { get; set; } = "名稱";
+        public string NamePlaceholder { get; set; } = "請選擇資料";
 
         [HtmlAttributeName("x-model-code")]
         public string XModelCode { get; set; } = string.Empty;
@@ -37,7 +37,7 @@ namespace Web_EIP_Csharp.Views.Components
         [HtmlAttributeName("lov-api")]
         public string LovApi { get; set; } = string.Empty;
         [HtmlAttributeName("lov-columns")]
-        public string LovColumns { get; set; } = string.Empty; // e.g. "編號,名稱,ID"
+        public string LovColumns { get; set; } = string.Empty; // e.g. "蝺刻?,?迂,ID"
         [HtmlAttributeName("lov-fields")]
         public string LovFields { get; set; } = string.Empty;  // e.g. "employee_no,employee_name,employee_id"
         [HtmlAttributeName("lov-key-hidden")]
@@ -87,12 +87,16 @@ namespace Web_EIP_Csharp.Views.Components
                 string rdAttr = Readonly ? " readonly" : string.Empty;
                 string xmAttr = !string.IsNullOrEmpty(XModelCode) ? $" x-model=\"{XModelCode}\"" : string.Empty;
                 bool hasName = !string.IsNullOrEmpty(NameId) || ShowButton;
+                string effectiveCodeWidth = hasName ? CodeWidth : "w-full";
                 string rounded = hasName ? "rounded-r-none" : "rounded-lg";
+                string codeInputStyle = Readonly
+                    ? @"text-blue-700 font-bold bg-blue-50 hover:bg-blue-100 cursor-pointer"
+                    : @"text-slate-700 bg-white";
                 codeHtml = $@"<input type=""text"" id=""{HtmlId(CodeId)}"" name=""{HtmlEncode(CodeId)}""
                        value=""{HtmlEncode(CodeValue)}""
                        placeholder=""{HtmlEncode(CodePlaceholder)}""{rdAttr}{onclick}{xmAttr}
-                       class=""block {CodeWidth} px-3 py-2 border border-slate-300 {rounded} text-sm
-                              text-blue-700 font-bold bg-blue-50 hover:bg-blue-100 cursor-pointer
+                       class=""block {effectiveCodeWidth} px-3 py-2 border border-slate-300 {rounded} text-sm
+                              {codeInputStyle}
                               focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors"">";
             }
 
@@ -170,10 +174,11 @@ namespace Web_EIP_Csharp.Views.Components
                 map.Append($"'{EscapeJs(LovKeyName)}':'{EscapeJs(NameId)}'");
                 first = false;
             }
-            if (!string.IsNullOrWhiteSpace(LovDisplayFormat) && !string.IsNullOrWhiteSpace(NameId))
+            var formattedTargetId = !string.IsNullOrWhiteSpace(NameId) ? NameId : CodeId;
+            if (!string.IsNullOrWhiteSpace(LovDisplayFormat) && !string.IsNullOrWhiteSpace(formattedTargetId))
             {
                 if (!first) map.Append(",");
-                map.Append($"'FORMATTED_DISPLAY':'{EscapeJs(NameId)}'");
+                map.Append($"'FORMATTED_DISPLAY':'{EscapeJs(formattedTargetId)}'");
             }
             map.Append("}");
 
@@ -233,3 +238,4 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string s) => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
+
