@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    <div class="flex-1 flex flex-col min-h-0">
+    <div class="flex flex-col">
         <g-datagrid id="idmGrid"
                     api="/Idm/select?DataMember=IDMGD01"
                     columns="PROGRAM_NO:程式編號:150:left:text::text,DISPLAY_CODE:顯示:80:center:select:Y=Y;N=N:select,EMPLOYEE_ID:員工編號:150:left:text::lov,PURPOSE:用途:220:left:text::text,PROGRAM_TYPE:程式型態:120:left:text::text,ENTRY_DATE:建檔日期:170:left:readonly::"
@@ -66,14 +66,15 @@
                     @@edit="editRecord($event.detail.row)"
                     @@delete="confirmDelete($event.detail.row)"
                     @@query="executeQueryFromGrid($event.detail.filters)"
-                    clean-style="true"></g-datagrid>
+                    extra-class="shrink-0"
+                    clean-style="false"></g-datagrid>
 
         <div class="border-t border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
             主檔：<span class="font-semibold" x-text="selectedProgram?.PROGRAM_NO || '-'"></span>
             <span class="text-slate-400 ml-2" x-text="selectedProgram?.PURPOSE || '請先點選上方程式資料'"></span>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 bg-slate-50 border-t border-slate-200 min-h-[260px]">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 pb-4 bg-slate-50 border-t border-slate-200 min-h-[340px]">
             <g-datagrid id="roleGrid1"
                         title="位置一"
                         api="/Idm/selectRoleFunctionPrograms?DataMember=IDMGD01&positionNo=1"
