@@ -96,6 +96,19 @@ app.UseSession();
 
 app.UseAuthorization();
 
+app.MapControllerRoute(
+    name: "files",
+    pattern: "Files/{action=Index}/{id?}",
+    defaults: new { controller = "Files" });
+
+// Dashboard route:
+// /Dashboard              -> DashboardController.Index
+// /Dashboard/Dashboard    -> DashboardController.Dashboard
+app.MapControllerRoute(
+    name: "dashboard",
+    pattern: "Dashboard/{action=Index}/{id?}",
+    defaults: new { controller = "Dashboard" });
+
 // Map default route to Login
 app.MapControllerRoute(
     name: "default",

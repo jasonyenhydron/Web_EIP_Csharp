@@ -8,6 +8,26 @@ namespace Web_EIP_Csharp.Controllers
     {
         public IActionResult Index()
         {
+            return RenderDashboard("Index");
+        }
+
+        public IActionResult Dashboard()
+        {
+            return RenderDashboard("Dashboard");
+        }
+
+        public IActionResult Board()
+        {
+            return RenderDashboard("~/Views/Dashboard/Board.cshtml");
+        }
+
+        public IActionResult SigonCenter()
+        {
+            return RenderDashboard("~/Views/Dashboard/sigoncenter.cshtml");
+        }
+
+        private IActionResult RenderDashboard(string viewName)
+        {
             var username = HttpContext.Session.GetString("username");
             if (string.IsNullOrEmpty(username))
             {
@@ -18,7 +38,7 @@ namespace Web_EIP_Csharp.Controllers
             ViewBag.UserName = HttpContext.Session.GetString("user_name");
             ViewBag.TodayDate = DateTime.Today.ToString("yyyy-MM-dd");
 
-            return View();
+            return View(viewName);
         }
     }
 }
