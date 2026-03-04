@@ -65,7 +65,7 @@ namespace Web_EIP_Csharp.Views.Components
                 case "popup":
                     return new[] { "~/js/g-components.js" };
                 case "main":
-                    return new[] { "~/js/sidebar.js" };
+                    return new[] { "~/js/g-components.js", "~/js/sidebar.js" };
                 case "mis-programs":
                     return new[] { "~/js/g-components.js", "~/js/sidebar.js", "~/js/mis_programs.js" };
                 default:

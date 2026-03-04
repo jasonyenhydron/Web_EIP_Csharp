@@ -1,14 +1,6 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-/*
- * GButtonTagHelper ??å°æ? jeasyui LinkButton
- * ?¨æ?ï¼?g-button text="?²å?" type="primary" icon="save" onclick="save()"/>
- *       <g-button text="è¿”å?" type="ghost" icon="close" href="/mis/programs"/>
- * type : primary | secondary | danger | warning | success | info | ghost
- * icon : save | trash | edit | search | plus | close | check | refresh |
- *        upload | download | print | eye | list | play | filter
- * size : sm | md | lg
- */
+
 namespace Web_EIP_Csharp.Views.Components
 {
     [HtmlTargetElement("g-button")]
@@ -20,9 +12,7 @@ namespace Web_EIP_Csharp.Views.Components
         public string Class    { get; set; } = "";
         public string ExtraClass { get; set; } = "";
         public string Onclick  { get; set; } = "";
-        /// <summary>è¨­å?å¾Œè¼¸??&lt;a&gt; æ¨™ç±¤ï¼ˆé€???‰é?ï¼‰ï??¦å?è¼¸å‡º &lt;button&gt;</summary>
         public string Href     { get; set; } = "";
-        /// <summary>a æ¨™ç±¤??target å±¬æ€§ï?å¦?"_blank"</summary>
         public string Target   { get; set; } = "";
         public string Id       { get; set; } = "";
         public string Size     { get; set; } = "md";
@@ -51,8 +41,6 @@ namespace Web_EIP_Csharp.Views.Components
             };
             var disabledC = Disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "hover:scale-[1.02] active:scale-95";
             var iconHtml  = GetIconSvg(Icon);
-
-            // ??href ?‚è¼¸??<a>ï¼Œå¦?‡è¼¸??<button>
             bool isLink = !string.IsNullOrEmpty(Href);
             output.TagName = isLink ? "a" : "button";
 

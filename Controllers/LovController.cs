@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace Web_EIP_Csharp.Controllers
     [Route("api/lov")]
     public class LovController : ControllerBase
     {
-        private static string BuildDbConnectionString(string tns) => DbHelper.DefaultConnectionString;
+        private static string BuildDbConnectionString(string tns) => DbHelper.BuildConnectionString(tns);
 
         private bool CheckSession(out string username, out string password, out string tns)
         {

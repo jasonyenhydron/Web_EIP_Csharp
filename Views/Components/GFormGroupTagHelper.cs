@@ -1,11 +1,6 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-/*
- * GFormGroupTagHelper ??Â∞çÊ? jeasyui Form field
- * <g-form-group label="?°Â∑•ÂßìÂ?" required="true" col-span="2">
- *     <input type="text" class="g-input">
- * </g-form-group>
- */
+
 namespace Web_EIP_Csharp.Views.Components
 {
     [HtmlTargetElement("g-form-group")]

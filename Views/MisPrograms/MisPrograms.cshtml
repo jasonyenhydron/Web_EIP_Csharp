@@ -1,17 +1,8 @@
-﻿@{
+﻿@model Web_EIP_Csharp.Models.ViewModels.MisProgramsViewModel
+@{
     ViewData["Title"] = "MIS 系統 - 程式項目";
     ViewBag.HeaderTitle = "MIS 系統 - 程式項目";
     ViewBag.HeaderIcon = @"<svg class=""w-6 h-6"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4""></path></svg>";
-    var employeeLovSql = Uri.EscapeDataString(@"
-SELECT employee_id, employee_no, employee_name
-FROM (
-    SELECT employee_id, employee_no, employee_name,
-           ROW_NUMBER() OVER (ORDER BY employee_no ASC) AS rn
-    FROM hrm_employee_v
-    WHERE (UPPER(employee_no) LIKE :q OR UPPER(employee_name) LIKE :q)
-)
-WHERE rn > :offset AND rn <= :endRow");
-    var employeeLovApi = $"/api/lov/query?sql={employeeLovSql}";
 }
 
 @section Styles {
@@ -53,17 +44,9 @@ WHERE rn > :offset AND rn <= :endRow");
                                  hidden-value="@ViewBag.EmployeeIdFilter"
                                  code-id="employee_display"
                                  code-placeholder="員工編號..."
-                                 lov-title="尋找員工 (Employee)"
-                                 lov-api="@employeeLovApi"
-                                 lov-columns="編號,名稱,ID"
-                                 lov-fields="employee_no,employee_name,employee_id"
-                                 lov-key-hidden="employee_id"
-                                 lov-key-code="employee_id"
-                                 lov-display-format="{employee_id} {employee_name}"
+                                 config="@Model.EmployeeLov"
                                  readonly="false"
-                                 lov-sort-enabled="true"
-                                 lov-buffer-view="true"
-                                 lov-page-size="50">
+                                 >
                     </g-lov-input>
 
                     <g-combobox label="顯示狀態"
@@ -274,3 +257,4 @@ WHERE rn > :offset AND rn <= :endRow");
 @section Scripts {
     <g-js profile="mis-programs"></g-js>
 }
+

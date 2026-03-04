@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace Web_EIP_Csharp.Controllers
         private static readonly List<string> TNS_LIST = new() { "MIS", "TEST" };
 
         private static string BuildDbConnectionString(string tns) =>
-            DbHelper.DefaultConnectionString;
+            DbHelper.BuildConnectionString(tns);
 
         [HttpGet]
         public IActionResult Login()
@@ -73,7 +73,7 @@ namespace Web_EIP_Csharp.Controllers
                 HttpContext.Session.SetString("tns", tns);
                 HttpContext.Session.SetString("user_name", string.IsNullOrWhiteSpace(userName) ? username : userName);
 
-                return RedirectToAction("Index", "Dashboard");
+                return RedirectToAction("Dashboard", "Dashboard");
             }
             catch (Exception ex)
             {

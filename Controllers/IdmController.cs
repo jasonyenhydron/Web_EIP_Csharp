@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,8 @@ using System.Data.Common;
 using System.Globalization;
 using System.Threading.Tasks;
 using Web_EIP_Csharp.Helpers;
+using Web_EIP_Csharp.Models.Lov;
+using Web_EIP_Csharp.Models.ViewModels;
 
 namespace Web_EIP_Csharp.Controllers
 {
@@ -24,7 +26,34 @@ namespace Web_EIP_Csharp.Controllers
         }
 
         private static string BuildDbConnectionString(string tns) =>
-            DbHelper.DefaultConnectionString;
+            DbHelper.BuildConnectionString(tns);
+
+        private static LovInputConfig BuildEmployeeLovConfig()
+        {
+            var employeeLovSql = Uri.EscapeDataString(@"
+SELECT employee_id, employee_no, employee_name
+FROM (
+    SELECT employee_id, employee_no, employee_name,
+           ROW_NUMBER() OVER (ORDER BY employee_no ASC) AS rn
+    FROM hrm_employee_v
+    WHERE (UPPER(employee_no) LIKE :q OR UPPER(employee_name) LIKE :q)
+)
+WHERE rn > :offset AND rn <= :endRow");
+
+            return new LovInputConfig
+            {
+                Title = "尋找員工 (Employee)",
+                Api = $"/api/lov/query?sql={employeeLovSql}",
+                Columns = "編號,名稱,ID",
+                Fields = "employee_no,employee_name,employee_id",
+                KeyHidden = "employee_id",
+                KeyCode = "employee_no",
+                KeyName = "employee_name",
+                BufferView = true,
+                PageSize = 50,
+                SortEnabled = true
+            };
+        }
 
         [HttpGet("Idm/IDMGD01")]
         public IActionResult IDMGD01()
@@ -36,7 +65,12 @@ namespace Web_EIP_Csharp.Controllers
             ViewBag.UserId = username;
             ViewBag.UserName = HttpContext.Session.GetString("user_name");
             ViewBag.NumericUserId = HttpContext.Session.GetString("numeric_user_id");
-            return View("~/Views/MisPrograms/IDMGD01.cshtml");
+
+            var vm = new IdmGd01ViewModel
+            {
+                EmployeeLov = BuildEmployeeLovConfig()
+            };
+            return View("~/Views/MisPrograms/IDMGD01.cshtml", vm);
         }
 
         [HttpGet("Idm/select")]

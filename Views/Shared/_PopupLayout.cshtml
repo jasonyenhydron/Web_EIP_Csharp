@@ -17,16 +17,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <g-style profile="popup"></g-style>
     <style>
-        .g-popup-scroll-root { overflow: hidden !important; }
+        html, body {
+            height: 100%;
+        }
+        body {
+            margin: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        .g-popup-scroll-root { overflow: auto !important; }
         body.g-modal-open .g-popup-scroll-root { overflow: hidden !important; }
     </style>
     @RenderSection("Styles", required: false)
 </head>
-<body class="bg-slate-50 overflow-hidden h-screen flex flex-col">
+<body class="bg-slate-50 min-h-screen flex flex-col">
     @* SVG Icon Sprite *@
     <partial name="~/Views/Shared/_IconSprite.cshtml" />
 
-    <div class="g-popup-scroll-root flex-1 min-h-0 relative overflow-hidden">
+    <div class="g-popup-scroll-root flex-1 min-h-0 relative overflow-y-auto overflow-x-hidden overscroll-contain">
         @RenderBody()
     </div>
 

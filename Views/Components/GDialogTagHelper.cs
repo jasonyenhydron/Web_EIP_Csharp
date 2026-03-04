@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-/*
- * GDialogTagHelper ??Â∞çÊ? jeasyui Dialog / Modal
- * <g-dialog id="dlgAdd" title="?∞Â?Á®ãÂ?" width="lg">content</g-dialog>
- * JS: gDialogOpen('dlgAdd') / gDialogClose('dlgAdd')
- */
+
 namespace Web_EIP_Csharp.Views.Components
 {
     [HtmlTargetElement("g-dialog")]

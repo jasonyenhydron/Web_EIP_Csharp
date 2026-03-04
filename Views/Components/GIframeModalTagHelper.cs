@@ -2,35 +2,19 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
-    /// <summary>
-    /// g-iframe-modalÔºöÂê´ iframe ?ÑÁ?ÂºèÂü∑Ë°åË?Á™óÂ?‰ª?    ///
-    /// ‰ΩøÁî®?πÂ?Ôº?    ///   <g-iframe-modal
-    ///       id="executionModal"
-    ///       modal-content-id="executionModalContent"
-    ///       iframe-id="executionIframe"
-    ///       title-id="executionModalTitle"
-    ///       title="Á®ãÂ??∑Ë?"
-    ///       gradient="indigo"
-    ///       maximize-btn-id="execMaximizeBtn"
-    ///       maximize-icon-id="execMaximizeIcon"
-    ///       restore-icon-id="execRestoreIcon"
-    ///       close-fn="closeExecutionModal()"
-    ///       maximize-fn="toggleExecutionMaximize()" />
-    ///
-    /// gradient ?ØÈÅ∏ÔºöindigoÔºàÈ?Ë®≠Ô?| blue | green | slate
-    /// </summary>
     [HtmlTargetElement("g-iframe-modal")]
     public class GIframeModalTagHelper : TagHelper
     {
         [HtmlAttributeName("id")]
         public string Id { get; set; } = "executionModal";
+
         public string ModalContentId { get; set; } = "executionModalContent";
         public string IframeId { get; set; } = "executionIframe";
         public string TitleId { get; set; } = "executionModalTitle";
         public string MaximizeBtnId { get; set; } = "execMaximizeBtn";
         public string MaximizeIconId { get; set; } = "execMaximizeIcon";
-        public string RestoreIconId  { get; set; } = "execRestoreIcon";
-        public string Title { get; set; } = "Á®ãÂ??∑Ë?";
+        public string RestoreIconId { get; set; } = "execRestoreIcon";
+        public string Title { get; set; } = "Âü∑Ë°åË¶ñÁ™ó";
         public string Gradient { get; set; } = "indigo";
         public string CloseFn { get; set; } = "closeExecutionModal()";
         public string MaximizeFn { get; set; } = "toggleExecutionMaximize()";
@@ -40,45 +24,42 @@ namespace Web_EIP_Csharp.Views.Components
         {
             output.TagName = "div";
             output.Attributes.SetAttribute("id", Id);
-            output.Attributes.SetAttribute("class",
-                "fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[60] " +
-                "items-center justify-center p-4 transition-all duration-300");
+            output.Attributes.SetAttribute(
+                "class",
+                "fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[60] items-center justify-center p-4 transition-all duration-300");
 
-            // Ê®ôÈ??óÊº∏Â±§Ëâ≤
-            string gradientClass = Gradient?.ToLower() switch
+            var gradientClass = Gradient?.ToLower() switch
             {
-                "blue"  => "from-blue-600 to-blue-700",
+                "blue" => "from-blue-600 to-blue-700",
                 "green" => "from-green-600 to-teal-700",
                 "slate" => "from-slate-700 to-slate-800",
-                _       => "from-indigo-600 to-blue-700"
+                _ => "from-indigo-600 to-blue-700"
             };
 
-            var titleIconSvg = @"<svg class=""w-5 h-5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+            const string titleIconSvg = @"<svg class=""w-5 h-5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4""/></svg>";
 
-            var maximizeSvg  = @"<svg class=""w-5 h-5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+            const string maximizeSvg = @"<svg class=""w-5 h-5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
                       d=""M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4""/></svg>";
 
-            var restoreSvg   = $@"<svg id=""{RestoreIconId}"" class=""w-[85%] h-[85%] hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+            var restoreSvg = $@"<svg id=""{RestoreIconId}"" class=""w-[85%] h-[85%] hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
                       d=""M9 9L4 4m0 0v4m0-4h4m12 12l-5-5m5 5v-4m0 4h-4M9 15l-5 5m0 0v-4m0 4h4m11-11l-5 5m5-5v4m0-4h-4""/></svg>";
 
-            var closeSvg     = @"<svg class=""w-6 h-6"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+            const string closeSvg = @"<svg class=""w-6 h-6"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/></svg>";
 
-            string html = $@"
+            var html = $@"
 <div class=""bg-white rounded-2xl shadow-2xl w-full max-w-7xl flex flex-col overflow-hidden border border-slate-200 transform scale-95 transition-transform duration-300""
      id=""{HtmlEncode(ModalContentId)}"" style=""height:{HtmlEncode(Height)}"">
 
-    <!-- Ê®ôÈ???-->
     <div class=""bg-gradient-to-r {gradientClass} text-white px-4 py-3 flex items-center justify-between shadow-lg shrink-0"">
         <h2 class=""text-lg font-bold flex items-center gap-3"">
             {titleIconSvg}
             <span id=""{HtmlEncode(TitleId)}"">{HtmlEncode(Title)}</span>
         </h2>
         <div class=""flex items-center gap-1"">
-            <!-- ?ÄÂ§ßÂ??âÈ? -->
             <button type=""button""
                     id=""{HtmlEncode(MaximizeBtnId)}""
                     onclick=""{HtmlAttr(MaximizeFn)}""
@@ -86,7 +67,6 @@ namespace Web_EIP_Csharp.Views.Components
                 <span id=""{HtmlEncode(MaximizeIconId)}"">{maximizeSvg}</span>
                 {restoreSvg}
             </button>
-            <!-- ?úÈ??âÈ? -->
             <button type=""button""
                     onclick=""{HtmlAttr(CloseFn)}""
                     class=""text-white/70 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all"">
@@ -95,10 +75,9 @@ namespace Web_EIP_Csharp.Views.Components
         </div>
     </div>
 
-    <!-- iframe ?ßÂÆπ?Ä -->
-    <div class=""flex-1 bg-slate-50 relative"">
+    <div class=""flex-1 bg-slate-50 relative min-h-0"">
         <iframe id=""{HtmlEncode(IframeId)}"" src=""""
-                class=""absolute inset-0 w-full h-full border-0 rounded-b-2xl"">
+                class=""absolute inset-0 w-full h-full border-0 rounded-b-2xl"" scrolling=""auto"">
         </iframe>
     </div>
 
@@ -108,7 +87,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
 
         private static string HtmlEncode(string? s) => System.Net.WebUtility.HtmlEncode(s ?? string.Empty);
-        private static string HtmlAttr(string? s)    => s?.Replace("\"", "&quot;") ?? string.Empty;
+        private static string HtmlAttr(string? s) => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
-

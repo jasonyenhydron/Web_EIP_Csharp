@@ -1,6 +1,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using Oracle.ManagedDataAccess.Client;
 
 namespace Web_EIP_Csharp.Helpers
@@ -13,6 +14,7 @@ namespace Web_EIP_Csharp.Helpers
     {
         private static readonly object SyncRoot = new();
         private static readonly ConcurrentDictionary<string, DbParameter[]> ParameterCache = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly Regex OracleObjectNameRegex = new(@"^[A-Za-z][A-Za-z0-9_$#]*(\.[A-Za-z][A-Za-z0-9_$#]*){0,2}$", RegexOptions.Compiled);
         private static DbProviderFactory _providerFactory = OracleClientFactory.Instance;
         private static string _defaultConnectionString = string.Empty;
 
@@ -324,6 +326,278 @@ namespace Web_EIP_Csharp.Helpers
                 cmd.Parameters.AddRange(cmdParams);
             }
         }
+
+        public static async Task<Dictionary<string, object?>> ExecuteProcedureWithOutputsAsync(
+            string connectionString,
+            string procedureName,
+            DbParameter[]? commandParameters = null,
+            CancellationToken cancellationToken = default)
+        {
+            EnsureOracleObjectName(procedureName, nameof(procedureName));
+            await using var conn = CreateConnection(connectionString);
+            await using var cmd = conn.CreateCommand();
+            await PrepareCommandAsync(cmd, conn, null, CommandType.StoredProcedure, procedureName, commandParameters, cancellationToken);
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+            return CollectOutputValues(cmd.Parameters);
+        }
+
+        public static Task<Dictionary<string, object?>> ExecuteProcedureWithOutputsAsync(
+            string procedureName,
+            DbParameter[]? commandParameters = null,
+            CancellationToken cancellationToken = default) =>
+            ExecuteProcedureWithOutputsAsync(GetDefaultConnectionString(), procedureName, commandParameters, cancellationToken);
+
+        public static Task<Dictionary<string, object?>> ExecutePackageProcedureWithOutputsAsync(
+            string connectionString,
+            string packageName,
+            string procedureName,
+            DbParameter[]? commandParameters = null,
+            CancellationToken cancellationToken = default)
+        {
+            EnsureOracleObjectName(packageName, nameof(packageName));
+            EnsureOracleObjectName(procedureName, nameof(procedureName));
+            return ExecuteProcedureWithOutputsAsync(connectionString, $"{packageName}.{procedureName}", commandParameters, cancellationToken);
+        }
+
+        public static Task<Dictionary<string, object?>> ExecutePackageProcedureWithOutputsAsync(
+            string packageName,
+            string procedureName,
+            DbParameter[]? commandParameters = null,
+            CancellationToken cancellationToken = default) =>
+            ExecutePackageProcedureWithOutputsAsync(GetDefaultConnectionString(), packageName, procedureName, commandParameters, cancellationToken);
+
+        public static async Task<object?> ExecuteFunctionScalarAsync(
+            string connectionString,
+            string functionName,
+            DbType returnType = DbType.String,
+            DbParameter[]? inputParameters = null,
+            CancellationToken cancellationToken = default)
+        {
+            EnsureOracleObjectName(functionName, nameof(functionName));
+
+            var returnParam = CreateParameter("return_value", null, returnType, ParameterDirection.ReturnValue);
+            var allParams = new List<DbParameter> { returnParam };
+            if (inputParameters != null && inputParameters.Length > 0)
+                allParams.AddRange(inputParameters);
+
+            await using var conn = CreateConnection(connectionString);
+            await using var cmd = conn.CreateCommand();
+            await PrepareCommandAsync(cmd, conn, null, CommandType.StoredProcedure, functionName, allParams.ToArray(), cancellationToken);
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+            return NormalizeDbValue(returnParam.Value);
+        }
+
+        public static Task<object?> ExecuteFunctionScalarAsync(
+            string functionName,
+            DbType returnType = DbType.String,
+            DbParameter[]? inputParameters = null,
+            CancellationToken cancellationToken = default) =>
+            ExecuteFunctionScalarAsync(GetDefaultConnectionString(), functionName, returnType, inputParameters, cancellationToken);
+
+        public static async Task CreateSchedulerJobAsync(
+            string connectionString,
+            string jobName,
+            string jobType,
+            string jobAction,
+            DateTime? startDate = null,
+            string? repeatInterval = null,
+            bool enabled = true,
+            bool autoDrop = false,
+            string? comments = null,
+            CancellationToken cancellationToken = default)
+        {
+            EnsureOracleObjectName(jobName, nameof(jobName));
+            if (string.IsNullOrWhiteSpace(jobType)) throw new ArgumentException("jobType is required.", nameof(jobType));
+            if (string.IsNullOrWhiteSpace(jobAction)) throw new ArgumentException("jobAction is required.", nameof(jobAction));
+
+            const string sql = @"
+BEGIN
+    DBMS_SCHEDULER.CREATE_JOB(
+        job_name        => :job_name,
+        job_type        => :job_type,
+        job_action      => :job_action,
+        start_date      => :start_date,
+        repeat_interval => :repeat_interval,
+        enabled         => CASE WHEN :enabled_flag = 1 THEN TRUE ELSE FALSE END,
+        auto_drop       => CASE WHEN :auto_drop_flag = 1 THEN TRUE ELSE FALSE END,
+        comments        => :comments
+    );
+END;";
+
+            await ExecuteNonQueryAsync(
+                connectionString,
+                CommandType.Text,
+                sql,
+                new[]
+                {
+                    CreateParameter("job_name", jobName),
+                    CreateParameter("job_type", jobType),
+                    CreateParameter("job_action", jobAction),
+                    CreateParameter("start_date", startDate.HasValue ? (object)startDate.Value : DBNull.Value, DbType.DateTime),
+                    CreateParameter("repeat_interval", string.IsNullOrWhiteSpace(repeatInterval) ? (object)DBNull.Value : repeatInterval),
+                    CreateParameter("enabled_flag", enabled ? 1 : 0, DbType.Int32),
+                    CreateParameter("auto_drop_flag", autoDrop ? 1 : 0, DbType.Int32),
+                    CreateParameter("comments", string.IsNullOrWhiteSpace(comments) ? (object)DBNull.Value : comments)
+                },
+                cancellationToken);
+        }
+
+        public static Task CreateSchedulerJobAsync(
+            string jobName,
+            string jobType,
+            string jobAction,
+            DateTime? startDate = null,
+            string? repeatInterval = null,
+            bool enabled = true,
+            bool autoDrop = false,
+            string? comments = null,
+            CancellationToken cancellationToken = default) =>
+            CreateSchedulerJobAsync(GetDefaultConnectionString(), jobName, jobType, jobAction, startDate, repeatInterval, enabled, autoDrop, comments, cancellationToken);
+
+        public static Task<int> DropSchedulerJobAsync(string connectionString, string jobName, bool force = true, CancellationToken cancellationToken = default)
+        {
+            EnsureOracleObjectName(jobName, nameof(jobName));
+            const string sql = @"
+BEGIN
+    DBMS_SCHEDULER.DROP_JOB(
+        job_name => :job_name,
+        force    => CASE WHEN :force_flag = 1 THEN TRUE ELSE FALSE END
+    );
+END;";
+
+            return ExecuteNonQueryAsync(
+                connectionString,
+                CommandType.Text,
+                sql,
+                new[]
+                {
+                    CreateParameter("job_name", jobName),
+                    CreateParameter("force_flag", force ? 1 : 0, DbType.Int32)
+                },
+                cancellationToken);
+        }
+
+        public static Task<int> DropSchedulerJobAsync(string jobName, bool force = true, CancellationToken cancellationToken = default) =>
+            DropSchedulerJobAsync(GetDefaultConnectionString(), jobName, force, cancellationToken);
+
+        public static Task<int> RunSchedulerJobAsync(string connectionString, string jobName, bool useCurrentSession = false, CancellationToken cancellationToken = default)
+        {
+            EnsureOracleObjectName(jobName, nameof(jobName));
+            const string sql = @"
+BEGIN
+    DBMS_SCHEDULER.RUN_JOB(
+        job_name            => :job_name,
+        use_current_session => CASE WHEN :use_current_session_flag = 1 THEN TRUE ELSE FALSE END
+    );
+END;";
+
+            return ExecuteNonQueryAsync(
+                connectionString,
+                CommandType.Text,
+                sql,
+                new[]
+                {
+                    CreateParameter("job_name", jobName),
+                    CreateParameter("use_current_session_flag", useCurrentSession ? 1 : 0, DbType.Int32)
+                },
+                cancellationToken);
+        }
+
+        public static Task<int> RunSchedulerJobAsync(string jobName, bool useCurrentSession = false, CancellationToken cancellationToken = default) =>
+            RunSchedulerJobAsync(GetDefaultConnectionString(), jobName, useCurrentSession, cancellationToken);
+
+        public static Task<int> EnableSchedulerJobAsync(string connectionString, string jobName, CancellationToken cancellationToken = default)
+        {
+            EnsureOracleObjectName(jobName, nameof(jobName));
+            const string sql = "BEGIN DBMS_SCHEDULER.ENABLE(name => :job_name); END;";
+            return ExecuteNonQueryAsync(
+                connectionString,
+                CommandType.Text,
+                sql,
+                new[] { CreateParameter("job_name", jobName) },
+                cancellationToken);
+        }
+
+        public static Task<int> EnableSchedulerJobAsync(string jobName, CancellationToken cancellationToken = default) =>
+            EnableSchedulerJobAsync(GetDefaultConnectionString(), jobName, cancellationToken);
+
+        public static Task<int> DisableSchedulerJobAsync(string connectionString, string jobName, bool force = false, CancellationToken cancellationToken = default)
+        {
+            EnsureOracleObjectName(jobName, nameof(jobName));
+            const string sql = @"
+BEGIN
+    DBMS_SCHEDULER.DISABLE(
+        name  => :job_name,
+        force => CASE WHEN :force_flag = 1 THEN TRUE ELSE FALSE END
+    );
+END;";
+
+            return ExecuteNonQueryAsync(
+                connectionString,
+                CommandType.Text,
+                sql,
+                new[]
+                {
+                    CreateParameter("job_name", jobName),
+                    CreateParameter("force_flag", force ? 1 : 0, DbType.Int32)
+                },
+                cancellationToken);
+        }
+
+        public static Task<int> DisableSchedulerJobAsync(string jobName, bool force = false, CancellationToken cancellationToken = default) =>
+            DisableSchedulerJobAsync(GetDefaultConnectionString(), jobName, force, cancellationToken);
+
+        public static Task<DataTable> GetSchedulerJobsAsync(string connectionString, string? owner = null, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(owner))
+            {
+                const string userSql = @"
+SELECT JOB_NAME, ENABLED, STATE, JOB_TYPE, JOB_ACTION, REPEAT_INTERVAL, START_DATE, NEXT_RUN_DATE, LAST_START_DATE
+FROM USER_SCHEDULER_JOBS
+ORDER BY JOB_NAME";
+                return GetDataTableAsync(connectionString, CommandType.Text, userSql, null, cancellationToken);
+            }
+
+            EnsureOracleObjectName(owner, nameof(owner));
+            const string allSql = @"
+SELECT OWNER, JOB_NAME, ENABLED, STATE, JOB_TYPE, JOB_ACTION, REPEAT_INTERVAL, START_DATE, NEXT_RUN_DATE, LAST_START_DATE
+FROM ALL_SCHEDULER_JOBS
+WHERE OWNER = UPPER(:owner)
+ORDER BY JOB_NAME";
+            return GetDataTableAsync(connectionString, CommandType.Text, allSql, new[] { CreateParameter("owner", owner) }, cancellationToken);
+        }
+
+        public static Task<DataTable> GetSchedulerJobsAsync(string? owner = null, CancellationToken cancellationToken = default) =>
+            GetSchedulerJobsAsync(GetDefaultConnectionString(), owner, cancellationToken);
+
+        private static void EnsureOracleObjectName(string value, string paramName)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Object name is required.", paramName);
+            if (!OracleObjectNameRegex.IsMatch(value.Trim()))
+                throw new ArgumentException("Invalid Oracle object name.", paramName);
+        }
+
+        private static Dictionary<string, object?> CollectOutputValues(DbParameterCollection parameters)
+        {
+            var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            foreach (DbParameter parameter in parameters)
+            {
+                if (parameter.Direction == ParameterDirection.Output ||
+                    parameter.Direction == ParameterDirection.InputOutput ||
+                    parameter.Direction == ParameterDirection.ReturnValue)
+                {
+                    var key = parameter.ParameterName?.Trim().TrimStart(':') ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(key))
+                        continue;
+                    result[key] = NormalizeDbValue(parameter.Value);
+                }
+            }
+            return result;
+        }
+
+        private static object? NormalizeDbValue(object? value) =>
+            value == null || value == DBNull.Value ? null : value;
 
         private static string GetDefaultConnectionString()
         {

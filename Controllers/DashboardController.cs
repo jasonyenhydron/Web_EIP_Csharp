@@ -8,7 +8,7 @@ namespace Web_EIP_Csharp.Controllers
     {
         public IActionResult Index()
         {
-            return RenderDashboard("Index");
+            return View("Index");
         }
 
         public IActionResult Dashboard()

@@ -1,9 +1,6 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+Ôªøusing Microsoft.AspNetCore.Razor.TagHelpers;
 
-/*
- * GPanelTagHelper ??Â∞çÊ? jeasyui Panel
- * <g-panel title="?∫Êú¨Ë≥áË?" icon="info" collapsible="true" collapsed="false">content</g-panel>
- */
+
 namespace Web_EIP_Csharp.Views.Components
 {
     [HtmlTargetElement("g-panel")]
@@ -15,10 +12,6 @@ namespace Web_EIP_Csharp.Views.Components
         public bool   Collapsed    { get; set; } = false;
         public string Class        { get; set; } = "";
         public string ExtraClass   { get; set; } = "";
-        /// <summary>
-        /// Ë®≠ÁÇ∫ true ?ÇÁßª??overflow-hiddenÔºåÂ?Ë®±ÂÖß?®Á?Â∞çÂ?‰ΩçÂ??ÉÁ?ÔºàÂ? suggestion dropdownÔºâË???panel ?äÁ???
-        /// ?®Ê?Ôº?g-panel allow-overflow="true">
-        /// </summary>
         public bool   AllowOverflow { get; set; } = false;
 
         public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
@@ -27,7 +20,7 @@ namespace Web_EIP_Csharp.Views.Components
             var panelId  = $"gp_{Guid.NewGuid():N}";
             var iconSvg  = GetIconSvg(Icon);
             var colBtn   = Collapsible
-                ? $@"<button type=""button"" onclick=""gPanelToggle('{panelId}')"" title=""?∂Â?/Â±ïÈ?""
+                ? $@"<button type=""button"" onclick=""gPanelToggle('{panelId}')"" title=""Â±ïÈñã/Êî∂Âêà""
                          class=""ml-auto text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"">
                          <svg id=""{panelId}-arrow"" class=""w-4 h-4 transition-transform duration-200{(Collapsed ? " rotate-180" : "")}"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                              <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 15l7-7 7 7""/>
@@ -36,7 +29,6 @@ namespace Web_EIP_Csharp.Views.Components
                 : "";
 
             var hiddenClass  = Collapsed ? " hidden" : "";
-            // AllowOverflow=true: ÁßªÈô§ overflow-hidden ‰ª•ÊîØ??suggestion dropdown Á≠âÁ?Â∞çÂ?‰ΩçÂ??ÉÁ?
             var overflowCls  = AllowOverflow ? "overflow-visible" : "overflow-hidden";
 
             output.TagName = "div";
@@ -69,4 +61,5 @@ namespace Web_EIP_Csharp.Views.Components
         };
     }
 }
+
 

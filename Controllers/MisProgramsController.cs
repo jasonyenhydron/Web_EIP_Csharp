@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -6,17 +6,51 @@ using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
 using Web_EIP_Csharp.Helpers;
+using Web_EIP_Csharp.Models.Lov;
+using Web_EIP_Csharp.Models.ViewModels;
 
 namespace Web_EIP_Csharp.Controllers
 {
     public class MisProgramsController : Controller
     {
         private static string BuildDbConnectionString(string tns) =>
-            DbHelper.DefaultConnectionString;
+            DbHelper.BuildConnectionString(tns);
+
+        private static LovInputConfig BuildEmployeeLovConfig()
+        {
+            var employeeLovSql = Uri.EscapeDataString(@"
+SELECT employee_id, employee_no, employee_name
+FROM (
+    SELECT employee_id, employee_no, employee_name,
+           ROW_NUMBER() OVER (ORDER BY employee_no ASC) AS rn
+    FROM hrm_employee_v
+    WHERE (UPPER(employee_no) LIKE :q OR UPPER(employee_name) LIKE :q)
+)
+WHERE rn > :offset AND rn <= :endRow");
+
+            return new LovInputConfig
+            {
+                Title = "尋找員工 (Employee)",
+                Api = $"/api/lov/query?sql={employeeLovSql}",
+                Columns = "編號,名稱,ID",
+                Fields = "employee_no,employee_name,employee_id",
+                KeyHidden = "employee_id",
+                KeyCode = "employee_id",
+                DisplayFormat = "{employee_id} {employee_name}",
+                SortEnabled = true,
+                BufferView = true,
+                PageSize = 50
+            };
+        }
 
         [HttpGet("mis/programs")]
         public async Task<IActionResult> Index(string program_no, string employee_id, string display_code = "Y")
         {
+            var vm = new MisProgramsViewModel
+            {
+                EmployeeLov = BuildEmployeeLovConfig()
+            };
+
             var username = HttpContext.Session.GetString("username");
             var password = HttpContext.Session.GetString("password");
             var tns = HttpContext.Session.GetString("tns");
@@ -80,9 +114,9 @@ namespace Web_EIP_Csharp.Controllers
                     }
                     else
                     {
-                        if (!categories.ContainsKey("?嗡?"))
-                            categories["?嗡?"] = new List<Dictionary<string, object>>();
-                        categories["?嗡?"].Add(program);
+                        if (!categories.ContainsKey("其他"))
+                            categories["其他"] = new List<Dictionary<string, object>>();
+                        categories["其他"].Add(program);
                     }
                 }
 
@@ -93,13 +127,13 @@ namespace Web_EIP_Csharp.Controllers
                 ViewBag.DisplayCodeFilter = display_code ?? "Y";
                 ViewBag.UserName = HttpContext.Session.GetString("user_name") ?? username;
 
-                return View("MisPrograms");
+                return View("MisPrograms", vm);
             }
             catch (Exception e)
             {
-                ViewBag.Error = $"蝟餌絞?航炊: {e.Message}";
+                ViewBag.Error = $"系統錯誤: {e.Message}";
                 ViewBag.Programs = new List<Dictionary<string, object>>();
-                return View("MisPrograms");
+                return View("MisPrograms", vm);
             }
         }
 

@@ -1,17 +1,8 @@
-﻿@{
+﻿@model Web_EIP_Csharp.Models.ViewModels.IdmGd01ViewModel
+@{
     var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
     ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
-    var employeeLovSql = Uri.EscapeDataString(@"
-SELECT employee_id, employee_no, employee_name
-FROM (
-    SELECT employee_id, employee_no, employee_name,
-           ROW_NUMBER() OVER (ORDER BY employee_no ASC) AS rn
-    FROM hrm_employee_v
-    WHERE (UPPER(employee_no) LIKE :q OR UPPER(employee_name) LIKE :q)
-)
-WHERE rn > :offset AND rn <= :endRow");
-    var employeeLovApi = $"/api/lov/query?sql={employeeLovSql}";
 }
 
 <div class="absolute inset-0 flex flex-col bg-slate-50 overflow-hidden" x-data="idmgd01App()" x-init="init()">
@@ -29,13 +20,7 @@ WHERE rn > :offset AND rn <= :endRow");
                          hidden-id="searchEmployeeId" x-model-hidden="search.employeeId"
                          code-id="searchEmployeeNo" code-placeholder="員工" code-width="w-20"
                          name-id="searchEmployeeName"
-                         lov-title="尋找員工 (Employee)"
-                         lov-api="@employeeLovApi"
-                         lov-columns="編號,名稱,ID"
-                         lov-fields="employee_no,employee_name,employee_id"
-                         lov-key-hidden="employee_id"
-                         lov-key-code="employee_no"
-                         lov-key-name="employee_name">
+                         config="@Model.EmployeeLov">
             </g-lov-input>
 
             <g-combobox label="顯示碼"
@@ -509,3 +494,5 @@ WHERE rn > :offset AND rn <= :endRow");
         });
     </script>
 }
+
+

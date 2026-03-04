@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace Web_EIP_Csharp.Controllers
     public class HrmController : Controller
     {
         private static string BuildDbConnectionString(string tns) =>
-            DbHelper.DefaultConnectionString;
+            DbHelper.BuildConnectionString(tns);
 
         [HttpGet("Hrm/HRMGD47")]
         public IActionResult HRMGD47()

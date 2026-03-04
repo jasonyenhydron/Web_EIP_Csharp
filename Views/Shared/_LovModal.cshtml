@@ -111,39 +111,36 @@
         `;
 
         const thead = document.getElementById('genericLovThead').querySelector('tr');
-        thead.innerHTML = '';
-        columns.forEach(col => {
-            const th = document.createElement('th');
-            th.className = 'border-b border-r border-slate-300 px-3 py-2 font-bold whitespace-nowrap';
-            th.innerHTML = `
-                <span class="inline-flex items-center gap-1">
-                    <span>${col}</span>
-                    ${genericLovState.sortEnabled ? `
-                    <button type="button" class="text-slate-400 hover:text-blue-600 transition-colors" data-sort-idx="${thead.children.length}" title="排序">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                        </svg>
-                    </button>` : ``}
-                </span>`;
-            thead.appendChild(th);
-        });
-        if (genericLovState.sortEnabled) {
-            thead.querySelectorAll('[data-sort-idx]').forEach((btn) => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const idx = Number(btn.getAttribute('data-sort-idx'));
-                    const key = genericLovState.dataFields[idx];
-                    if (!key) return;
-                    if (genericLovState.sortKey === key) {
-                        genericLovState.sortDir = genericLovState.sortDir === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        genericLovState.sortKey = key;
-                        genericLovState.sortDir = 'asc';
-                    }
-                    renderGenericLovTable(null, false);
-                });
+        function renderGenericLovHeader() {
+            thead.innerHTML = '';
+            columns.forEach((col, idx) => {
+                const key = genericLovState.dataFields[idx];
+                const sortable = genericLovState.sortEnabled && !!key;
+                const isCurrent = genericLovState.sortKey === key;
+                const indicator = !sortable ? '' : (isCurrent ? (genericLovState.sortDir === 'asc' ? '▲' : '▼') : '↕');
+                const th = document.createElement('th');
+                th.className = `border-b border-r border-slate-300 px-3 py-2 font-bold whitespace-nowrap ${sortable ? 'cursor-pointer select-none hover:bg-blue-50' : ''}`;
+                th.innerHTML = `
+                    <span class="inline-flex items-center gap-1">
+                        <span>${col}</span>
+                        ${sortable ? `<span class="text-[11px] ${isCurrent ? 'text-blue-600' : 'text-slate-400'}">${indicator}</span>` : ``}
+                    </span>`;
+                if (sortable) {
+                    th.addEventListener('click', () => {
+                        if (genericLovState.sortKey === key) {
+                            genericLovState.sortDir = genericLovState.sortDir === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            genericLovState.sortKey = key;
+                            genericLovState.sortDir = 'asc';
+                        }
+                        renderGenericLovHeader();
+                        renderGenericLovTable();
+                    });
+                }
+                thead.appendChild(th);
             });
         }
+        renderGenericLovHeader();
 
         document.getElementById('genericLovTableBody').innerHTML = '';
         document.getElementById('genericLovSearchInput').value = '';
@@ -200,7 +197,7 @@
                 } else {
                     genericLovState.rows = [...(result.data || [])];
                 }
-                renderGenericLovTable(null, loadMore && genericLovState.query === query);
+                renderGenericLovTable();
                 genericLovState.hasMore = typeof result.hasMore === 'boolean'
                     ? result.hasMore
                     : (Array.isArray(result.data) && result.data.length >= genericLovState.pageSize);
@@ -221,9 +218,9 @@
         }
     }
 
-    function renderGenericLovTable(data, append = false) {
+    function renderGenericLovTable() {
         const tbody = document.getElementById('genericLovTableBody');
-        if (!append) tbody.innerHTML = '';
+        tbody.innerHTML = '';
 
         const source = Array.isArray(genericLovState.rows) ? genericLovState.rows : [];
         const sortKey = genericLovState.sortKey;
@@ -238,15 +235,15 @@
             });
 
         if (!sorted || sorted.length === 0) {
-            if (!append) {
-                tbody.innerHTML = `<tr><td colspan="${genericLovState.columns.length}" class="text-center py-4 text-slate-500">查無資料</td></tr>`;
-            }
+            tbody.innerHTML = `<tr><td colspan="${genericLovState.columns.length}" class="text-center py-4 text-slate-500">查無資料</td></tr>`;
             return;
         }
 
         sorted.forEach((item, index) => {
             const tr = document.createElement('tr');
-            tr.className = 'cursor-pointer transition-colors border-b border-slate-200 hover:bg-blue-50';
+            const rowBaseClass = `cursor-pointer transition-colors border-b border-slate-200 hover:bg-blue-50 ${(index % 2 === 0) ? 'bg-white' : 'bg-slate-50/70'}`;
+            tr.className = rowBaseClass;
+            tr.dataset.rowBaseClass = rowBaseClass;
             tr.onclick = function () { selectGenericLovRow(tr, item); };
             tr.ondblclick = function () { selectGenericLovRow(tr, item); confirmGenericLovSelection(); };
 
@@ -259,23 +256,23 @@
 
             tbody.appendChild(tr);
 
-            if (!append && index === 0) {
+            if (index === 0) {
                 selectGenericLovRow(tr, item);
             }
         });
     }
 
     function selectGenericLovRow(rowElement, rowData) {
-        if (genericLovState.currentRow) {
-            genericLovState.currentRow.classList.remove('bg-blue-600', 'text-white');
-            genericLovState.currentRow.classList.add('hover:bg-blue-50');
-            genericLovState.currentRow.querySelectorAll('td').forEach(td => td.classList.remove('text-white'));
-            genericLovState.currentRow.querySelector('td:nth-child(1)')?.classList.add('text-blue-700');
-            genericLovState.currentRow.querySelector('td:nth-child(2)')?.classList.add('text-slate-700');
-        }
+        document.querySelectorAll('#genericLovTableBody tr').forEach((tr) => {
+            const baseClass = tr.dataset.rowBaseClass || 'cursor-pointer transition-colors border-b border-slate-200 hover:bg-blue-50 bg-white';
+            tr.className = baseClass;
+            tr.querySelectorAll('td').forEach(td => td.classList.remove('text-white'));
+            tr.querySelector('td:nth-child(1)')?.classList.add('text-blue-700');
+            tr.querySelector('td:nth-child(2)')?.classList.add('text-slate-700');
+        });
 
         genericLovState.currentRow = rowElement;
-        genericLovState.currentRow.classList.remove('hover:bg-blue-50');
+        genericLovState.currentRow.classList.remove('hover:bg-blue-50', 'bg-white', 'bg-slate-50/70');
         genericLovState.currentRow.classList.add('bg-blue-600', 'text-white');
         genericLovState.currentRow.querySelectorAll('td').forEach(td => {
             td.classList.remove('text-blue-700', 'text-slate-700', 'text-slate-500');

@@ -2,12 +2,6 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
-    /// <summary>
-    /// g-progress-bar ??Â∞çÊ? jEasyUI ProgressBar
-    /// <g-progress-bar value="60" label="‰∏äÂÇ≥‰∏?.." show-label="true" type="primary"/>
-    /// type: primary | success | warning | danger
-    /// value: 0~100
-    /// </summary>
     [HtmlTargetElement("g-progress-bar")]
     public class GProgressBarTagHelper : TagHelper
     {
@@ -50,12 +44,6 @@ namespace Web_EIP_Csharp.Views.Components
             ");
         }
     }
-
-    /// <summary>
-    /// g-tooltip ??Â∞çÊ? jEasyUI Tooltip
-    /// <g-tooltip text="?ôÊòØ?êÁ§∫?áÂ?" position="top">ÊªëÈ?ÁßªÂÖ•</g-tooltip>
-    /// position: top(?êË®≠) | bottom | left | right
-    /// </summary>
     [HtmlTargetElement("g-tooltip")]
     public class GTooltipTagHelper : TagHelper
     {

@@ -74,6 +74,17 @@ namespace Web_EIP_Csharp.Helpers
             _ => OracleDbHelper.DefaultConnectionString
         };
 
+        public static string BuildConnectionString(string? tns = null)
+        {
+            var conn = DefaultConnectionString;
+            if (_provider != "oracle" || string.IsNullOrWhiteSpace(tns))
+                return conn;
+
+            var builder = new DbConnectionStringBuilder { ConnectionString = conn };
+            builder["Data Source"] = tns.Trim();
+            return builder.ConnectionString;
+        }
+
         public static DbParameter CreateParameter(
             string name,
             object? value,

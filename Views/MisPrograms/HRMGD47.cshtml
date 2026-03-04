@@ -219,13 +219,13 @@ WHERE rn > :offset AND rn <= :endRow");
             <!-- Tab 2：附件檔案 -->
             <g-tab title="附件檔案" icon="upload">
                 <g-panel title="附件上傳" icon="upload">
-                    <p class="text-xs text-red-500 mb-3 font-medium">使用說明：瀏覽 -> 存檔 -> 上傳檔案</p>
+                    <p class="text-xs text-red-500 mb-3 font-medium">使用說明：選檔 -> Upload -> 閱讀</p>
                     <div class="overflow-x-auto rounded-lg border border-slate-200">
                         <table class="min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50">
                                 <tr>
                                     <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase w-8">序</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">原始檔名</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">附件上傳</th>
                                     <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">檔案說明</th>
                                     <th class="px-3 py-2 text-center text-xs font-semibold text-slate-500 uppercase w-32">操作</th>
                                 </tr>
@@ -236,14 +236,30 @@ WHERE rn > :offset AND rn <= :endRow");
                                     <tr class="hover:bg-slate-50">
                                         <td class="px-3 py-2 text-xs text-slate-500">@fi</td>
                                         <td class="px-3 py-2">
-                                            <input type="file" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                                            <g-file-uploader id="hrmAttachUploader_@fi"
+                                                             label=""
+                                                             name="files"
+                                                             upload-url="/api/files/upload"
+                                                             upload-mode="useButtons"
+                                                             folder="hrmgd47"
+                                                             accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                                             allowed-file-extensions=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                                             multiple="false"
+                                                             max-file-size="10485760"
+                                                             select-button-text="選擇檔案"
+                                                             upload-button-text="Upload"
+                                                             cancel-button-text="Clear"
+                                                             drop-zone-text="或拖拉檔案到此"
+                                                             result-input-id="attachPath_@fi"
+                                                             on-uploaded="onHrmAttachmentUploaded">
+                                            </g-file-uploader>
+                                            <input type="hidden" id="attachPath_@fi" name="attachPath_@fi" value="">
                                         </td>
                                         <td class="px-3 py-2">
                                             <input type="text" class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-blue-500 focus:border-blue-500" placeholder="說明...">
                                         </td>
                                         <td class="px-3 py-2 text-center space-x-1">
-                                            <g-button text="上傳" icon="upload" type="success" size="sm"></g-button>
-                                            <g-button text="閱讀" icon="eye" type="info" size="sm" disabled="true"></g-button>
+                                            <g-button text="閱讀" icon="eye" type="info" size="sm" onclick="openAttachmentFile(@fi)"></g-button>
                                         </td>
                                     </tr>
                                 }
@@ -350,6 +366,23 @@ WHERE rn > :offset AND rn <= :endRow");
                 ['部門ID', '部門編號', '部門名稱'], ['department_id', 'department_no', 'department_name'],
                 { 'department_no': 'deptNo', 'department_name': 'deptName' }
             );
+        }
+
+        function onHrmAttachmentUploaded(payload) {
+            const count = payload?.files?.length || 0;
+            if (count > 0) {
+                gToast(`附件上傳成功 (${count})`, 'success');
+            }
+        }
+
+        function openAttachmentFile(index) {
+            const hidden = document.getElementById(`attachPath_${index}`);
+            const filePath = hidden?.value || '';
+            if (!filePath) {
+                gToast('請先上傳附件', 'warning');
+                return;
+            }
+            window.open(`/Files/Open?path=${encodeURIComponent(filePath)}`, '_blank');
         }
 
         // ---- 送出申請 ----

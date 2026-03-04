@@ -6,6 +6,7 @@ namespace Web_EIP_Csharp.Models
         public string CurrentRelativePath { get; set; } = string.Empty;
         public string? ParentRelativePath { get; set; }
         public string? ErrorMessage { get; set; }
+        public string SearchQuery { get; set; } = string.Empty;
         public bool RequiresWindowsAuth { get; set; }
         public bool IsWindowsAuthPassed { get; set; }
         public string AuthUserName { get; set; } = string.Empty;

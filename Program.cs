@@ -74,9 +74,8 @@ if (!app.Environment.IsDevelopment())
 {
     // The default HSTS value is 30 days. You may want to change this for production scenarios.
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 
 // Similar to FastAPI static cache-control
 app.UseStaticFiles(new StaticFileOptions
@@ -109,10 +108,10 @@ app.MapControllerRoute(
     pattern: "Dashboard/{action=Index}/{id?}",
     defaults: new { controller = "Dashboard" });
 
-// Map default route to Login
+// Default route shows landing page first.
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 app.Run();
 

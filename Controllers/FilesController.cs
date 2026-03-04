@@ -11,25 +11,20 @@ namespace Web_EIP_Csharp.Controllers
         private const string SessionWinUser = "files_win_user";
         private const string SessionWinPwd = "files_win_pwd";
 
-        private static readonly string[] FallbackRoots =
-        {
-            @"M:\",
-            @"\\10.10.208.17\gom0106"
-        };
-
         public FilesController(IConfiguration configuration)
         {
             _configuration = configuration;
         }
 
         [HttpGet]
-        public IActionResult Index(string? path = null)
+        public IActionResult Index(string? path = null, string? q = null)
         {
             if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
 
             var model = new FileBrowserViewModel
             {
-                RequestedPath = path ?? string.Empty
+                RequestedPath = path ?? string.Empty,
+                SearchQuery = (q ?? string.Empty).Trim()
             };
 
             var root = ResolveRootPath();
@@ -72,27 +67,35 @@ namespace Web_EIP_Csharp.Controllers
 
             model.CurrentRelativePath = normalizedRelative;
             model.ParentRelativePath = GetParentRelativePath(normalizedRelative);
-            model.Entries = ReadDirectoryEntries(root, fullPath);
+            var entries = ReadDirectoryEntries(root, fullPath);
+            if (!string.IsNullOrWhiteSpace(model.SearchQuery))
+            {
+                entries = entries
+                    .Where(x => x.Name.Contains(model.SearchQuery, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            model.Entries = entries;
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Authenticate(string username, string password, string? domain, string? path = null)
+        public IActionResult Authenticate(string username, string password, string? domain, string? path = null, string? q = null)
         {
             if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
 
             var root = ResolveRootPath();
             if (string.IsNullOrEmpty(root) || !IsUncPath(root))
             {
-                return RedirectToAction(nameof(Index), new { path });
+                return RedirectToAction(nameof(Index), new { path, q });
             }
 
             var account = NormalizeAccount(username, domain);
             if (string.IsNullOrWhiteSpace(account) || string.IsNullOrWhiteSpace(password))
             {
                 TempData["FilesAuthError"] = "請輸入完整帳號與密碼。";
-                return RedirectToAction(nameof(Index), new { path });
+                return RedirectToAction(nameof(Index), new { path, q });
             }
 
             if (!TryConnectShare(root, account, password, out var authError))
@@ -103,7 +106,7 @@ namespace Web_EIP_Csharp.Controllers
 
             HttpContext.Session.SetString(SessionWinUser, account);
             HttpContext.Session.SetString(SessionWinPwd, password);
-            return RedirectToAction(nameof(Index), new { path });
+            return RedirectToAction(nameof(Index), new { path, q });
         }
 
         [HttpPost]
@@ -160,6 +163,73 @@ namespace Web_EIP_Csharp.Controllers
             return PhysicalFile(fullPath, "application/octet-stream", Path.GetFileName(fullPath), enableRangeProcessing: true);
         }
 
+        [HttpPost("/api/files/upload")]
+        [RequestSizeLimit(209715200)] // 200 MB
+        public async Task<IActionResult> Upload([FromForm] List<IFormFile> files, [FromForm] string? folder = null, CancellationToken cancellationToken = default)
+        {
+            if (!IsLoggedIn()) return Unauthorized(new { status = "error", message = "Unauthorized" });
+
+            if (files == null || files.Count == 0)
+            {
+                return BadRequest(new { status = "error", message = "No file uploaded" });
+            }
+
+            var root = ResolveRootPath();
+            if (string.IsNullOrEmpty(root))
+            {
+                return BadRequest(new { status = "error", message = "File root path is not configured" });
+            }
+
+            if (!EnsureShareAuth(root))
+            {
+                return Unauthorized(new { status = "error", message = "Windows authentication required" });
+            }
+
+            var targetDirectory = ResolveSafePath(root, folder, out var normalizedFolder);
+            if (targetDirectory == null)
+            {
+                return BadRequest(new { status = "error", message = "Invalid target folder" });
+            }
+
+            Directory.CreateDirectory(targetDirectory);
+
+            var savedFiles = new List<object>();
+            foreach (var file in files.Where(f => f != null && f.Length > 0))
+            {
+                var originalName = Path.GetFileName(file.FileName ?? string.Empty);
+                if (string.IsNullOrWhiteSpace(originalName))
+                {
+                    continue;
+                }
+
+                var filePath = BuildUniquePath(targetDirectory, originalName, out var storedName);
+                await using (var fs = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    await file.CopyToAsync(fs, cancellationToken);
+                }
+
+                var relativePath = string.IsNullOrWhiteSpace(normalizedFolder)
+                    ? storedName
+                    : $"{normalizedFolder.Replace('\\', '/')}/{storedName}";
+                var renamed = !string.Equals(originalName, storedName, StringComparison.OrdinalIgnoreCase);
+                savedFiles.Add(new
+                {
+                    fileName = originalName,
+                    storedName,
+                    relativePath,
+                    size = file.Length,
+                    renamed
+                });
+            }
+
+            if (savedFiles.Count == 0)
+            {
+                return BadRequest(new { status = "error", message = "No valid file to upload" });
+            }
+
+            return Ok(new { status = "ok", files = savedFiles });
+        }
+
         private bool IsLoggedIn()
         {
             var username = HttpContext.Session.GetString("username");
@@ -178,7 +248,7 @@ namespace Web_EIP_Csharp.Controllers
         private string? ResolveRootPath()
         {
             var configuredRoots = _configuration.GetSection("FileManagement:Roots").Get<string[]>() ?? Array.Empty<string>();
-            foreach (var root in configuredRoots.Concat(FallbackRoots))
+            foreach (var root in configuredRoots)
             {
                 if (string.IsNullOrWhiteSpace(root)) continue;
 
@@ -316,6 +386,27 @@ namespace Web_EIP_Csharp.Controllers
         {
             var rel = Path.GetRelativePath(root, fullPath);
             return rel.Replace(Path.DirectorySeparatorChar, '/');
+        }
+
+        private static string BuildUniquePath(string directory, string originalName, out string storedName)
+        {
+            var nameOnly = Path.GetFileNameWithoutExtension(originalName);
+            var ext = Path.GetExtension(originalName);
+            storedName = $"{nameOnly}{ext}";
+            var full = Path.Combine(directory, storedName);
+            if (!System.IO.File.Exists(full)) return full;
+
+            var suffix = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+            storedName = $"{nameOnly}_{suffix}{ext}";
+            full = Path.Combine(directory, storedName);
+            var seq = 1;
+            while (System.IO.File.Exists(full))
+            {
+                storedName = $"{nameOnly}_{suffix}_{seq}{ext}";
+                full = Path.Combine(directory, storedName);
+                seq++;
+            }
+            return full;
         }
 
         [StructLayout(LayoutKind.Sequential)]

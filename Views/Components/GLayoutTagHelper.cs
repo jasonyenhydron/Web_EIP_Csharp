@@ -1,17 +1,6 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-/*
- * GLayoutTagHelper ??Â∞çÊ? jeasyui BorderLayout (North/West/Center/East/South)
- *
- * ?®Ê?Ôº?
- *   <g-layout style="height:100vh">
- *       <g-north  height="50px">...Header...</g-north>
- *       <g-west   width="220px" collapsible="true">...Sidebar...</g-west>
- *       <g-center>...Main Content...</g-center>
- *       <g-east   width="200px">...Right Panel...</g-east>
- *       <g-south  height="40px">...Footer...</g-south>
- *   </g-layout>
- */
+
 namespace Web_EIP_Csharp.Views.Components
 {
     public class GLayoutContext
@@ -28,8 +17,6 @@ namespace Web_EIP_Csharp.Views.Components
         public bool    EastCollapsible { get; set; }
         public string? CenterHtml { get; set; }
     }
-
-    // ---- <g-north> ----
     [HtmlTargetElement("g-north", ParentTag = "g-layout")]
     public class GNorthTagHelper : TagHelper
     {
@@ -41,8 +28,6 @@ namespace Web_EIP_Csharp.Views.Components
             out2.SuppressOutput();
         }
     }
-
-    // ---- <g-south> ----
     [HtmlTargetElement("g-south", ParentTag = "g-layout")]
     public class GSouthTagHelper : TagHelper
     {
@@ -54,8 +39,6 @@ namespace Web_EIP_Csharp.Views.Components
             out2.SuppressOutput();
         }
     }
-
-    // ---- <g-west> ----
     [HtmlTargetElement("g-west", ParentTag = "g-layout")]
     public class GWestTagHelper : TagHelper
     {
@@ -73,8 +56,6 @@ namespace Web_EIP_Csharp.Views.Components
             out2.SuppressOutput();
         }
     }
-
-    // ---- <g-east> ----
     [HtmlTargetElement("g-east", ParentTag = "g-layout")]
     public class GEastTagHelper : TagHelper
     {
@@ -92,8 +73,6 @@ namespace Web_EIP_Csharp.Views.Components
             out2.SuppressOutput();
         }
     }
-
-    // ---- <g-center> ----
     [HtmlTargetElement("g-center", ParentTag = "g-layout")]
     public class GCenterTagHelper : TagHelper
     {
@@ -104,10 +83,6 @@ namespace Web_EIP_Csharp.Views.Components
             out2.SuppressOutput();
         }
     }
-
-    // =============================================
-    // ---- ?∂Â?‰ª?<g-layout> ----
-    // =============================================
     [HtmlTargetElement("g-layout")]
     [RestrictChildren("g-north", "g-south", "g-west", "g-east", "g-center")]
     public class GLayoutTagHelper : TagHelper
@@ -122,18 +97,12 @@ namespace Web_EIP_Csharp.Views.Components
 
             var westId  = $"gwest_{Guid.NewGuid():N}";
             var eastId  = $"geast_{Guid.NewGuid():N}";
-
-            // ---- North ----
             var northHtml = lc.NorthHtml != null
                 ? $@"<div class=""g-layout-north bg-white border-b border-slate-200 shrink-0"" style=""height:{lc.NorthHeight}"">{lc.NorthHtml}</div>"
                 : "";
-
-            // ---- South ----
             var southHtml = lc.SouthHtml != null
                 ? $@"<div class=""g-layout-south bg-white border-t border-slate-200 shrink-0"" style=""height:{lc.SouthHeight}"">{lc.SouthHtml}</div>"
                 : "";
-
-            // ---- West ----
             var westToggle = lc.WestCollapsible
                 ? $@"<button type=""button"" onclick=""gLayoutToggle('{westId}')""
                          class=""absolute top-1/2 -translate-y-1/2 -right-3 z-10 w-6 h-10 bg-slate-200 hover:bg-blue-400 hover:text-white text-slate-400 rounded-r-lg flex items-center justify-center transition-colors shadow-sm"">
@@ -142,15 +111,12 @@ namespace Web_EIP_Csharp.Views.Components
                          </svg>
                      </button>"
                 : "";
-            // RWD: hidden on mobile (< md), visible on md+
             var westHtml = lc.WestHtml != null
                 ? $@"<div id=""{westId}"" class=""g-layout-west bg-white border-r border-slate-200 overflow-auto relative transition-all duration-200 shrink-0 hidden md:block"" style=""width:{lc.WestWidth}"">
                        {westToggle}
                        {lc.WestHtml}
                    </div>"
                 : "";
-
-            // ---- East ----
             var eastToggle = lc.EastCollapsible
                 ? $@"<button type=""button"" onclick=""gLayoutToggle('{eastId}')""
                          class=""absolute top-1/2 -translate-y-1/2 -left-3 z-10 w-6 h-10 bg-slate-200 hover:bg-blue-400 hover:text-white text-slate-400 rounded-l-lg flex items-center justify-center transition-colors shadow-sm"">
@@ -159,18 +125,13 @@ namespace Web_EIP_Csharp.Views.Components
                          </svg>
                      </button>"
                 : "";
-            // RWD: hidden on mobile (< md)
             var eastHtml = lc.EastHtml != null
                 ? $@"<div id=""{eastId}"" class=""g-layout-east bg-white border-l border-slate-200 overflow-auto relative transition-all duration-200 shrink-0 hidden md:block"" style=""width:{lc.EastWidth}"">
                        {eastToggle}
                        {lc.EastHtml}
                    </div>"
                 : "";
-
-            // ---- Center ----
             var centerHtml = $@"<div class=""g-layout-center flex-1 overflow-auto min-w-0"">{lc.CenterHtml}</div>";
-
-            // ---- ‰∏≠È?Ê©´Ê?Ôºàwest + center + eastÔº?---
             var middleRow  = $@"<div class=""flex flex-1 min-h-0 overflow-hidden"">{westHtml}{centerHtml}{eastHtml}</div>";
 
             output.TagName = "div";

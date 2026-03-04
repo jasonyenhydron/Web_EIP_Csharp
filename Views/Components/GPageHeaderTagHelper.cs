@@ -1,36 +1,15 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+ï»¿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
-    /// <summary>
-    /// g-page-headerï¼šå?ç¨‹å??é??—å?ä»?    /// ?…å«æ¼¸å±¤ icon?ç?å¼æ?é¡Œã€å…¬?¸å‰¯æ¨™ã€ç™»?¥è€…è?è¨Šã€ä??¥æ—¥?Ÿã€?    /// ä½¿ç”¨?¹å?ï¼?    ///   <g-page-header title="@ViewData["Title"]"
-    ///                  icon="calendar"
-    ///                  subtitle="æ°¸å??‰å­¸ ERP / äººè?ç®¡ç?ç³»çµ±"
-    ///                  user-id="@ViewBag.UserId"
-    ///                  user-name="@ViewBag.UserName" />
-    /// </summary>
     [HtmlTargetElement("g-page-header")]
     public class GPageHeaderTagHelper : TagHelper
     {
-        /// <summary>?é¢æ¨™é?ï¼ˆh1ï¼?/summary>
         public string Title { get; set; } = string.Empty;
-
-        /// <summary>?¯æ?ï¼ˆå…¬??/ ç³»çµ±?ç¨±ï¼‰ï??è¨­ï¼šæ°¸?å?å­?ERP / ç³»çµ±</summary>
-        public string Subtitle { get; set; } = "æ°¸å??‰å­¸ ERP / ç³»çµ±";
-
-        /// <summary>
-        /// å·¦å´æ¼¸å±¤?¹å??§ç? icon ?ç¨±ï¼Œæ”¯?´ï?
-        /// calendar, user, cog, list, document, chart, home, check, search, upload
-        /// </summary>
+        public string Subtitle { get; set; } = "ä¼æ¥­è³‡æºç®¡ç†ç³»çµ± ERP / ç®¡ç†å¹³å°";
         public string Icon { get; set; } = "home";
-
-        /// <summary>?»å…¥?¡å·¥ç·¨è?ï¼ˆå? A001ï¼?/summary>
         public string UserId { get; set; } = string.Empty;
-
-        /// <summary>?»å…¥?¡å·¥å§“å?</summary>
         public string UserName { get; set; } = string.Empty;
-
-        /// <summary>ä»Šæ—¥?¥æ?ï¼ˆé?è¨?DateTime.Now.ToString("yyyy-MM-dd")ï¼?/summary>
         public string Date { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
@@ -39,8 +18,6 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("class",
                 "bg-white rounded-2xl shadow-sm border border-slate-200/60 p-4 " +
                 "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4");
-
-            // ?€?€ å·¦å´ï¼šicon + æ¨™é? ?€?€
             string iconSvg = GetIconSvg(Icon);
 
             string leftHtml = $@"
@@ -53,8 +30,6 @@ namespace Web_EIP_Csharp.Views.Components
         <p class=""text-xs text-slate-500 mt-0.5"">{HtmlEncode(Subtitle)}</p>
     </div>
 </div>";
-
-            // ?€?€ ?³å´ï¼šä½¿?¨è€?+ ?¥æ? ?€?€
             string userIcon = @"<svg class=""w-3.5 h-3.5 text-slate-400"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
                       d=""M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z""/></svg>";
@@ -78,8 +53,6 @@ namespace Web_EIP_Csharp.Views.Components
 
             output.Content.SetHtmlContent(leftHtml + rightHtml);
         }
-
-        // ?€?€ SVG ?–ç¤ºåº??€?€
         private static string GetIconSvg(string icon) => icon?.ToLower() switch
         {
             "calendar" => @"<svg class=""w-6 h-6"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
@@ -128,4 +101,5 @@ namespace Web_EIP_Csharp.Views.Components
             System.Net.WebUtility.HtmlEncode(s ?? string.Empty);
     }
 }
+
 

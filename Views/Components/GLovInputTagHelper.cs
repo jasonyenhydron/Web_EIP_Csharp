@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 using System.Text;
+using Web_EIP_Csharp.Models.Lov;
 
 namespace Web_EIP_Csharp.Views.Components
 {
@@ -30,6 +31,8 @@ namespace Web_EIP_Csharp.Views.Components
         // Legacy mode: existing inline JS function call.
         [HtmlAttributeName("lov-fn")]
         public string LovFn { get; set; } = string.Empty;
+        [HtmlAttributeName("config")]
+        public LovInputConfig? Config { get; set; }
 
         // Declarative mode (no extra JS function needed).
         [HtmlAttributeName("lov-title")]
@@ -51,17 +54,19 @@ namespace Web_EIP_Csharp.Views.Components
         [HtmlAttributeName("lov-on-confirm")]
         public string LovOnConfirm { get; set; } = string.Empty; // optional callback function name
         [HtmlAttributeName("lov-buffer-view")]
-        public bool LovBufferView { get; set; } = true;
+        public bool? LovBufferView { get; set; }
         [HtmlAttributeName("lov-page-size")]
-        public int LovPageSize { get; set; } = 50;
+        public int? LovPageSize { get; set; }
         [HtmlAttributeName("lov-sort-enabled")]
-        public bool LovSortEnabled { get; set; } = false;
+        public bool? LovSortEnabled { get; set; }
 
         public bool ShowButton { get; set; } = false;
         public bool Readonly { get; set; } = true;
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
+            ApplyConfig();
+
             int colSpan = ColSpan < 1 ? 1 : ColSpan;
             string colClass = colSpan > 1 ? $"md:col-span-{colSpan}" : string.Empty;
 
@@ -187,8 +192,10 @@ namespace Web_EIP_Csharp.Views.Components
             var fieldsJs = "[" + string.Join(",", fields.Select(f => $"'{EscapeJs(f)}'")) + "]";
             var formatFn = BuildFormatFunction(LovDisplayFormat);
             var callback = string.IsNullOrWhiteSpace(LovOnConfirm) ? "null" : LovOnConfirm;
-            var pageSize = LovPageSize <= 0 ? 50 : LovPageSize;
-            var options = $"{{ bufferView: {(LovBufferView ? "true" : "false")}, pageSize: {pageSize}, sortEnabled: {(LovSortEnabled ? "true" : "false")} }}";
+            var pageSize = (LovPageSize ?? 50) <= 0 ? 50 : (LovPageSize ?? 50);
+            var bufferView = LovBufferView ?? true;
+            var sortEnabled = LovSortEnabled ?? false;
+            var options = $"{{ bufferView: {(bufferView ? "true" : "false")}, pageSize: {pageSize}, sortEnabled: {(sortEnabled ? "true" : "false")} }}";
 
             return $"openGenericLov('{EscapeJs(title)}','{EscapeJs(LovApi)}',{colsJs},{fieldsJs},{map},{formatFn},{callback},{options})";
         }
@@ -224,6 +231,24 @@ namespace Web_EIP_Csharp.Views.Components
             return sb.ToString();
         }
 
+        private void ApplyConfig()
+        {
+            if (Config == null) return;
+
+            if (string.IsNullOrWhiteSpace(LovTitle)) LovTitle = Config.Title ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(LovApi)) LovApi = Config.Api ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(LovColumns)) LovColumns = Config.Columns ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(LovFields)) LovFields = Config.Fields ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(LovKeyHidden)) LovKeyHidden = Config.KeyHidden ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(LovKeyCode)) LovKeyCode = Config.KeyCode ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(LovKeyName)) LovKeyName = Config.KeyName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(LovDisplayFormat)) LovDisplayFormat = Config.DisplayFormat ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(LovOnConfirm)) LovOnConfirm = Config.OnConfirm ?? string.Empty;
+            if (!LovBufferView.HasValue && Config.BufferView.HasValue) LovBufferView = Config.BufferView.Value;
+            if (!LovPageSize.HasValue && Config.PageSize.HasValue) LovPageSize = Config.PageSize.Value;
+            if (!LovSortEnabled.HasValue && Config.SortEnabled.HasValue) LovSortEnabled = Config.SortEnabled.Value;
+        }
+
         private static List<string> SplitCsv(string s)
             => s.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
 
@@ -238,5 +263,3 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string s) => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
-
-

@@ -1,36 +1,8 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-/*
- * GTreeTagHelper / GTreeNodeTagHelper / GTreeLeafTagHelper
- * Â∞çÊ? jeasyui Tree ???úÊ?Â∑¢Á?Ê®πÁ?ÁµêÊ?ÔºàRazor Ë≥áÊ?Ê∫êÔ?
- *
- * ?®Ê?ÔºàÈ???RazorÔºâÔ?
- *   <g-tree id="programTree">
- *       <g-tree-node label="HRM ‰∫∫Ë?Á≥ªÁµ±" icon="folder" expanded="true">
- *           <g-tree-leaf label="HRMGD47 Ë´ãÂ??≥Ë?" onclick="openProg('HRMGD47')" icon="file"/>
- *           <g-tree-leaf label="HRMGD01 ?ìÂç°Ë®òÈ?" onclick="openProg('HRMGD01')"/>
- *       </g-tree-node>
- *       <g-tree-node label="IDM Á≥ªÁµ±ÁÆ°Á?">
- *           <g-tree-leaf label="IDMGD01 Á®ãÂ?Á∂≠Ë≠∑" onclick="openProg('IDMGD01')"/>
- *       </g-tree-node>
- *   </g-tree>
- *
- * ?®Ê?ÔºàÂ???Razor foreachÔºåÊê≠??Category Ë≥áÊ?ÔºâÔ?
- *   <g-tree>
- *       @foreach (var cat in ViewBag.Categories) {
- *           <g-tree-node label="@cat.Key" icon="folder">
- *               @foreach (var prog in cat.Value) {
- *                   <g-tree-leaf label="@prog["PROGRAM_NO"] @prog["PROGRAM_NAME"]"
- *                                onclick="openProg('@prog["PROGRAM_NO"]')"/>
- *               }
- *           </g-tree-node>
- *       }
- *   </g-tree>
- */
+
 namespace Web_EIP_Csharp.Views.Components
 {
-    // =============================================
-    // <g-tree-leaf> ???âÁ?ÈªûÔ??°Â??ÖÁõÆÔº?    // =============================================
     [HtmlTargetElement("g-tree-leaf", ParentTag = "g-tree-node")]
     public class GTreeLeafTagHelper : TagHelper
     {
@@ -63,16 +35,13 @@ namespace Web_EIP_Csharp.Views.Components
             _ =>        """<svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>"""
         };
     }
-
-    // =============================================
-    // <g-tree-node> ???ØÂ??ãÁ??∂Á?Èª?    // =============================================
     [HtmlTargetElement("g-tree-node", ParentTag = "g-tree")]
     public class GTreeNodeTagHelper : TagHelper
     {
         public string Label    { get; set; } = "";
         public string Icon     { get; set; } = "folder"; // folder | setting | code | user
         public bool   Expanded { get; set; } = false;
-        public string Badge    { get; set; } = "";        // È°ØÁ§∫ badgeÔºàÂ?Â≠êÈ??ÆÊï∏?èÔ?
+        public string Badge    { get; set; } = "";
         public string Onclick  { get; set; } = "";
 
         public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
@@ -117,10 +86,6 @@ namespace Web_EIP_Csharp.Views.Components
             _         => """<svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>"""
         };
     }
-
-    // =============================================
-    // <g-tree> ??Ê®πÁ?ÂÆπÂô®
-    // =============================================
     [HtmlTargetElement("g-tree")]
     [RestrictChildren("g-tree-node")]
     public class GTreeTagHelper : TagHelper
