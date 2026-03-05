@@ -145,7 +145,7 @@ function openProgramModal(input) {
     }
 
     const modalBody = modal.querySelector('.overflow-y-auto');
-    const header = modal.querySelector('.bg-gradient-to-r');
+    const header = modal.querySelector('.uk-background-primary');
     if (modalBody && header) {
         modalBody.onscroll = function () {
             if (modalBody.scrollTop > 10) {
@@ -273,7 +273,7 @@ function fetchSuggestions(query) {
             showSuggestions(data);
         })
         .catch((err) => {
-            console.error('[Suggestion] 載入失敗:', err);
+            console.error('[Suggestion] 查詢失敗:', err);
         });
 }
 
@@ -306,7 +306,7 @@ function showSuggestions(data) {
         div.className = 'suggestion-item';
         div.innerHTML = `
             <span class="prog-no">${no}</span>
-            <span class="prog-name">${name || '未命名'}</span>
+            <span class="prog-name">${name || '未命名程式'}</span>
         `;
 
         div.addEventListener('mousedown', (e) => {
@@ -354,7 +354,7 @@ function runProgram() {
     const programNo = (input?.value || '').trim().toUpperCase();
 
     if (!programNo) {
-        alert('請先輸入程式代號');
+        alert('請先輸入程式編號');
         return;
     }
 
@@ -431,3 +431,4 @@ function toggleExecutionMaximize() {
         restoreIcon.classList.add('hidden');
     }
 }
+

@@ -1,3 +1,8 @@
+// 功能：IDM 管理控制器，提供角色與功能資料的查詢、新增、修改、刪除與 upsert 操作。
+// 輸入：輸入 DataMember、查詢條件、payload 資料與 Session 連線資訊。
+// 輸出：輸出 IDM 管理視圖回應與各類權限異動 JSON API 回應。
+// 依賴：DbHelper、ViewModels、LovInputConfig、HttpContext.Session、ASP.NET Core MVC。
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -5,6 +10,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Globalization;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Web_EIP_Csharp.Helpers;
 using Web_EIP_Csharp.Models.Lov;
@@ -14,6 +21,49 @@ namespace Web_EIP_Csharp.Controllers
 {
     public class IdmController : Controller
     {
+        private static readonly Dictionary<string, string> IdmQueryFieldMap = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["programNo"] = "PROGRAM_NO",
+            ["employeeId"] = "EMPLOYEE_ID",
+            ["displayCode"] = "DISPLAY_CODE",
+            ["programType"] = "PROGRAM_TYPE",
+            ["purpose"] = "PURPOSE",
+            ["programId"] = "PROGRAM_ID",
+            ["vendorId"] = "VENDOR_ID",
+            ["personId"] = "PERSON_ID",
+            ["entryId"] = "ENTRY_ID",
+            ["trId"] = "TR_ID",
+            ["planStartDevelopDate"] = "PLAN_START_DEVELOP_DATE",
+            ["planFinishDevelopDate"] = "PLAN_FINISH_DEVELOP_DATE",
+            ["realStartDevelopDate"] = "REAL_START_DEVELOP_DATE",
+            ["realFinishDevelopDate"] = "REAL_FINISH_DEVELOP_DATE",
+            ["planWorkHours"] = "PLAN_WORK_HOURS",
+            ["realWorkHours"] = "REAL_WORK_HOURS"
+        };
+
+        private static readonly HashSet<string> IdmQueryAllowedColumns = new(
+            IdmQueryFieldMap.Values.Concat(new[]
+            {
+                "ROWID",
+                "PROGRAM_ID",
+                "PROGRAM_NO",
+                "DISPLAY_CODE",
+                "PURPOSE",
+                "PROGRAM_TYPE",
+                "EMPLOYEE_ID",
+                "VENDOR_ID",
+                "PERSON_ID",
+                "ENTRY_ID",
+                "TR_ID",
+                "PLAN_START_DEVELOP_DATE",
+                "PLAN_FINISH_DEVELOP_DATE",
+                "REAL_START_DEVELOP_DATE",
+                "REAL_FINISH_DEVELOP_DATE",
+                "PLAN_WORK_HOURS",
+                "REAL_WORK_HOURS"
+            }),
+            StringComparer.OrdinalIgnoreCase);
+
         private sealed class RoleFunctionColumnMeta
         {
             public string SelectExpr { get; set; } = "CAST(NULL AS VARCHAR2(100)) AS FUNCTION_NO";
@@ -23,6 +73,16 @@ namespace Web_EIP_Csharp.Controllers
             public string InsertValue { get; set; } = string.Empty;
             public string ParameterName { get; set; } = string.Empty;
             public bool UseNumericParameter { get; set; } = false;
+        }
+
+        private sealed class SelectPredicate
+        {
+            public string Key { get; set; } = string.Empty;
+            public string Column { get; set; } = string.Empty;
+            public string Value { get; set; } = string.Empty;
+            public string Condition { get; set; } = "=";
+            public string AndOr { get; set; } = "AND";
+            public string DataType { get; set; } = "string";
         }
 
         private static string BuildDbConnectionString(string tns) =>
@@ -74,7 +134,11 @@ WHERE rn > :offset AND rn <= :endRow");
         }
 
         [HttpGet("Idm/select")]
-        public async Task<IActionResult> Select(string DataMember, string programNo, string employeeId, string displayCode)
+        public async Task<IActionResult> Select(
+            string DataMember,
+            string? programNo = null,
+            string? employeeId = null,
+            string? displayCode = null)
         {
             if (DataMember != "IDMGD01")
                 return BadRequest(new { status = "error", message = "Unsupported DataMember" });
@@ -87,7 +151,7 @@ WHERE rn > :offset AND rn <= :endRow");
 
             try
             {
-                const string sql = @"
+                var sql = new StringBuilder(@"
                     SELECT ROWID, PROGRAM_ID, PURPOSE, EMPLOYEE_ID, VENDOR_ID, PERSON_ID,
                            PLAN_START_DEVELOP_DATE, PLAN_FINISH_DEVELOP_DATE,
                            REAL_START_DEVELOP_DATE, REAL_FINISH_DEVELOP_DATE,
@@ -95,32 +159,29 @@ WHERE rn > :offset AND rn <= :endRow");
                            ENTRY_ID, ENTRY_DATE, TR_ID, TR_DATE,
                            PROGRAM_NO, DISPLAY_CODE, PROGRAM_TYPE
                     FROM idm_program
-                    WHERE program_no like :program_no || '%'
-                      AND (employee_id = :employee_id or :employee_id is null)
-                      AND (display_code = :display_code or :display_code is null)
-                    ORDER BY program_no";
+                    WHERE 1=1");
+
+                var predicates = BuildSelectPredicates(Request.Query);
+                AddLegacyPredicate(predicates, "programNo", programNo, "%");
+                AddLegacyPredicate(predicates, "employeeId", employeeId, "=");
+                AddLegacyPredicate(predicates, "displayCode", displayCode, "=");
+
+                var whereSegment = BuildWhereSegment(predicates, out var dbParameters);
+                if (!string.IsNullOrWhiteSpace(whereSegment))
+                {
+                    sql.Append(" AND (");
+                    sql.Append(whereSegment);
+                    sql.Append(")");
+                }
+                sql.Append(" ORDER BY program_no");
 
                 var dt = await DbHelper.GetDataTableAsync(
                     BuildDbConnectionString(tns),
                     CommandType.Text,
-                    sql,
-                    new DbParameter[]
-                    {
-                        DbHelper.CreateParameter("program_no", string.IsNullOrEmpty(programNo) ? string.Empty : programNo),
-                        DbHelper.CreateParameter("employee_id", string.IsNullOrEmpty(employeeId) ? (object)DBNull.Value : employeeId),
-                        DbHelper.CreateParameter("display_code", string.IsNullOrEmpty(displayCode) ? (object)DBNull.Value : displayCode)
-                    });
+                    sql.ToString(),
+                    dbParameters.ToArray());
 
-                var programs = new List<Dictionary<string, object>>();
-                foreach (DataRow row in dt.Rows)
-                {
-                    var dict = new Dictionary<string, object>();
-                    foreach (DataColumn c in dt.Columns)
-                        dict[c.ColumnName] = row[c] == DBNull.Value ? string.Empty : row[c];
-                    programs.Add(dict);
-                }
-
-                return Ok(new { status = "success", data = programs });
+                return Ok(new { status = "success", data = DataTableToRows(dt) });
             }
             catch (Exception ex)
             {
@@ -551,6 +612,204 @@ WHERE rn > :offset AND rn <= :endRow");
         private static string? GetString(Dictionary<string, object> payload, string key) =>
             payload.ContainsKey(key) ? payload[key]?.ToString() : null;
 
+        private static List<SelectPredicate> BuildSelectPredicates(IQueryCollection query)
+        {
+            var result = new List<SelectPredicate>();
+            var keys = query.Keys.ToList();
+            foreach (var key in keys)
+            {
+                if (string.IsNullOrWhiteSpace(key)) continue;
+                if (key.Equals("DataMember", StringComparison.OrdinalIgnoreCase)) continue;
+                if (key.EndsWith("_condition", StringComparison.OrdinalIgnoreCase)) continue;
+                if (key.EndsWith("_andOr", StringComparison.OrdinalIgnoreCase)) continue;
+                if (key.EndsWith("_dataType", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var rawValue = query[key].ToString();
+                if (string.IsNullOrWhiteSpace(rawValue)) continue;
+                if (!TryResolveColumnName(key, out var columnName)) continue;
+
+                var condition = query[$"{key}_condition"].ToString();
+                var andOr = query[$"{key}_andOr"].ToString();
+                var dataType = query[$"{key}_dataType"].ToString();
+
+                result.Add(new SelectPredicate
+                {
+                    Key = key,
+                    Column = columnName,
+                    Value = rawValue,
+                    Condition = NormalizeCondition(condition, key),
+                    AndOr = NormalizeAndOr(andOr),
+                    DataType = NormalizeDataType(dataType)
+                });
+            }
+            return result;
+        }
+
+        private static void AddLegacyPredicate(List<SelectPredicate> predicates, string key, string? value, string defaultCondition)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+            if (predicates.Any(p => p.Key.Equals(key, StringComparison.OrdinalIgnoreCase))) return;
+            if (!TryResolveColumnName(key, out var columnName)) return;
+
+            predicates.Add(new SelectPredicate
+            {
+                Key = key,
+                Column = columnName,
+                Value = value!,
+                Condition = defaultCondition,
+                AndOr = "AND",
+                DataType = "string"
+            });
+        }
+
+        private static string BuildWhereSegment(List<SelectPredicate> predicates, out List<DbParameter> parameters)
+        {
+            parameters = new List<DbParameter>();
+            if (predicates.Count == 0) return string.Empty;
+
+            var where = new StringBuilder();
+            var idx = 0;
+            foreach (var p in predicates)
+            {
+                if (!TryBuildClause(p, idx, out var clause, out var dbValue))
+                    continue;
+
+                if (where.Length > 0)
+                {
+                    where.Append(' ');
+                    where.Append(p.AndOr);
+                    where.Append(' ');
+                }
+
+                where.Append(clause);
+                parameters.Add(DbHelper.CreateParameter($"q_{idx}", dbValue));
+                idx++;
+            }
+            return where.ToString();
+        }
+
+        private static bool TryBuildClause(SelectPredicate predicate, int idx, out string clause, out object value)
+        {
+            clause = string.Empty;
+            value = DBNull.Value;
+
+            if (string.IsNullOrWhiteSpace(predicate.Value))
+                return false;
+
+            var paramName = $"q_{idx}";
+            var op = NormalizeCondition(predicate.Condition, predicate.Key);
+            if (op is "%" or "%%")
+            {
+                var raw = predicate.Value.Trim();
+                value = op == "%" ? (raw.EndsWith('%') ? raw : raw + "%") : $"%{raw.Trim('%')}%";
+                clause = $"{predicate.Column} LIKE :{paramName}";
+                return true;
+            }
+
+            if (!TryConvertPredicateValue(predicate.Value, predicate.DataType, out var converted))
+                return false;
+
+            value = converted;
+            clause = $"{predicate.Column} {op} :{paramName}";
+            return true;
+        }
+
+        private static bool TryConvertPredicateValue(string value, string dataType, out object converted)
+        {
+            converted = value;
+            switch (NormalizeDataType(dataType))
+            {
+                case "number":
+                    if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var dec) ||
+                        decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out dec))
+                    {
+                        converted = dec;
+                        return true;
+                    }
+                    return false;
+
+                case "datetime":
+                    if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var dt) ||
+                        DateTime.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out dt))
+                    {
+                        converted = dt;
+                        return true;
+                    }
+                    return false;
+
+                case "guid":
+                    if (Guid.TryParse(value, out var guid))
+                    {
+                        converted = guid.ToString();
+                        return true;
+                    }
+                    return false;
+
+                default:
+                    converted = value;
+                    return true;
+            }
+        }
+
+        private static bool TryResolveColumnName(string key, out string columnName)
+        {
+            columnName = string.Empty;
+            if (string.IsNullOrWhiteSpace(key)) return false;
+
+            if (IdmQueryFieldMap.TryGetValue(key, out var mapped))
+            {
+                columnName = mapped;
+                return true;
+            }
+
+            var upper = key.Trim().ToUpperInvariant();
+            if (!IdmQueryAllowedColumns.Contains(upper)) return false;
+
+            columnName = upper;
+            return true;
+        }
+
+        private static string NormalizeCondition(string? condition, string? key = null)
+        {
+            var c = (condition ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(c))
+            {
+                if (!string.IsNullOrWhiteSpace(key) && key.Equals("programNo", StringComparison.OrdinalIgnoreCase))
+                    return "%";
+                return "=";
+            }
+
+            return c switch
+            {
+                "=" => "=",
+                "!=" => "<>",
+                "<>" => "<>",
+                ">" => ">",
+                ">=" => ">=",
+                "<" => "<",
+                "<=" => "<=",
+                "%" => "%",
+                "%%" => "%%",
+                _ => "="
+            };
+        }
+
+        private static string NormalizeAndOr(string? andOr)
+        {
+            return string.Equals(andOr?.Trim(), "OR", StringComparison.OrdinalIgnoreCase) ? "OR" : "AND";
+        }
+
+        private static string NormalizeDataType(string? dataType)
+        {
+            return (dataType ?? string.Empty).Trim().ToLowerInvariant() switch
+            {
+                "number" => "number",
+                "datetime" => "datetime",
+                "guid" => "guid",
+                _ => "string"
+            };
+        }
+
         private static string? GetDateString(Dictionary<string, object> payload, string key)
         {
             var raw = GetString(payload, key);
@@ -674,7 +933,6 @@ WHERE rn > :offset AND rn <= :endRow");
             }
             catch
             {
-                // fallback: avoid invalid identifier issues on custom/legacy schema
                 var fallbackSql = @"
                     SELECT ROWID, ROLE_FUNCTION_ID, PROGRAM_ID, POSITION_NO,
                            ROLE_ID, ROLE_NO, ROLE_NAME,

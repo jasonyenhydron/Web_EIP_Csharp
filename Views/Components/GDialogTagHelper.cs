@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 
 namespace Web_EIP_Csharp.Views.Components
@@ -25,7 +25,7 @@ namespace Web_EIP_Csharp.Views.Components
                 _      => "max-w-lg"
             };
             var closeBtnHtml = CloseBtn
-                ? $"""<button type="button" onclick="gDialogClose('{Id}')" class="text-white/70 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>"""
+                ? $"""<button type="button" onclick="gDialogClose('{Id}')" class="text-white/70 hover:text-white uk-background-default p-1.5 rounded-lg transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>"""
                 : "";
             var backdropAttr = BackdropClose
                 ? $"""onclick="if(event.target===this)gDialogClose('{Id}')" """
@@ -35,14 +35,14 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("id", Id);
             output.Attributes.SetAttribute("role", "dialog");
             output.Attributes.SetAttribute("aria-modal", "true");
-            output.Attributes.SetAttribute("class", "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] items-center justify-center p-4");
+            output.Attributes.SetAttribute("class", "fixed inset-0 uk-background-secondary backdrop-blur-sm z-[200] items-center justify-center p-4");
             output.Attributes.SetAttribute("style", "display:none;");
             if (!string.IsNullOrEmpty(backdropAttr))
                 output.Attributes.SetAttribute("onclick", $"if(event.target===this)gDialogClose('{Id}')");
 
             output.Content.SetHtmlContent($"""
-                <div class="bg-white rounded-2xl shadow-2xl w-full {maxW} mx-4 sm:mx-auto flex flex-col border border-slate-200 transform transition-all duration-200 scale-95 opacity-0" id="{Id}-content">
-                    <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-2xl shrink-0">
+                <div class="uk-background-default rounded-2xl shadow-2xl w-full {maxW} mx-4 sm:mx-auto flex flex-col border border-slate-200 transform transition-all duration-200 scale-95 opacity-0" id="{Id}-content">
+                    <div class="flex items-center justify-between px-5 py-4 uk-background-primary from-blue-600 to-blue-700 rounded-t-2xl shrink-0">
                         <h3 class="text-base font-bold text-white truncate pr-2">{Title}</h3>
                         {closeBtnHtml}
                     </div>
@@ -54,4 +54,5 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 

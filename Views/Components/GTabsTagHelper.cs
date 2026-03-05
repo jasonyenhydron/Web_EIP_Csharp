@@ -57,8 +57,8 @@ namespace Web_EIP_Csharp.Views.Components
                     <button type="button"
                         @@click="active={i}"
                         :class="active==={i}
-                            ? 'border-blue-600 text-blue-700 font-bold bg-white shadow-sm'
-                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'"
+                            ? 'border-blue-600 text-blue-700 font-bold uk-background-default shadow-sm'
+                            : 'border-transparent text-slate-500 hover:text-slate-700 uk-background-muted'"
                         class="flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition-all whitespace-nowrap rounded-t-lg">
                         {iconHtml}{title}
                     </button>
@@ -76,10 +76,10 @@ namespace Web_EIP_Csharp.Views.Components
             }
 
             output.TagName = "div";
-            output.Attributes.SetAttribute("class", $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden {Class}");
+            output.Attributes.SetAttribute("class", $"uk-background-default rounded-xl border border-slate-200 shadow-sm overflow-hidden {Class}");
             output.Attributes.SetAttribute("x-data", $"{{ active: {ActiveTab} }}");
             output.Content.SetHtmlContent($"""
-                <div class="flex flex-wrap gap-0.5 border-b border-slate-200 bg-slate-50/70 px-3 pt-2 overflow-x-auto">
+                <div class="flex flex-wrap gap-0.5 border-b border-slate-200 uk-background-muted px-3 pt-2 overflow-x-auto">
                     {headers}
                 </div>
                 <div>{panels}</div>
@@ -99,5 +99,6 @@ namespace Web_EIP_Csharp.Views.Components
         };
     }
 }
+
 
 

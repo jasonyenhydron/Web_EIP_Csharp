@@ -1,4 +1,4 @@
-﻿# Components Usage
+# Components Usage
 
 本文件描述目前專案可用的主要 Razor TagHelper（`g-*` 系列）。
 

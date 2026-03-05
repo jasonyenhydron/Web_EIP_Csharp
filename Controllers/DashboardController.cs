@@ -1,3 +1,8 @@
+// 功能：儀表板控制器，負責 Index/Dashboard/Board/SigonCenter 頁面顯示與登入狀態檢查。
+// 輸入：輸入頁面路由請求與 Session 使用者身分資訊。
+// 輸出：輸出儀表板相關視圖回應，或未登入時導向 Account/Login。
+// 依賴：HttpContext.Session、Dashboard 視圖檔、ASP.NET Core MVC。
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using System;

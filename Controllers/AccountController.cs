@@ -1,3 +1,8 @@
+﻿// ?嚗董??交?嗅嚗?鞎祉?亥?霅??澈???瑼Ｘ??箸? Session 皜???
+// 頛詨嚗撓??tns?sername?assword??蝟餉??交??澆??嚗誑???Session ???
+// 頛詨嚗撓?箇?仿??Ｕ?交???憭望?閮??箏?撠?蝯???
+// 靘陷嚗bHelper?ttpContext.Session?ogin.cshtml?SP.NET Core MVC??
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -77,7 +82,15 @@ namespace Web_EIP_Csharp.Controllers
             }
             catch (Exception ex)
             {
-                ViewBag.Error = $"Connection Failed: {ex.Message}";
+                var message = ex.Message ?? string.Empty;
+                if (message.Contains("ORA-01017", StringComparison.OrdinalIgnoreCase))
+                {
+                    ViewBag.Error = "資料庫連線失敗：ORA-01017（資料庫帳號/密碼錯誤）。請檢查 appsettings.json 的 ConnectionStrings:oracleConn_MIS / oracleConn_TEST。";
+                }
+                else
+                {
+                    ViewBag.Error = $"資料庫連線失敗: {message}";
+                }
                 ViewBag.Username = username;
                 ViewBag.Tns = tns;
                 return View();
@@ -92,6 +105,7 @@ namespace Web_EIP_Csharp.Controllers
         }
     }
 }
+
 
 
 

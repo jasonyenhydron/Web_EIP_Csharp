@@ -1,18 +1,10 @@
-/**
+﻿/**
  * eip-components.js
- * ===========================================
- * 配合 Views/Components Tag Helpers 使用的共用 JavaScript
- *
- * 引用方式（加在 _Layout.cshtml 或個別 View 的 @section Scripts）：
- *   <script src="~/js/eip-components.js" asp-append-version="true"></script>
- * ===========================================
+ * 共用前端互動函式（panel/dialog/toast/confirm）
  */
 
-// =============================================
-// eip-panel：收合/展開
-// =============================================
 function eipPanelToggle(panelId) {
-    const body  = document.getElementById(panelId);
+    const body = document.getElementById(panelId);
     const arrow = document.getElementById(`${panelId}-arrow`);
     if (!body) return;
 
@@ -21,11 +13,8 @@ function eipPanelToggle(panelId) {
     if (arrow) arrow.classList.toggle('rotate-180', !isHidden);
 }
 
-// =============================================
-// eip-dialog：開啟 / 關閉
-// =============================================
 function eipDialogOpen(dialogId) {
-    const dlg     = document.getElementById(dialogId);
+    const dlg = document.getElementById(dialogId);
     const content = document.getElementById(`${dialogId}-content`);
     if (!dlg) return;
 
@@ -33,7 +22,6 @@ function eipDialogOpen(dialogId) {
     dlg.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
-    // 動畫入場
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             if (content) {
@@ -45,7 +33,7 @@ function eipDialogOpen(dialogId) {
 }
 
 function eipDialogClose(dialogId) {
-    const dlg     = document.getElementById(dialogId);
+    const dlg = document.getElementById(dialogId);
     const content = document.getElementById(`${dialogId}-content`);
     if (!dlg) return;
 
@@ -61,26 +49,21 @@ function eipDialogClose(dialogId) {
     }, 180);
 }
 
-// =============================================
-// eip-toast：全域 Toast 通知
-// 用法：eipToast('儲存成功', 'success')  // success|error|warning|info
-// =============================================
 function eipToast(message, type = 'success') {
     const colors = {
-        success : 'bg-green-600',
-        error   : 'bg-red-600',
-        warning : 'bg-amber-500',
-        info    : 'bg-blue-600'
+        success: 'uk-background-primary',
+        error: 'uk-background-muted',
+        warning: 'uk-background-muted',
+        info: 'uk-background-primary'
     };
     const icons = {
-        success : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>',
-        error   : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>',
-        warning : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
-        info    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+        success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>',
+        error: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>',
+        warning: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+        info: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
     };
 
-    // 移除已存在的 toast
-    document.querySelectorAll('.eip-toast').forEach(el => el.remove());
+    document.querySelectorAll('.eip-toast').forEach((el) => el.remove());
 
     const toast = document.createElement('div');
     toast.className = `eip-toast fixed bottom-5 right-5 z-[999] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-white text-sm font-semibold transition-all duration-300 ${colors[type] ?? colors.info} opacity-0 translate-y-4`;
@@ -93,7 +76,6 @@ function eipToast(message, type = 'success') {
 
     document.body.appendChild(toast);
 
-    // 入場動畫
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             toast.classList.remove('opacity-0', 'translate-y-4');
@@ -101,7 +83,6 @@ function eipToast(message, type = 'success') {
         });
     });
 
-    // 自動消失
     setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0');
         toast.classList.add('opacity-0', 'translate-y-4');
@@ -109,21 +90,17 @@ function eipToast(message, type = 'success') {
     }, 2800);
 }
 
-// =============================================
-// eip-confirm：確認對話框（Promise）
-// 用法：if (!(await eipConfirm('確定刪除？'))) return;
-// =============================================
-function eipConfirm(message, title = '確認操作') {
+function eipConfirm(message, title = '系統提示') {
     return new Promise((resolve) => {
         const id = `_eipConfirm_${Date.now()}`;
         const overlay = document.createElement('div');
         overlay.id = id;
-        overlay.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[900] flex items-center justify-center p-4';
+        overlay.className = 'fixed inset-0 uk-background-secondary backdrop-blur-sm z-[900] flex items-center justify-center p-4';
         overlay.innerHTML = `
-            <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm transform scale-95 opacity-0 transition-all duration-200" id="${id}-box">
+            <div class="uk-background-default rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm transform scale-95 opacity-0 transition-all duration-200" id="${id}-box">
                 <div class="px-5 pt-5 pb-4">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                        <div class="w-10 h-10 rounded-full uk-background-muted flex items-center justify-center shrink-0">
                             <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
@@ -133,26 +110,31 @@ function eipConfirm(message, title = '確認操作') {
                     <p class="text-sm text-slate-600 leading-relaxed">${message}</p>
                 </div>
                 <div class="flex justify-end gap-2 px-5 pb-5">
-                    <button id="${id}-cancel" class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">取消</button>
-                    <button id="${id}-ok"     class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">確認</button>
+                    <button id="${id}-cancel" class="px-4 py-2 text-sm font-semibold rounded-lg uk-background-muted text-slate-700 transition-colors">取消</button>
+                    <button id="${id}-ok" class="px-4 py-2 text-sm font-semibold rounded-lg uk-background-primary text-white transition-colors">確定</button>
                 </div>
             </div>
         `;
         document.body.appendChild(overlay);
 
         const box = document.getElementById(`${id}-box`);
-        requestAnimationFrame(() => { requestAnimationFrame(() => {
-            box.classList.remove('scale-95', 'opacity-0');
-            box.classList.add('scale-100', 'opacity-100');
-        }); });
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                box.classList.remove('scale-95', 'opacity-0');
+                box.classList.add('scale-100', 'opacity-100');
+            });
+        });
 
         const close = (result) => {
             box.classList.add('scale-95', 'opacity-0');
             setTimeout(() => overlay.remove(), 180);
             resolve(result);
         };
-        document.getElementById(`${id}-ok`).onclick     = () => close(true);
+
+        document.getElementById(`${id}-ok`).onclick = () => close(true);
         document.getElementById(`${id}-cancel`).onclick = () => close(false);
-        overlay.onclick = (e) => { if (e.target === overlay) close(false); };
+        overlay.onclick = (e) => {
+            if (e.target === overlay) close(false);
+        };
     });
 }

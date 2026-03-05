@@ -1,3 +1,8 @@
+// 功能：共用工具邏輯封裝與基礎操作整合。
+// 輸入：方法參數、設定值、連線資訊或資料集合。
+// 輸出：計算結果、轉換後資料或執行結果。
+// 依賴：.NET 基礎套件、ADO.NET 或專案內輔助類別。
+
 using System.Data;
 using System.Data.Common;
 using Microsoft.Extensions.Configuration;
@@ -7,11 +12,13 @@ namespace Web_EIP_Csharp.Helpers
     public static class DbHelper
     {
         private static string _provider = "oracle";
+        private static IConfiguration? _configuration;
 
         public static string Provider => _provider;
 
         public static void Configure(IConfiguration configuration)
         {
+            _configuration = configuration;
             var provider = (configuration["Database:Provider"] ?? "oracledbhelper").Trim().ToLowerInvariant();
             _provider = provider switch
             {
@@ -79,6 +86,12 @@ namespace Web_EIP_Csharp.Helpers
             var conn = DefaultConnectionString;
             if (_provider != "oracle" || string.IsNullOrWhiteSpace(tns))
                 return conn;
+
+            // Prefer per-TNS connection string when provided, e.g. oracleConn_MIS / oracleConn_TEST.
+            var tnsKey = tns.Trim().ToUpperInvariant();
+            var namedConn = _configuration?.GetConnectionString($"oracleConn_{tnsKey}");
+            if (!string.IsNullOrWhiteSpace(namedConn))
+                return namedConn;
 
             var builder = new DbConnectionStringBuilder { ConnectionString = conn };
             builder["Data Source"] = tns.Trim();

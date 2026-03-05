@@ -40,14 +40,14 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("class", "");
             output.Content.SetHtmlContent($@"
                 {(Overlay ? $@"<div id=""{overlayId}"" onclick=""gDrawerClose('{drawerId}')""
-                     class=""fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[55] hidden transition-opacity duration-300""></div>" : "")}
+                     class=""fixed inset-0 uk-background-secondary backdrop-blur-sm z-[55] hidden transition-opacity duration-300""></div>" : "")}
                 <div id=""{drawerId}"" style=""{sizeStyle}""
-                     class=""fixed {posClass} bg-white shadow-2xl z-[60] transform {translateOut} transition-transform duration-300 flex flex-col {Class}"">
+                     class=""fixed {posClass} uk-background-default shadow-2xl z-[60] transform {translateOut} transition-transform duration-300 flex flex-col {Class}"">
                     <!-- Header -->
-                    <div class=""flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white shrink-0"">
+                    <div class=""flex items-center justify-between px-4 py-3 border-b border-slate-200 uk-background-primary from-slate-50 to-white shrink-0"">
                         <h3 class=""text-sm font-bold text-slate-700"">{Title}</h3>
                         <button type=""button"" onclick=""gDrawerClose('{drawerId}')""
-                                class=""text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"">
+                                class=""text-slate-400 hover:text-slate-600 uk-background-muted p-1.5 rounded-lg transition-colors"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>
                             </svg>
@@ -136,17 +136,17 @@ namespace Web_EIP_Csharp.Views.Components
 
             var sb = new System.Text.StringBuilder();
             sb.Append(@"<div class=""relative pl-6"">");
-            sb.Append(@"<div class=""absolute left-3 top-0 bottom-0 w-0.5 bg-slate-200""></div>");
+            sb.Append(@"<div class=""absolute left-3 top-0 bottom-0 w-0.5 uk-background-muted""></div>");
 
             foreach (var (date, title, content, icon, type) in tl.Items)
             {
                 var dotColor = type switch
                 {
-                    "success" => "bg-green-500 border-green-200",
-                    "warning" => "bg-amber-500 border-amber-200",
-                    "danger"  => "bg-red-500 border-red-200",
-                    "slate"   => "bg-slate-400 border-slate-200",
-                    _         => "bg-blue-500 border-blue-200"
+                    "success" => "uk-background-primary border-green-200",
+                    "warning" => "uk-background-muted border-amber-200",
+                    "danger"  => "uk-background-muted border-red-200",
+                    "slate"   => "uk-background-muted border-slate-200",
+                    _         => "uk-background-primary border-blue-200"
                 };
                 sb.Append($@"
                 <div class=""relative mb-6 last:mb-0"">
@@ -155,7 +155,7 @@ namespace Web_EIP_Csharp.Views.Components
                             <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""3"" d=""M5 13l4 4L19 7""/>
                         </svg>
                     </div>
-                    <div class=""ml-4 bg-white rounded-xl border border-slate-200 shadow-sm p-3"">
+                    <div class=""ml-4 uk-background-default rounded-xl border border-slate-200 shadow-sm p-3"">
                         <div class=""flex items-center justify-between mb-1"">
                             <span class=""text-sm font-semibold text-slate-700"">{title}</span>
                             <span class=""text-xs text-slate-400"">{date}</span>
@@ -172,4 +172,5 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 

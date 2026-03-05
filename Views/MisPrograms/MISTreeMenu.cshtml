@@ -1,0 +1,230 @@
+﻿@using Web_EIP_Csharp.Models.MISTreeMenu
+@model Web_EIP_Csharp.Models.ViewModels.MisProgramsViewModel
+@{
+    ViewData["Title"] = "程式項目";
+    ViewBag.HeaderTitle = "程式項目";
+    ViewBag.HeaderIcon = "<svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' /></svg>";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var programs = (ViewBag.Programs as IEnumerable<IdmProgramVModel>)?.ToList() ?? new List<IdmProgramVModel>();
+    var categories = ViewBag.Categories as Dictionary<string, List<IdmProgramVModel>> ?? new Dictionary<string, List<IdmProgramVModel>>();
+
+    var programNoFilter = (ViewBag.ProgramNoFilter as string) ?? string.Empty;
+    var employeeIdFilter = (ViewBag.EmployeeIdFilter as string) ?? string.Empty;
+    var displayCodeFilter = (ViewBag.DisplayCodeFilter as string) ?? "Y";
+}
+
+@section Styles {
+    <g-style profile="mis-programs"></g-style>
+    <style>
+        .mis-shell { background: #f1f5f9; }
+        .mis-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px rgba(2, 6, 23, .04); }
+        .mis-panel-title { font-size: 1rem; font-weight: 700; color: #1e293b; }
+        .mis-filter-label { font-size: .75rem; font-weight: 600; color: #475569; }
+        .mis-filter-input { width: 100%; border: 1px solid #cbd5e1; border-radius: .625rem; padding: .5rem .75rem; font-size: .875rem; }
+        .mis-filter-input:focus { outline: 0; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.12); }
+        .mis-tree-wrap { max-height: calc(100vh - 260px); overflow: auto; }
+        .mis-status-pill { font-size: .75rem; border-radius: 9999px; padding: .1rem .5rem; }
+        .mis-status-pill.y { background: #dcfce7; color: #166534; }
+        .mis-status-pill.n { background: #e2e8f0; color: #334155; }
+        .mis-meta-label { color: #64748b; font-size: .75rem; }
+        .mis-meta-value { color: #0f172a; font-size: .95rem; font-weight: 600; }
+    </style>
+}
+
+<div class="flex h-screen mis-shell overflow-hidden">
+    <partial name="Components/_Sidebar" />
+
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <partial name="Components/_Header" />
+
+        <main class="flex-1 overflow-auto p-5 space-y-4">
+            @if (!string.IsNullOrWhiteSpace(ViewBag.Error as string))
+            {
+                <div class="uk-alert-danger" uk-alert>
+                    <a href class="uk-alert-close" uk-close></a>
+                    <p>@ViewBag.Error</p>
+                </div>
+            }
+
+            <section class="mis-panel p-4">
+                <h2 class="mis-panel-title mb-3">查詢條件</h2>
+                <form method="get" action="/mis/programs" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                    <div>
+                        <label class="mis-filter-label">程式編號</label>
+                        <input type="text" name="program_no" value="@programNoFilter" placeholder="請輸入程式編號" class="mis-filter-input uppercase" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label class="mis-filter-label">員工編號</label>
+                        <input type="text" name="employee_id" value="@employeeIdFilter" placeholder="請輸入員工編號" class="mis-filter-input" />
+                    </div>
+                    <div>
+                        <label class="mis-filter-label">顯示碼</label>
+                        <select name="display_code" class="mis-filter-input">
+                            @if (string.IsNullOrEmpty(displayCodeFilter))
+                            {
+                                <option value="" selected>全部</option>
+                            }
+                            else
+                            {
+                                <option value="">全部</option>
+                            }
+                            @if (displayCodeFilter == "Y")
+                            {
+                                <option value="Y" selected>是</option>
+                            }
+                            else
+                            {
+                                <option value="Y">是</option>
+                            }
+                            @if (displayCodeFilter == "N")
+                            {
+                                <option value="N" selected>否</option>
+                            }
+                            else
+                            {
+                                <option value="N">否</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="uk-button uk-button-primary">查詢</button>
+                        <a href="/mis/programs" class="uk-button uk-button-default">清除</a>
+                        <button type="button" class="uk-button uk-button-secondary" onclick="runProgram()">執行</button>
+                    </div>
+                </form>
+            </section>
+
+            <div id="suggestionList" class="hidden"></div>
+
+            <section class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                <div class="xl:col-span-5 mis-panel p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="mis-panel-title">程式清單</h2>
+                        <span class="text-sm text-slate-500">共 @programs.Count 筆</span>
+                    </div>
+
+                    <div class="tree-container mis-tree-wrap pr-1">
+                        @if (categories.Count == 0)
+                        {
+                            <div class="text-slate-500 text-sm">查無資料</div>
+                        }
+                        else
+                        {
+                            @foreach (var category in categories)
+                            {
+                                <div class="tree-node mb-2">
+                                    <button type="button" class="tree-item system-level w-full text-left" onclick="toggleNode(this)">
+                                        <svg class="arrow w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                        <svg class="folder-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>
+                                        <span class="tree-label">@category.Key (@category.Value.Count)</span>
+                                    </button>
+                                    <div class="tree-children hidden">
+                                        @foreach (var p in category.Value)
+                                        {
+                                            <button type="button"
+                                                    class="tree-item program-level w-full text-left"
+                                                    onclick="openProgramModal(this)"
+                                                    data-program-no="@p.ProgramNo"
+                                                    data-program-name="@p.ProgramName"
+                                                    data-purpose="@p.Purpose"
+                                                    data-employee-id="@p.EmployeeId"
+                                                    data-program-type="@p.ProgramType"
+                                                    data-plan-start="@p.PlanStartDevelopDate"
+                                                    data-plan-finish="@p.PlanFinishDevelopDate"
+                                                    data-real-start="@p.RealStartDevelopDate"
+                                                    data-real-finish="@p.RealFinishDevelopDate"
+                                                    data-plan-hours="@p.PlanWorkHours"
+                                                    data-real-hours="@p.RealWorkHours">
+                                                <svg class="file-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                <span class="program-no">@p.ProgramNo</span>
+                                                <span class="program-purpose">@p.ProgramName</span>
+                                                <span class="mis-status-pill @(string.Equals(p.DisplayCode, "Y", StringComparison.OrdinalIgnoreCase) ? "y" : "n")">@(string.Equals(p.DisplayCode, "Y", StringComparison.OrdinalIgnoreCase) ? "啟用" : "停用")</span>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div class="xl:col-span-7 mis-panel p-4">
+                    <h2 class="mis-panel-title mb-3">操作說明</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="mis-meta-label">1. 查詢</div>
+                            <div class="mis-meta-value">輸入程式編號、員工編號或顯示碼後按「查詢」。</div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="mis-meta-label">2. 檢視</div>
+                            <div class="mis-meta-value">點選左側任一程式，即可開啟明細視窗。</div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 md:col-span-2">
+                            <div class="mis-meta-label">3. 執行</div>
+                            <div class="mis-meta-value">在查詢欄輸入程式編號，按「執行」可直接開啟程式執行視窗。</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<div id="programModal" class="fixed inset-0 bg-slate-900/45 hidden items-center justify-center p-4 z-50" style="display:none;">
+    <div id="modalContent" class="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-200">
+        <div class="uk-background-primary text-white px-5 py-3 flex items-center justify-between">
+            <div class="font-semibold text-lg">程式詳細資料</div>
+            <div class="flex items-center gap-2">
+                <button type="button" class="uk-icon-button" onclick="toggleMaximizeModal()" aria-label="切換全螢幕">
+                    <svg id="maximizeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" /></svg>
+                    <svg id="restoreIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8h8v8H8z" /></svg>
+                </button>
+                <button type="button" class="uk-icon-button" onclick="closeProgramModal()" aria-label="關閉">
+                    <span uk-icon="close"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-5 overflow-y-auto max-h-[calc(90vh-64px)]">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><div class="mis-meta-label">程式編號</div><div id="modal-program-no" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">程式名稱</div><div id="modal-program-name" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">員工編號</div><div id="modal-employee-id" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">程式類型</div><div id="modal-program-type" class="mis-meta-value">-</div></div>
+                <div class="md:col-span-2"><div class="mis-meta-label">用途說明</div><div id="modal-purpose" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">預計開始</div><div id="modal-plan-start" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">預計完成</div><div id="modal-plan-finish" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">實際開始</div><div id="modal-real-start" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">實際完成</div><div id="modal-real-finish" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">預計工時</div><div id="modal-plan-hours" class="mis-meta-value">-</div></div>
+                <div><div class="mis-meta-label">實際工時</div><div id="modal-real-hours" class="mis-meta-value">-</div></div>
+            </div>
+            <div class="mt-5 text-right">
+                <button id="btnOpenProgram" type="button" class="uk-button uk-button-primary">開啟程式</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="executionModal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center p-4 z-[60]" style="display:none;">
+    <div id="executionModalContent" class="w-full max-w-7xl h-[95vh] bg-white rounded-2xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-200 flex flex-col">
+        <div class="uk-background-secondary text-white px-5 py-3 flex items-center justify-between">
+            <div id="executionModalTitle" class="font-semibold text-lg">程式執行</div>
+            <div class="flex items-center gap-2">
+                <button type="button" class="uk-icon-button" onclick="toggleExecutionMaximize()" aria-label="切換全螢幕">
+                    <svg id="execMaximizeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" /></svg>
+                    <svg id="execRestoreIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8h8v8H8z" /></svg>
+                </button>
+                <button type="button" class="uk-icon-button" onclick="closeExecutionModal()" aria-label="關閉">
+                    <span uk-icon="close"></span>
+                </button>
+            </div>
+        </div>
+        <iframe id="executionIframe" class="flex-1 w-full border-0" src="about:blank" title="程式執行視窗"></iframe>
+    </div>
+</div>
+
+@section Scripts {
+    <g-js profile="mis-programs"></g-js>
+}

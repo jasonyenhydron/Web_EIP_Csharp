@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 
 namespace Web_EIP_Csharp.Views.Components
@@ -23,7 +23,7 @@ namespace Web_EIP_Csharp.Views.Components
 
             output.TagName = "div";
             output.Attributes.SetAttribute("class",
-                $"flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors {cursor} {Class}");
+                $"flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-slate-700 uk-background-primary hover:text-blue-700 transition-colors {cursor} {Class}");
             if (!string.IsNullOrEmpty(Onclick)) output.Attributes.SetAttribute("onclick", Onclick);
             if (!string.IsNullOrEmpty(Title))   output.Attributes.SetAttribute("title", Title);
             output.Content.SetHtmlContent($"{iconHtml}<span class='truncate'>{Label}</span>");
@@ -51,7 +51,7 @@ namespace Web_EIP_Csharp.Views.Components
             var initOpen = Expanded;
             var iconHtml = GetNodeIcon(Icon);
             var badge    = !string.IsNullOrEmpty(Badge)
-                ? $"""<span class="ml-auto text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full font-semibold">{Badge}</span>"""
+                ? $"""<span class="ml-auto text-xs uk-background-muted text-slate-600 px-1.5 py-0.5 rounded-full font-semibold">{Badge}</span>"""
                 : "";
             var hdrClick = !string.IsNullOrEmpty(Onclick)
                 ? $"""ondblclick="{Onclick}" """
@@ -60,7 +60,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("class", "tree-node");
             output.Content.SetHtmlContent($"""
-                <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer transition-colors select-none group"
+                <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 uk-background-muted cursor-pointer transition-colors select-none group"
                      onclick="gTreeToggle('{nodeId}')" {hdrClick}>
                     <svg id="{nodeId}-arrow"
                          class="w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-150{(initOpen ? " rotate-90" : "")}"
@@ -105,4 +105,5 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 

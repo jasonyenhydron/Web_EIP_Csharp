@@ -44,7 +44,7 @@ namespace Web_EIP_Csharp.Views.Components
                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/>
                     </svg>
                 </span>
-                <ul id=""{listId}"" class=""absolute z-[150] w-full mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 hidden overflow-y-auto max-h-52"" role=""listbox""></ul>
+                <ul id=""{listId}"" class=""absolute z-[150] w-full mt-1 uk-background-default rounded-xl shadow-2xl border border-slate-200 hidden overflow-y-auto max-h-52"" role=""listbox""></ul>
                 <script>
                 (function(){{
                     let _t;
@@ -63,7 +63,7 @@ namespace Web_EIP_Csharp.Views.Components
                                 lst.innerHTML = d.length ? '' : '<li class=""px-4 py-3 text-sm text-slate-400"">無符合資料</li>';
                                 d.forEach(item=>{{
                                     const li = document.createElement('li');
-                                    li.className='px-4 py-2.5 text-sm cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors';
+                                    li.className='px-4 py-2.5 text-sm cursor-pointer uk-background-primary hover:text-blue-700 transition-colors';
                                     li.innerHTML=`{labelJs.Replace("`","\\`")}`;
                                     li.addEventListener('click',()=>{{
                                         inp.value={displayJs};
@@ -84,5 +84,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 
 

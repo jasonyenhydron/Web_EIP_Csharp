@@ -2,6 +2,77 @@ body {
     font-family: 'Inter', sans-serif;
 }
 
+.g-btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.g-btn-lg {
+    padding: 10px 20px;
+    font-size: 16px;
+    line-height: 1.3;
+}
+
+/* Shared UIkit-oriented utility classes for program pages */
+.ukx-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.ukx-note {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.ukx-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.ukx-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ukx-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+}
+
+.ukx-th {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.ukx-td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.ukx-td-center {
+    text-align: center;
+}
+
+.ukx-pill {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+}
+
 /* Sidebar Collapsible Styles */
 #sidebar {
     transition: width 0.3s ease-in-out;

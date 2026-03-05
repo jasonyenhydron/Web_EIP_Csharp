@@ -1,0 +1,11 @@
+root = true
+
+[*.{cs,cshtml,js,json,md,css,html,ts,tsx,jsx,xml,yml,yaml,txt,sql}]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.bat]
+end_of_line = crlf
+

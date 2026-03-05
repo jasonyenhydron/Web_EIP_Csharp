@@ -1,11 +1,13 @@
+// 功能：員工請假檔資料模型，對應 `HRM_EM_ASK_FOR_LEAVE` 資料表，提供請假資料新增、修改、刪除、查詢的欄位結構。
+// 輸入：`employee_id`、`start_time`、`end_time`、`leave_id` 與其他請假相關欄位值。
+// 輸出：員工請假資料物件（供控制器接收請求、寫入資料庫與回傳 API 使用）。
+// 依賴：`HrmGd47Contorller`、`HRMGD47.cshtml`、ASP.NET Core Model Binding、DataAnnotations。
+
 using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Web_EIP_Csharp.Models
 {
-    /// <summary>
-    /// 員工請假檔 (HRM_EM_ASK_FOR_LEAVE)
-    /// </summary>
     public class HrmEmAskForLeave
     {
         public long? EmAskForLeaveId { get; set; } // 員工請假ID (由 Sequence 自動產生)

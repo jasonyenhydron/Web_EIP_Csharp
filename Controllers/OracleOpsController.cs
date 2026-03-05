@@ -1,3 +1,8 @@
+// 功能：Oracle 操作 API 控制器，提供程序程式與函式執行，以及排程作業的建立、啟用、停用、執行、刪除、查詢。
+// 輸入：輸入 procedure/function/job 請求內容與 Session 連線資訊。
+// 輸出：輸出 Oracle 執行結果 JSON、輸出參數資料或錯誤訊息。
+// 依賴：Oracle 請求模型、DbHelper、HttpContext.Session、ASP.NET Core Web API。
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;

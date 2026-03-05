@@ -28,7 +28,7 @@
 - `AccountController`：登入驗證、Session 寫入/清除
 - `MisProgramsController`：MIS 程式清單與建議查詢
 - `IdmController`：IDMGD01 CRUD API + popup view
-- `HrmController`：HRMGD47 view + submit API
+- `HrmGd47Contorller`：HRMGD47 view + submit API
 - `LovController`：通用 LOV API（employees, leave-types, departments...）
 
 ## 5. 前端架構

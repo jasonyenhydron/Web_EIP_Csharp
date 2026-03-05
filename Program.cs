@@ -1,3 +1,8 @@
+// 功能：應用程式啟動與路由管線設定。
+// 輸入：appsettings 設定、環境變數、HTTP 請求。
+// 輸出：WebApplication 執行管線與路由設定。
+// 依賴：ASP.NET Core Hosting、Middleware、Session、ExceptionHandler。
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,11 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 DbHelper.Configure(builder.Configuration);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 
-// Add Session Services
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -26,7 +29,6 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -72,12 +74,10 @@ app.UseExceptionHandler(errorApp =>
 
 if (!app.Environment.IsDevelopment())
 {
-    // The default HSTS value is 30 days. You may want to change this for production scenarios.
     app.UseHsts();
     app.UseHttpsRedirection();
 }
 
-// Similar to FastAPI static cache-control
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
@@ -90,7 +90,6 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseRouting();
 
-// Use Session middleware! This must be BEFORE UseAuthorization
 app.UseSession();
 
 app.UseAuthorization();
@@ -100,15 +99,11 @@ app.MapControllerRoute(
     pattern: "Files/{action=Index}/{id?}",
     defaults: new { controller = "Files" });
 
-// Dashboard route:
-// /Dashboard              -> DashboardController.Index
-// /Dashboard/Dashboard    -> DashboardController.Dashboard
 app.MapControllerRoute(
     name: "dashboard",
     pattern: "Dashboard/{action=Index}/{id?}",
     defaults: new { controller = "Dashboard" });
 
-// Default route shows landing page first.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");

@@ -29,7 +29,7 @@
     </style>
     @RenderSection("Styles", required: false)
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
+<body class="uk-background-muted min-h-screen flex flex-col">
     @* SVG Icon Sprite *@
     <partial name="~/Views/Shared/_IconSprite.cshtml" />
 
@@ -37,10 +37,10 @@
         @RenderBody()
     </div>
 
-    <div class="shrink-0 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-2 flex justify-end">
+    <div class="shrink-0 border-t border-slate-200 uk-background-default backdrop-blur px-4 py-2 flex justify-end">
         <button type="button"
                 onclick="gPopupTryClose()"
-                class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors shadow-sm"
+                class="uk-button uk-button-default"
                 title="關閉">
             關閉
         </button>
@@ -49,9 +49,6 @@
     @* Global message / toast components *@
     <g-messager/>
     <g-error-message />
-
-    @* SweetAlert2 *@
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @* LOV modal component *@
     <partial name="~/Views/Shared/_LovModal.cshtml" />
@@ -107,17 +104,14 @@
             }
 
             const msg = '目前資料尚未存檔，確定要離開嗎？';
-            if (window.Swal && typeof window.Swal.fire === 'function') {
-                window.Swal.fire({
-                    title: '尚未存檔',
-                    text: msg,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: '離開',
-                    cancelButtonText: '取消'
-                }).then((r) => {
-                    if (r.isConfirmed) gPopupDoClose();
-                });
+            if (window.gMsg && typeof window.gMsg.confirm === 'function') {
+                window.gMsg.confirm(
+                    '尚未存檔',
+                    msg,
+                    () => gPopupDoClose(),
+                    null,
+                    'warning'
+                );
                 return;
             }
 
@@ -129,6 +123,7 @@
     @RenderSection("Scripts", required: false)
 </body>
 </html>
+
 
 
 

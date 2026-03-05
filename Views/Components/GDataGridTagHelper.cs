@@ -113,7 +113,7 @@ namespace Web_EIP_Csharp.Views.Components
         {
             var compId   = string.IsNullOrEmpty(Id) ? $"grid_{Guid.NewGuid():N}" : Id;
             var fnName   = $"gDataGrid_{compId}";
-            var striped  = Striped ? "odd:bg-white even:bg-slate-50/60" : "";
+            var striped  = Striped ? "uk-background-default uk-background-muted" : "";
             var rowClick = !string.IsNullOrEmpty(OnRowClick)
                 ? $"@click.stop=\"({OnRowClick.Replace("\"","&quot;")})(row)\""
                 : "";
@@ -159,34 +159,34 @@ namespace Web_EIP_Csharp.Views.Components
             {
                 var helpIcon = !string.IsNullOrEmpty(HelpLink) ? $"<a href='{HelpLink}' target='_blank' class='text-slate-400 hover:text-blue-500 transition-colors' title='Help'><svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/></svg></a>" : "";
                 var titleSortButtons = TitleSortEnabled
-                    ? @"<div class='inline-flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden'>
-                            <button type='button' @click='setTitleSort(""asc"")' :class='(sortKey===titleSortField && sortDir===""asc"") ? ""text-blue-600 bg-blue-50"" : ""text-slate-500 hover:bg-slate-50""' class='w-8 h-8 inline-flex items-center justify-center transition-colors' title='升冪'>
+                    ? @"<div class='inline-flex items-center rounded-lg border border-slate-200 uk-background-default overflow-hidden'>
+                            <button type='button' @click='setTitleSort(""asc"")' :class='(sortKey===titleSortField && sortDir===""asc"") ? ""text-blue-600 uk-background-muted"" : ""text-slate-500 uk-background-muted""' class='w-8 h-8 inline-flex items-center justify-center transition-colors' title='升冪'>
                                 <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 15l7-7 7 7'/></svg>
                             </button>
-                            <button type='button' @click='setTitleSort(""desc"")' :class='(sortKey===titleSortField && sortDir===""desc"") ? ""text-blue-600 bg-blue-50"" : ""text-slate-500 hover:bg-slate-50""' class='w-8 h-8 inline-flex items-center justify-center border-l border-slate-200 transition-colors' title='降冪'>
+                            <button type='button' @click='setTitleSort(""desc"")' :class='(sortKey===titleSortField && sortDir===""desc"") ? ""text-blue-600 uk-background-muted"" : ""text-slate-500 uk-background-muted""' class='w-8 h-8 inline-flex items-center justify-center border-l border-slate-200 transition-colors' title='降冪'>
                                 <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/></svg>
                             </button>
                         </div>"
                     : "";
-                titleHeaderHtml = $"<div class='px-4 py-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center'><h3 class='font-bold text-slate-700 text-sm flex items-center gap-2'><svg class='w-4 h-4 text-blue-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 10h16M4 14h16M4 18h16'/></svg>{Title}</h3><div class='flex items-center gap-2'>{titleSortButtons}{helpIcon}</div></div>";
+                titleHeaderHtml = $"<div class='px-4 py-3 uk-background-muted border-b border-slate-200 flex justify-between items-center'><h3 class='font-bold text-slate-700 text-sm flex items-center gap-2'><svg class='w-4 h-4 text-blue-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 10h16M4 14h16M4 18h16'/></svg>{Title}</h3><div class='flex items-center gap-2'>{titleSortButtons}{helpIcon}</div></div>";
             }
 
             if (actualShowRowNum)
             {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 w-10 shrink-0"">#</th>");
+                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider uk-background-muted border-b-2 border-slate-200 w-10 shrink-0"">#</th>");
                 if (actualShowFilter)
                 {
-                    filterHtml.Append(@"<th class=""px-3 py-2 bg-indigo-50/50 border-b-2 border-slate-200""></th>");
+                    filterHtml.Append(@"<th class=""px-3 py-2 uk-background-muted border-b-2 border-slate-200""></th>");
                 }
                 tdHtml.Append(@"<td class=""px-3 py-2 text-center text-xs text-slate-400 border-b border-slate-100"" x-text=""(currentPage-1)*pageSize+rowIdx+1""></td>");
             }
 
             if (MultiSelect)
             {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center bg-slate-100 border-b-2 border-slate-200 w-10 shrink-0""><input type=""checkbox"" @change=""toggleAll($event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer""></th>");
+                thHtml.Append(@"<th class=""px-3 py-2.5 text-center uk-background-muted border-b-2 border-slate-200 w-10 shrink-0""><input type=""checkbox"" @change=""toggleAll($event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer""></th>");
                 if (actualShowFilter)
                 {
-                    filterHtml.Append(@"<th class=""px-3 py-2 bg-indigo-50/50 border-b-2 border-slate-200""></th>");
+                    filterHtml.Append(@"<th class=""px-3 py-2 uk-background-muted border-b-2 border-slate-200""></th>");
                 }
                 tdHtml.Append($@"<td class=""px-3 py-2 text-center border-b border-slate-100"" @click.stop><input type=""checkbox"" :value=""row['{actualIdField}']"" x-model=""selectedIds"" @change=""onSelectRow(row, $event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer""></td>");
             }
@@ -197,25 +197,25 @@ namespace Web_EIP_Csharp.Views.Components
                 var thAlign = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
                 var tdAlign = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
                 var isSortable = sortableFieldSet.Contains(col.Field);
-                var sortableHeaderClass = isSortable ? "cursor-pointer hover:bg-slate-200" : "cursor-default";
+                var sortableHeaderClass = isSortable ? "cursor-pointer uk-background-muted" : "cursor-default";
                 var filterIconBtn = actualTitleFilterEnabled
                     ? $@"<button type=""button"" @click.stop=""openHeaderFilter('{col.Field}', $event)"" title=""欄位篩選""
-                               class=""ml-1 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-blue-100 text-blue-600 transition-colors"">
+                               class=""ml-1 inline-flex items-center justify-center w-5 h-5 rounded uk-background-muted text-blue-600 transition-colors"">
                             <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><use href=""#icon-filter""></use></svg>
                        </button>"
                     : "";
 
                 var sortIconBtns = $@"
-                            <span x-show=""isSortableField('{col.Field}')"" class=""inline-flex items-center rounded border border-slate-200 bg-white overflow-hidden"">
+                            <span x-show=""isSortableField('{col.Field}')"" class=""inline-flex items-center rounded border border-slate-200 uk-background-default overflow-hidden"">
                                 <button type=""button"" @click.stop=""setSort('{col.Field}', 'asc')"" title=""升冪""
-                                        :class=""isSorted('{col.Field}', 'asc') ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:bg-slate-100'""
+                                        :class=""isSorted('{col.Field}', 'asc') ? 'text-blue-600 uk-background-muted' : 'text-slate-400 uk-background-muted'""
                                         class=""w-4 h-4 inline-flex items-center justify-center transition-colors"">
                                     <svg class=""w-3 h-3"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 15l7-7 7 7""/>
                                     </svg>
                                 </button>
                                 <button type=""button"" @click.stop=""setSort('{col.Field}', 'desc')"" title=""降冪""
-                                        :class=""isSorted('{col.Field}', 'desc') ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:bg-slate-100'""
+                                        :class=""isSorted('{col.Field}', 'desc') ? 'text-blue-600 uk-background-muted' : 'text-slate-400 uk-background-muted'""
                                         class=""w-4 h-4 inline-flex items-center justify-center border-l border-slate-200 transition-colors"">
                                     <svg class=""w-3 h-3"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M19 9l-7 7-7-7""/>
@@ -224,7 +224,7 @@ namespace Web_EIP_Csharp.Views.Components
                             </span>";
 
                 thHtml.Append($@"<th @dblclick=""toggleSort('{col.Field}')"" style=""{wStyle}""
-                        class=""px-3 py-2.5 {thAlign} text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 {sortableHeaderClass} transition-colors select-none whitespace-nowrap group"">
+                        class=""px-3 py-2.5 {thAlign} text-xs font-bold text-slate-500 uppercase tracking-wider uk-background-muted border-b-2 border-slate-200 {sortableHeaderClass} transition-colors select-none whitespace-nowrap group"">
                         <span class=""inline-flex items-center gap-1"">
                             {col.Title}
                             <span x-show=""multiSortEnabled && getSortOrder('{col.Field}') > 0""
@@ -236,7 +236,7 @@ namespace Web_EIP_Csharp.Views.Components
                     </th>");
                 if (ShowFilter)
                 {
-                    filterHtml.Append($@"<th class=""px-2 py-1.5 bg-indigo-50/50 border-b border-slate-200"">");
+                    filterHtml.Append($@"<th class=""px-2 py-1.5 uk-background-muted border-b border-slate-200"">");
                     if (col.FilterType == "text")
                     {
                         filterHtml.Append($@"<input type=""text"" x-model=""filters['{col.Field}']"" @keydown.enter=""applyFilter()"" class=""w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
@@ -307,18 +307,18 @@ namespace Web_EIP_Csharp.Views.Components
             }
             if (!string.IsNullOrEmpty(EditMode) && (AllowUpdate || AllowDelete || UpdateCommandVisible || DeleteCommandVisible || ViewCommandVisible))
             {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 w-24 shrink-0 sticky right-0"">操作</th>");
+                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider uk-background-muted border-b-2 border-slate-200 w-24 shrink-0 sticky right-0"">操作</th>");
                 if (actualShowFilter)
                 {
-                    filterHtml.Append(@"<th class=""px-3 py-2 bg-indigo-50/50 border-b-2 border-slate-200 sticky right-0 text-center"">
+                    filterHtml.Append(@"<th class=""px-3 py-2 uk-background-muted border-b-2 border-slate-200 sticky right-0 text-center"">
                         <button type=""button"" @click=""applyFilter()"" title=""套用欄位篩選""
-                                class=""inline-flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"">
+                                class=""inline-flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 text-blue-600 uk-background-muted transition-colors"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><use href=""#icon-filter""></use></svg>
                         </button>
                     </th>");
                 }
 
-                tdHtml.Append($@"<td class=""px-3 py-2 text-center text-sm border-b border-slate-100 whitespace-nowrap sticky right-0 bg-white group-odd:bg-white group-even:bg-slate-50/60 transition-colors"">
+                tdHtml.Append($@"<td class=""px-3 py-2 text-center text-sm border-b border-slate-100 whitespace-nowrap sticky right-0 uk-background-default uk-background-default uk-background-muted transition-colors"">
                     <div class=""flex items-center justify-center gap-2"">");
 
                 var btnViewHtml = ViewCommandVisible ? $@"
@@ -367,7 +367,7 @@ namespace Web_EIP_Csharp.Views.Components
             theadHtml.Append($@"<tr>{thHtml}</tr>");
             if (ShowFilter)
             {
-               theadHtml.Append($@"<tr class=""bg-indigo-50/50"">{filterHtml}</tr>");
+               theadHtml.Append($@"<tr class=""uk-background-muted"">{filterHtml}</tr>");
             }
 
             var paginationHtml = "";
@@ -385,18 +385,18 @@ namespace Web_EIP_Csharp.Views.Components
 
                 paginationHtml = $@"
                 <!-- Pagination -->
-                <div class=""flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-50/80 border-t border-slate-200 text-sm shrink-0 select-none"">
+                <div class=""flex flex-wrap items-center justify-between gap-3 px-4 py-2 uk-background-muted border-t border-slate-200 text-sm shrink-0 select-none"">
                     <div class=""flex items-center gap-2"">
                         <select x-model=""pageSize"" @change=""currentPage=1""
-                                class=""pl-2 pr-6 py-1 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"">
+                                class=""pl-2 pr-6 py-1 text-xs border border-slate-300 rounded-lg uk-background-default focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"">
                             {pageListOpts}
                         </select>
                     </div>
                     <div class=""flex items-center gap-1"">
                         <span class=""text-xs text-slate-500 whitespace-nowrap pr-1"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-700"" x-text=""rows.length""></span> 筆</span>
                         <button type=""button"" @click=""prevPage()"" :disabled=""currentPage<=1""
-                                :class=""currentPage<=1?'opacity-40 cursor-not-allowed':'hover:bg-slate-200'""
-                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
+                                :class=""currentPage<=1?'opacity-40 cursor-not-allowed':'uk-background-muted'""
+                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 uk-background-default text-slate-600 transition-colors"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15 19l-7-7 7-7""/></svg>
                         </button>
                         <div class=""flex items-center gap-1.5 px-2"">
@@ -408,8 +408,8 @@ namespace Web_EIP_Csharp.Views.Components
                             <span class=""text-slate-400 text-xs"">頁</span>
                         </div>
                         <button type=""button"" @click=""nextPage()"" :disabled=""currentPage>=totalPages""
-                                :class=""currentPage>=totalPages?'opacity-40 cursor-not-allowed':'hover:bg-slate-200'""
-                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
+                                :class=""currentPage>=totalPages?'opacity-40 cursor-not-allowed':'uk-background-muted'""
+                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 uk-background-default text-slate-600 transition-colors"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M9 5l7 7-7 7""/></svg>
                         </button>
                     </div>
@@ -419,7 +419,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("id", compId);
             var cleanStyleClass = CleanStyle ? "flex-1 border-0 rounded-none w-full shadow-none" : "";
-            var defaultClass = $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative min-h-0 {cleanStyleClass}".Trim();
+            var defaultClass = $"uk-background-default rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative min-h-0 {cleanStyleClass}".Trim();
             var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
             output.Attributes.SetAttribute("class", finalClass);
             output.Attributes.SetAttribute("x-data", $"{fnName}()");
@@ -428,17 +428,17 @@ namespace Web_EIP_Csharp.Views.Components
             output.Content.SetHtmlContent($@"
                 {titleHeaderHtml}
                 <!-- Toolbar -->
-                <div class=""g-grid-toolbar flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-50/70 shrink-0 flex-wrap"">
+                <div class=""g-grid-toolbar flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 uk-background-muted shrink-0 flex-wrap"">
                     <div class=""flex items-center gap-2"">
                         {ToolbarHtml}
                         {((AllowAdd && !string.IsNullOrEmpty(EditMode)) ? $@"
-                        <button type=""button"" @click=""addRow()"" class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg shadow-sm transition-colors font-medium"">
+                        <button type=""button"" @click=""addRow()"" class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-white uk-background-muted rounded-lg shadow-sm transition-colors font-medium"">
                             <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 4v16m8-8H4""/></svg>
                             新增
                         </button>
                         " : "")}
                         <button type=""button"" @click=""fetchData()"" title=""重新載入""
-                                class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg border border-slate-200 bg-white transition-colors font-medium"">
+                                class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 hover:text-blue-700 uk-background-muted rounded-lg border border-slate-200 uk-background-default transition-colors font-medium"">
                             <svg class=""w-3.5 h-3.5"" :class=""loading?'animate-spin':''"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15""/>
                             </svg>
@@ -451,7 +451,7 @@ namespace Web_EIP_Csharp.Views.Components
                 <div x-show=""headerFilter.open""
                      x-transition
                      @click.away=""cancelHeaderFilter()""
-                     class=""absolute z-40 bg-white border border-slate-200 rounded-xl shadow-xl w-64""
+                     class=""absolute z-40 uk-background-default border border-slate-200 rounded-xl shadow-xl w-64""
                      :style=""`left:${{headerFilter.x}}px; top:${{headerFilter.y}}px;`""
                      style=""display:none;"">
                     <div class=""px-3 py-2 border-b border-slate-100 text-sm font-semibold text-slate-700 flex items-center justify-between"">
@@ -500,13 +500,13 @@ namespace Web_EIP_Csharp.Views.Components
                         </template>
                     </div>
                     <div class=""px-3 py-2 border-t border-slate-100 flex justify-end gap-2"">
-                        <button type=""button"" @click=""confirmHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700"">OK</button>
-                        <button type=""button"" @click=""cancelHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"">Cancel</button>
+                        <button type=""button"" @click=""confirmHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md uk-background-muted text-white uk-background-muted"">OK</button>
+                        <button type=""button"" @click=""cancelHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 uk-background-muted"">Cancel</button>
                     </div>
                 </div>
                 <!-- Table -->
                 <div class=""g-grid-body overflow-x-auto overflow-y-auto flex-1 min-h-0"" style=""min-height:120px; max-height: var(--g-grid-body-max-height, 52vh); scrollbar-gutter: stable both-edges;"">
-                    <div x-show=""loading"" class=""absolute inset-0 z-20 bg-white/50 backdrop-blur-[1px] flex items-center justify-center text-blue-600 gap-2"">
+                    <div x-show=""loading"" class=""absolute inset-0 z-20 uk-background-default backdrop-blur-[1px] flex items-center justify-center text-blue-600 gap-2"">
                         <svg class=""w-8 h-8 animate-spin"" fill=""none"" viewBox=""0 0 24 24"">
                             <circle class=""opacity-25"" cx=""12"" cy=""12"" r=""10"" stroke=""currentColor"" stroke-width=""4""/>
                             <path class=""opacity-75"" fill=""currentColor"" d=""M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z""/>
@@ -523,8 +523,8 @@ namespace Web_EIP_Csharp.Views.Components
                         <thead class=""sticky top-0 z-10"">{theadHtml}</thead>
                         <tbody>
                             <template x-for=""(row, rowIdx) in pagedRows"" :key=""rowIdx"">
-                                <tr class=""group {striped} hover:bg-blue-50/50 transition-colors {rowCursor}""
-                                    :class=""selectedRow===row?'bg-blue-100/60 outline outline-1 outline-blue-400':''""
+                                <tr class=""group {striped} uk-background-muted transition-colors {rowCursor}""
+                                    :class=""selectedRow===row?'uk-background-muted outline outline-1 outline-blue-400':''""
                                     {rowDbl}
                                     @click=""selectedRow=row; {(!string.IsNullOrEmpty(OnRowClick) ? $"({OnRowClick.Replace("\"", "&quot;")})(row);" : "")} {(!string.IsNullOrEmpty(OnSelect) ? $"window['{OnSelect}'] && window['{OnSelect}'](row);" : "")}"">
                                     {tdHtml}
@@ -986,6 +986,9 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
+
+
 
 
 

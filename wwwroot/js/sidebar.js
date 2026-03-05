@@ -1,6 +1,7 @@
 function toggleMisMenu() {
     const submenu = document.getElementById('mis-submenu');
     const arrow = document.getElementById('mis-arrow');
+    if (!submenu || !arrow) return;
 
     if (submenu.classList.contains('hidden')) {
         submenu.classList.remove('hidden');
@@ -15,6 +16,7 @@ function toggleMisMenu() {
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('sidebar');
     const toggleBtns = document.querySelectorAll('.sidebar-toggle-btn, #sidebar-toggle');
+    if (!sidebar || toggleBtns.length === 0) return;
 
     function updateIcons() {
         const isCollapsed = sidebar.classList.contains('collapsed');

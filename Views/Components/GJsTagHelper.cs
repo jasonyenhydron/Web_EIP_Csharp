@@ -63,11 +63,29 @@ namespace Web_EIP_Csharp.Views.Components
             switch ((profile ?? "").Trim().ToLowerInvariant())
             {
                 case "popup":
-                    return new[] { "~/js/g-components.js" };
+                    return new[]
+                    {
+                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit.min.js",
+                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit-icons.min.js",
+                        "~/js/g-components.js"
+                    };
                 case "main":
-                    return new[] { "~/js/g-components.js", "~/js/sidebar.js" };
+                    return new[]
+                    {
+                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit.min.js",
+                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit-icons.min.js",
+                        "~/js/g-components.js",
+                        "~/js/sidebar.js"
+                    };
                 case "mis-programs":
-                    return new[] { "~/js/g-components.js", "~/js/sidebar.js", "~/js/mis_programs.js" };
+                    return new[]
+                    {
+                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit.min.js",
+                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit-icons.min.js",
+                        "~/js/g-components.js",
+                        "~/js/sidebar.js",
+                        "~/js/mis_programs.js"
+                    };
                 default:
                     return Array.Empty<string>();
             }

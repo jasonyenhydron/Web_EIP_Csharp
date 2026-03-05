@@ -26,7 +26,7 @@ namespace Web_EIP_Csharp.Views.Components
         {
             output.TagName = "div";
             output.Attributes.SetAttribute("class",
-                "bg-slate-800 rounded-lg p-3 text-white shadow-inner " +
+                "uk-background-secondary rounded-lg p-3 text-white shadow-inner " +
                 "flex items-center justify-between font-mono text-sm");
 
             // Record info area
@@ -49,7 +49,7 @@ namespace Web_EIP_Csharp.Views.Components
     <span class=""text-emerald-400 font-bold shrink-0"">狀態 &gt;</span>
     <input type=""text""
            id=""{HtmlEncode(MsgId)}""
-           class=""bg-slate-900 border border-slate-700 rounded px-3 py-1 flex-1
+           class=""uk-background-secondary border border-slate-700 rounded px-3 py-1 flex-1
                   text-slate-300 focus:outline-none focus:border-indigo-500 shadow-inner""
            value=""{HtmlEncode(DefaultMsg)}"" readonly>
 </div>
@@ -62,6 +62,7 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string? s)   => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
+
 
 
 

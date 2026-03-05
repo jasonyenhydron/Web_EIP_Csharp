@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 using System.Net;
 
 namespace Web_EIP_Csharp.Views.Components
@@ -46,7 +46,7 @@ namespace Web_EIP_Csharp.Views.Components
             var defaultWrapperClass = $"flex flex-col gap-1 {colClass}";
             var finalWrapperClass = string.IsNullOrWhiteSpace(WrapperClass) ? defaultWrapperClass : WrapperClass.Trim();
 
-            var baseClass = "g-file-uploader rounded-xl border border-slate-300 bg-white p-3";
+            var baseClass = "g-file-uploader rounded-xl border border-slate-300 uk-background-default p-3";
             var finalUploaderClass = TagHelperClassResolver.Resolve(baseClass, Class, ExtraClass);
 
             var reqMark = Required ? @"<span class=""text-red-500 ml-0.5 font-bold"">*</span>" : "";
@@ -93,20 +93,20 @@ namespace Web_EIP_Csharp.Views.Components
                      aria-disabled=""{Disabled.ToString().ToLowerInvariant()}"">
                     <input id=""{compId}_input"" type=""file"" class=""sr-only"" name=""{WebUtility.HtmlEncode(Name)}""{disabledAttr}{requiredAttr}{multipleAttr}{acceptAttr}>
                     <div class=""flex flex-wrap items-center gap-2"">
-                        <button type=""button"" class=""px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"" data-role=""pick""{disabledAttr}>
+                        <button type=""button"" class=""px-3 py-2 rounded-lg uk-background-primary text-white text-sm font-semibold uk-background-primary disabled:opacity-50 disabled:cursor-not-allowed"" data-role=""pick""{disabledAttr}>
                             {WebUtility.HtmlEncode(SelectButtonText)}
                         </button>
                         <span class=""text-sm text-slate-500"" data-role=""dropzone-text"">{WebUtility.HtmlEncode(DropZoneText)}</span>
                     </div>
-                    <div class=""mt-2 min-h-10 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-600"" data-role=""dropzone"">
+                    <div class=""mt-2 min-h-10 rounded-lg border border-dashed border-slate-300 uk-background-muted px-2 py-1.5 text-sm text-slate-600"" data-role=""dropzone"">
                         <div data-role=""list"" class=""space-y-1""></div>
                         <div data-role=""empty"" class=""text-slate-400"">No file selected</div>
                     </div>
                     <div class=""mt-2 flex items-center gap-2 {(!showButtonArea ? "hidden" : "")}"" data-role=""actions"">
-                        <button type=""button"" class=""px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"" data-role=""upload""{disabledAttr}>
+                        <button type=""button"" class=""px-3 py-1.5 rounded-lg uk-background-primary text-white text-sm font-semibold uk-background-primary disabled:opacity-50 disabled:cursor-not-allowed"" data-role=""upload""{disabledAttr}>
                             {WebUtility.HtmlEncode(UploadButtonText)}
                         </button>
-                        <button type=""button"" class=""px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"" data-role=""clear""{disabledAttr}>
+                        <button type=""button"" class=""px-3 py-1.5 rounded-lg uk-background-muted text-slate-700 text-sm font-semibold uk-background-muted disabled:opacity-50 disabled:cursor-not-allowed"" data-role=""clear""{disabledAttr}>
                             {WebUtility.HtmlEncode(CancelButtonText)}
                         </button>
                     </div>
@@ -128,3 +128,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+

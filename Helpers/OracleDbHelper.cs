@@ -1,3 +1,8 @@
+// 功能：共用工具邏輯封裝與基礎操作整合。
+// 輸入：方法參數、設定值、連線資訊或資料集合。
+// 輸出：計算結果、轉換後資料或執行結果。
+// 依賴：.NET 基礎套件、ADO.NET 或專案內輔助類別。
+
 using System.Data;
 using System.Data.Common;
 using System.Collections.Concurrent;
@@ -6,10 +11,6 @@ using Oracle.ManagedDataAccess.Client;
 
 namespace Web_EIP_Csharp.Helpers
 {
-    /// <summary>
-    /// General ADO.NET helper for SQL execution.
-    /// Default provider is Oracle.ManagedDataAccess.
-    /// </summary>
     public static class OracleDbHelper
     {
         private static readonly object SyncRoot = new();
@@ -18,13 +19,10 @@ namespace Web_EIP_Csharp.Helpers
         private static DbProviderFactory _providerFactory = OracleClientFactory.Instance;
         private static string _defaultConnectionString = string.Empty;
 
-        /// <summary>Retry count upper bound for retry methods.</summary>
         public static int MaxRetryCount { get; set; } = 10;
 
-        /// <summary>Retry wait milliseconds from 2nd attempt.</summary>
         public static int RetryWaitMilliseconds { get; set; } = 6000;
 
-        /// <summary>Default command timeout in seconds. 0 = no timeout.</summary>
         public static int DefaultCommandTimeout { get; set; } = 0;
 
         public static string DefaultConnectionString => _defaultConnectionString;
@@ -45,17 +43,11 @@ namespace Web_EIP_Csharp.Helpers
             return conn;
         }
 
-        /// <summary>
-        /// Create an OracleConnection using default connection string from appsettings.
-        /// </summary>
         public static OracleConnection GetConnection()
         {
             return new OracleConnection(GetDefaultConnectionString());
         }
 
-        /// <summary>
-        /// Create an OracleConnection using custom connection string.
-        /// </summary>
         public static OracleConnection GetConnection(string connectionString)
         {
             return new OracleConnection(connectionString);
@@ -661,10 +653,6 @@ ORDER BY JOB_NAME";
         public DbParameter[]? Parameters { get; set; }
     }
 
-    /// <summary>
-    /// Oracle executor wrapper with IDisposable lifecycle.
-    /// Connection string defaults to OracleDbHelper configured value (appsettings.json).
-    /// </summary>
     public sealed class OracleSqlExecutor : IDisposable
     {
         private readonly OracleConnection _connection;

@@ -1,0 +1,10 @@
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.csproj.AssemblyReference.cache
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\rpswa.dswa.cache.json
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.GeneratedMSBuildEditorConfig.editorconfig
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.AssemblyInfoInputs.cache
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.AssemblyInfo.cs
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.csproj.CoreCompileInputs.cache
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.MvcApplicationPartsAssemblyInfo.cache
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.RazorAssemblyInfo.cache
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.RazorAssemblyInfo.cs
+D:\CODE\Web_EIP_Csharp\obj_tmp\Debug\net10.0\Web_EIP_Csharp.sourcelink.json

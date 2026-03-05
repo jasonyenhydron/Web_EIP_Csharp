@@ -1,16 +1,10 @@
-@* _IconSprite.cshtml
-   在 _Layout.cshtml <body> 最開頭放置一次，以便所有 <use href="#icon-xxx"> 能使用外部 sprite
-   body { display:none } 的 svg 不佔版面
-*@
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
-    <!-- 將 g-icons.svg 的 <symbol> 直接內嵌，支援 <use href="#icon-xxx"> 用法 -->
-</svg>
-@* 動態注入 sprite（直接 include SVG 以支援 same-origin use） *@
+﻿@* 共用 SVG Sprite，放在 Layout 的 body 中供全站 icon <use> 使用。 *@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"></svg>
 <script>
-(function() {
+(function () {
     fetch('/images/g-icons.svg')
-        .then(r => r.text())
-        .then(txt => {
+        .then((r) => r.text())
+        .then((txt) => {
             const div = document.createElement('div');
             div.style.display = 'none';
             div.innerHTML = txt;

@@ -16,13 +16,13 @@ namespace Web_EIP_Csharp.Views.Components
         {
             output.TagName = "div";
             output.Attributes.SetAttribute("class",
-                "bg-white rounded-2xl shadow-sm border border-slate-200/60 p-4 " +
+                "uk-background-default rounded-2xl shadow-sm border border-slate-200/60 p-4 " +
                 "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4");
             string iconSvg = GetIconSvg(Icon);
 
             string leftHtml = $@"
 <div class=""flex items-center gap-3"">
-    <div class=""bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/30 text-white"">
+    <div class=""uk-background-primary from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/30 text-white"">
         {iconSvg}
     </div>
     <div>
@@ -39,7 +39,7 @@ namespace Web_EIP_Csharp.Views.Components
                       d=""M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z""/></svg>";
 
             string rightHtml = $@"
-<div class=""flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500 bg-slate-100/80 px-4 py-2 rounded-lg border border-slate-200"">
+<div class=""flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500 uk-background-muted px-4 py-2 rounded-lg border border-slate-200"">
     <span class=""flex items-center gap-1"">
         {userIcon}
         {HtmlEncode(UserId)} {HtmlEncode(UserName)}
@@ -101,5 +101,6 @@ namespace Web_EIP_Csharp.Views.Components
             System.Net.WebUtility.HtmlEncode(s ?? string.Empty);
     }
 }
+
 
 

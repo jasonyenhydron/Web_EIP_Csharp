@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 using System.Text;
 
 namespace Web_EIP_Csharp.Views.Components
@@ -29,18 +29,18 @@ namespace Web_EIP_Csharp.Views.Components
                 fieldsHtml.Append($@"
                 <div class=""flex flex-col gap-1"">
                     <label class=""text-xs font-semibold text-slate-500"">{label}</label>
-                    <div class=""min-h-9 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-700 break-all""
+                    <div class=""min-h-9 px-3 py-2 rounded-lg border border-slate-200 uk-background-muted text-sm text-slate-700 break-all""
                          x-text=""({Model} && {Model}['{field}'] != null) ? {Model}['{field}'] : ''""></div>
                 </div>");
             }
 
             var titleHtml = string.IsNullOrEmpty(Title)
                 ? ""
-                : $@"<div class=""px-4 py-3 border-b border-slate-200 bg-slate-50 text-sm font-bold text-slate-700"">{System.Net.WebUtility.HtmlEncode(Title)}</div>";
+                : $@"<div class=""px-4 py-3 border-b border-slate-200 uk-background-muted text-sm font-bold text-slate-700"">{System.Net.WebUtility.HtmlEncode(Title)}</div>";
 
             output.TagName = "div";
             output.Attributes.SetAttribute("id", formId);
-            var defaultClass = "bg-white rounded-xl border border-slate-200 shadow-sm";
+            var defaultClass = "uk-background-default rounded-xl border border-slate-200 shadow-sm";
             var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
             output.Attributes.SetAttribute("class", finalClass);
             output.Content.SetHtmlContent($@"
@@ -72,4 +72,5 @@ namespace Web_EIP_Csharp.Views.Components
             => (input ?? string.Empty).Replace("\\", "\\\\").Replace("'", "\\'");
     }
 }
+
 

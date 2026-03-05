@@ -4,10 +4,16 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.26.100" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="artifacts\**" />
+    <None Remove="artifacts\**" />
   </ItemGroup>
 
 </Project>

@@ -173,7 +173,7 @@ namespace Web_EIP_Csharp.Views.Components
                 <input type=""range"" id=""{inputId}"" name=""{Name}"" value=""{Value}""
                        min=""{Min}"" max=""{Max}"" step=""{Step}"" {disAttr} {xmodel}
                        oninput=""document.getElementById('{inputId}_val').textContent=this.value""
-                       class=""w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600 disabled:opacity-50"">
+                       class=""w-full h-2 uk-background-muted rounded-full appearance-none cursor-pointer accent-blue-600 disabled:opacity-50"">
                 <div class=""flex justify-between text-xs text-slate-400"">
                     <span>{Min}</span><span>{Max}</span>
                 </div>
@@ -211,7 +211,7 @@ namespace Web_EIP_Csharp.Views.Components
                         @click=""score={i}""
                         @mouseover=""hover={i}"" @mouseleave=""hover=0""
                         class=""text-2xl transition-colors {(Disabled ? "cursor-default" : "cursor-pointer")} focus:outline-none"">
-                    <span :class=""(hover||score)>={i}?'text-amber-400':'text-slate-300'"">??/span>
+                    <span :class=""(hover||score)>={i}?'text-amber-400':'text-slate-300'"">★</span>
                 </button>");
             }
 
@@ -264,7 +264,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Content.SetHtmlContent($@"
                 {labelHtml}
                 <label for=""{inputId}""
-                       class=""flex items-center gap-3 px-3 py-2.5 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors group {disLblCls}"">
+                       class=""flex items-center gap-3 px-3 py-2.5 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-400 uk-background-primary transition-colors group {disLblCls}"">
                     <svg class=""w-5 h-5 text-slate-400 group-hover:text-blue-500 shrink-0"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12""/>
                     </svg>
@@ -305,9 +305,9 @@ namespace Web_EIP_Csharp.Views.Components
             output.Content.SetHtmlContent($@"
                 {labelHtml}
                 <div id=""{compId}"" x-data=""{{ tags: {initTags}, inp: '' }}""
-                     class=""flex flex-wrap gap-1.5 p-2 border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-400 bg-white min-h-[40px]"">
+                     class=""flex flex-wrap gap-1.5 p-2 border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-400 uk-background-default min-h-[40px]"">
                     <template x-for=""(tag, i) in tags"" :key=""i"">
-                        <span class=""inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"">
+                        <span class=""inline-flex items-center gap-1 px-2 py-0.5 uk-background-primary text-blue-700 text-xs font-medium rounded-full"">
                             <span x-text=""tag""></span>
                             {(Disabled ? "" : @"<button type=""button"" @click=""tags.splice(i,1)"" class=""hover:text-red-600 transition-colors leading-none"">?</button>")}
                         </span>
@@ -315,13 +315,14 @@ namespace Web_EIP_Csharp.Views.Components
                     <input type=""text"" x-model=""inp"" placeholder=""{Placeholder}"" {(Disabled ? "disabled" : "")}
                            @keydown.enter.prevent=""if(inp.trim()&&!tags.includes(inp.trim())){{tags.push(inp.trim());inp='';}}""
                            @keydown.backspace=""if(!inp&&tags.length)tags.pop()""
-                           class=""flex-1 min-w-[120px] border-0 outline-none text-sm bg-transparent py-0.5"">
+                           class=""flex-1 min-w-[120px] border-0 outline-none text-sm uk-background-muted py-0.5"">
                     <input type=""hidden"" name=""{Name}"" :value=""tags.join(','"">
                 </div>
             ");
         }
     }
 }
+
 
 
 

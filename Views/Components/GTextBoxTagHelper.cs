@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Web_EIP_Csharp.Views.Components
 {
@@ -58,7 +58,7 @@ namespace Web_EIP_Csharp.Views.Components
             var maxAttr = !string.IsNullOrEmpty(Max) ? $@" max=""{Max}""" : "";
             var stepAttr = !string.IsNullOrEmpty(Step) ? $@" step=""{Step}""" : "";
             var maxlenAttr = !string.IsNullOrEmpty(Maxlength) ? $@" maxlength=""{Maxlength}""" : "";
-            var readonlyClass = Readonly ? " bg-slate-50 text-slate-500 cursor-not-allowed" : "";
+            var readonlyClass = Readonly ? " uk-background-muted text-slate-500 cursor-not-allowed" : "";
 
             var defaultInputClass = $"block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 {readonlyClass}";
             var finalInputClass = TagHelperClassResolver.Resolve(defaultInputClass, Class, ExtraClass);
@@ -91,4 +91,5 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
 

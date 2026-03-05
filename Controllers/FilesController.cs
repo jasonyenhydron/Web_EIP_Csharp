@@ -1,3 +1,8 @@
+// 功能：檔案瀏覽控制器，提供清單查詢、搜尋、開啟、下載與上傳功能（不包含刪除功能）。
+// 輸入：輸入 path、q、folder、上傳檔案、驗證帳密碼與 Session 認證資訊。
+// 輸出：輸出檔案瀏覽頁面、檔案串流下載回應、上傳 API 回應或導向結果。
+// 依賴：IConfiguration、FileBrowserViewModel、HttpContext.Session、ASP.NET Core MVC。
+
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
@@ -260,7 +265,6 @@ namespace Web_EIP_Csharp.Controllers
                 }
                 catch
                 {
-                    // Ignore invalid root and continue.
                 }
             }
 
@@ -303,7 +307,6 @@ namespace Web_EIP_Csharp.Controllers
                 Provider = null
             };
 
-            // Disconnect existing mapping first; ignore errors.
             WNetCancelConnection2(remote, 0, true);
 
             var result = WNetAddConnection2(ref nr, password, username, 0);

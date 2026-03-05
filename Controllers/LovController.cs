@@ -1,3 +1,8 @@
+// 功能：LOV 查詢 API 控制器，提供可選值資料的條件查詢與分頁取資料。
+// 輸入：輸入 sql、query、page、pageSize 與 Session 連線資訊。
+// 輸出：輸出 LOV 分頁 JSON 結果、未授權回應或錯誤訊息。
+// 依賴：DbHelper、Regex 參數解析、HttpContext.Session、ASP.NET Core Web API。
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;

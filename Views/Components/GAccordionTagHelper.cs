@@ -58,7 +58,7 @@ namespace Web_EIP_Csharp.Views.Components
                 <div class=""border border-slate-200 rounded-xl overflow-hidden {(i > 0 ? "mt-1" : "")}"">
                     <button type=""button""
                             onclick=""gAccordionToggle('{accId}','{panelId}',{(Exclusive ? "true" : "false")})""
-                            class=""w-full flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 transition-colors text-left"">
+                            class=""w-full flex items-center gap-2 px-4 py-3 uk-background-muted transition-colors text-left"">
                         {iconHtml}
                         <span class=""text-sm font-bold text-slate-700 flex-1"">{title}</span>
                         <svg id=""{panelId}-arrow"" class=""w-4 h-4 text-slate-400 transition-transform duration-200{(isOpen ? "" : " rotate-180")}"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
@@ -106,4 +106,5 @@ namespace Web_EIP_Csharp.Views.Components
         };
     }
 }
+
 

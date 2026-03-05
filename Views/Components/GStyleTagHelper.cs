@@ -52,6 +52,7 @@ namespace Web_EIP_Csharp.Views.Components
                     return new[]
                     {
                         "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/css/uikit.min.css",
                         "~/css/main.css"
                     };
                 case "mis-programs":
