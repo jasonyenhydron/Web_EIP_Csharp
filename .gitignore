@@ -1,0 +1,6 @@
+﻿# Build output
+bin/
+obj/
+
+# 前端套件
+wwwroot/lib/
