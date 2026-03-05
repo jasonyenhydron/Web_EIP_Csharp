@@ -25,7 +25,7 @@ namespace Web_EIP_Csharp.Views.Components
                 _      => "max-w-lg"
             };
             var closeBtnHtml = CloseBtn
-                ? $"""<button type="button" onclick="gDialogClose('{Id}')" class="text-white/70 hover:text-white bg-white p-1.5 rounded-lg transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>"""
+                ? $"""<button type="button" onclick="gDialogClose('{Id}')" class="text-white/85 hover:text-white bg-white/10 hover:bg-white/20 border border-white/25 p-1.5 rounded-lg transition-all" title="關閉"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>"""
                 : "";
             var backdropAttr = BackdropClose
                 ? $"""onclick="if(event.target===this)gDialogClose('{Id}')" """
@@ -54,5 +54,4 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
 

@@ -28,27 +28,43 @@
         }
         .g-popup-scroll-root { overflow: auto !important; }
         body.g-modal-open .g-popup-scroll-root { overflow: hidden !important; }
+        .g-popup-titlebar {
+            background: #6b7280;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        }
     </style>
     @RenderSection("Styles", required: false)
 </head>
 @{
-    var hidePopupFooterClose = (ViewData["HidePopupFooterClose"] as bool?) == true;
+    var showPopupTitleBar = (ViewData["ShowPopupTitleBar"] as bool?) ?? true;
+    var showPopupBottomPanelClose = (ViewData["ShowPopupBottomPanelClose"] as bool?) ?? true;
 }
 <body class="bg-slate-100 min-h-screen flex flex-col">
     @* SVG Icon Sprite *@
     <partial name="~/Views/Shared/_IconSprite.cshtml" />
 
+    @if (showPopupTitleBar)
+    {
+        <div class="g-popup-titlebar shrink-0 h-16 px-6 flex items-center">
+            <div class="text-3xl font-semibold tracking-wide truncate">@ViewData["Title"]</div>
+        </div>
+    }
+
     <div class="g-popup-scroll-root flex-1 min-h-0 relative overflow-y-auto overflow-x-auto overscroll-contain">
         @RenderBody()
     </div>
 
-    @if (!hidePopupFooterClose)
+    @if (showPopupBottomPanelClose)
     {
-        <div class="shrink-0 border-t border-slate-200 bg-white backdrop-blur px-4 py-2 flex justify-end">
+        <div class="shrink-0 border-t border-slate-300 bg-slate-200/60 px-4 py-2 flex justify-end">
             <button type="button"
                     onclick="gPopupTryClose()"
-                    class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    class="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow"
                     title="關閉">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/>
+                </svg>
                 關閉
             </button>
         </div>
@@ -131,4 +147,3 @@
     @RenderSection("Scripts", required: false)
 </body>
 </html>
-

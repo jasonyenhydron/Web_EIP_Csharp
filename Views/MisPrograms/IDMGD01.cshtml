@@ -2,7 +2,8 @@
 @{
     var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
     ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
-    ViewData["HidePopupFooterClose"] = true;
+    ViewData["HidePopupFooterClose"] = false;
+    ViewData["PopupFullscreenTargetId"] = "idmgRootPanel";
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
 }
 
@@ -17,16 +18,6 @@
             border-radius: 14px;
             box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
         }
-        .idmg-head {
-            background: linear-gradient(180deg, #4f5ee8 0%, #294dd5 100%);
-            border-top-left-radius: 14px;
-            border-top-right-radius: 14px;
-        }
-        .idmg-head-btn {
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            background: rgba(255, 255, 255, 0.12);
-        }
-        .idmg-head-btn:hover { background: rgba(255, 255, 255, 0.2); }
         .idmg-query {
             background: #f3f4f6;
             border: 1px solid #cbd5e1;
@@ -42,27 +33,6 @@
 
 <div class="absolute inset-0 p-4 idmg-shell overflow-hidden" x-data="idmgd01App()" x-init="init()">
 <div id="idmgRootPanel" class="idmg-panel flex flex-col h-full min-h-0 overflow-hidden">
-
-    <div class="idmg-head text-white px-4 py-3 shrink-0 flex items-center justify-between">
-        <div class="flex items-center gap-3 font-bold text-[36px] tracking-wide">
-            <span class="text-lg">&lt;/&gt;</span>
-            <span>IDMGD01 - 程式執行</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <button type="button" class="idmg-head-btn h-9 w-9 rounded-md inline-flex items-center justify-center transition-colors"
-                    title="全螢幕" onclick="idmToggleFullscreen()">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H5a2 2 0 00-2 2v3m16-5h-3m3 0v3M3 16v3a2 2 0 002 2h3m11-5v3a2 2 0 01-2 2h-3"/>
-                </svg>
-            </button>
-            <button type="button" class="idmg-head-btn h-9 w-9 rounded-md inline-flex items-center justify-center transition-colors"
-                    title="關閉" onclick="gPopupTryClose()">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/>
-                </svg>
-            </button>
-        </div>
-    </div>
 
     <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
         <g-datagrid id="idmGrid"
@@ -155,17 +125,6 @@
             </g-datagrid>
         </div>
 
-        <div class="px-4 pb-3 pt-2 border-t border-slate-300 bg-slate-200/60 flex justify-end">
-            <button type="button"
-                    class="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow"
-                    onclick="gPopupTryClose()"
-                    title="關閉">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/>
-                </svg>
-                關閉
-            </button>
-        </div>
     </div>
 
 <g-dialog id="dlgRecord" title="程式資料" width="lg">
@@ -308,16 +267,6 @@
                     if (queryValues && fieldName) queryValues[fieldName] = v;
                 }
             );
-        }
-
-        function idmToggleFullscreen() {
-            const root = document.getElementById('idmgRootPanel');
-            if (!root) return;
-            if (!document.fullscreenElement) {
-                root.requestFullscreen?.();
-            } else {
-                document.exitFullscreen?.();
-            }
         }
 
         function toDateInput(v) {

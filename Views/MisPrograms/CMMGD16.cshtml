@@ -1,7 +1,9 @@
 ﻿@{
     var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
     ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
-    ViewData["HidePopupFooterClose"] = true;
+    ViewData["HidePopupFooterClose"] = false;
+    ViewData["PopupFullscreenTargetId"] = "cmmRootPanel";
+    ViewData["ShowPopupTitleBar"] = false;
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
 }
 
@@ -14,76 +16,30 @@
 }
 
 <div class="absolute inset-0 p-2 bg-slate-100 overflow-hidden" x-data="cmmgd16App()" x-init="init()">
-    <div class="bg-white rounded-xl border border-slate-200 h-full flex flex-col min-h-0 overflow-hidden">
+    <div id="cmmRootPanel" class="bg-white rounded-xl border border-slate-200 h-full flex flex-col min-h-0 overflow-hidden">
         <div class="border-b border-slate-200 px-4 py-2.5">
             <h4 class="m-0 text-base font-semibold text-slate-700">業務員維護查詢</h4>
-        </div>
-        <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                <g-textbox label="業務員編號"
-                           x-model="search.agentNo"
-                           x-on-enter="executeQuery()"
-                           wrapper-class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                </g-textbox>
-
-                <g-textbox label="業務員名稱"
-                           x-model="search.agentName"
-                           x-on-enter="executeQuery()"
-                           wrapper-class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                </g-textbox>
-
-                <g-textbox label="員工編號"
-                           x-model="search.employeeId"
-                           x-on-enter="executeQuery()"
-                           wrapper-class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                </g-textbox>
-
-                <g-textbox label="獎金類別"
-                           x-model="search.bonusType"
-                           x-on-enter="executeQuery()"
-                           wrapper-class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                </g-textbox>
-
-                <g-textbox label="產品線"
-                           x-model="search.productLineId"
-                           x-on-enter="executeQuery()"
-                           wrapper-class="col-span-12 md:col-span-2 flex flex-col gap-1">
-                </g-textbox>
-
-                <g-textbox label="業務區域"
-                           x-model="search.agentAreaCode"
-                           x-on-enter="executeQuery()"
-                           wrapper-class="col-span-12 md:col-span-2 flex flex-col gap-1">
-                </g-textbox>
-
-                <g-textbox label="狀態起 >="
-                           x-model="search.statusFrom"
-                           x-on-enter="executeQuery()"
-                           wrapper-class="col-span-12 md:col-span-2 flex flex-col gap-1">
-                </g-textbox>
-
-                <g-textbox label="狀態迄 <="
-                           x-model="search.statusTo"
-                           x-on-enter="executeQuery()"
-                           wrapper-class="col-span-12 md:col-span-2 flex flex-col gap-1">
-                </g-textbox>
-
-                <div class="col-span-12 md:col-span-4 flex items-center gap-2 pb-1">
-                    <g-button text="查詢" icon="search" type="primary" onclick="window._cmmgd16App?.executeQuery()"></g-button>
-                    <g-button text="清除" icon="close" type="secondary" onclick="window._cmmgd16App?.clearQuery()"></g-button>
-                </div>
-            </div>
         </div>
         <g-datagrid
             id="cmmGrid"
             api="/Cmm/select?DataMember=CMMGD16"
             columns="AGENT_NO:業務員編號:150:left,AGENT_NAME:業務員名稱:180:left,EMPLOYEE_ID:員工編號:120:left,BONUS_TYPE:獎金類別:100:center,PRODUCT_LINE_ID:產品線:100:center,AGENT_AREA_CODE:業務區域:100:center,AGENT_STATUS:狀態:80:center"
+            query-columns='[
+                {"FieldName":"agentNo","Caption":"業務員編號","Condition":"%","DataType":"string","Editor":"text","Span":3},
+                {"FieldName":"agentName","Caption":"業務員名稱","Condition":"%%","DataType":"string","Editor":"text","Span":3},
+                {"FieldName":"employeeId","Caption":"員工編號","Condition":"=","DataType":"string","Editor":"lovinput","DefaultMethod":"openCmmEmployeeLovQuery","Span":3},
+                {"FieldName":"bonusType","Caption":"獎金類別","Condition":"=","DataType":"string","Editor":"text","Span":3},
+                {"FieldName":"productLineId","Caption":"產品線","Condition":"=","DataType":"string","Editor":"text","Span":2},
+                {"FieldName":"agentAreaCode","Caption":"業務區域","Condition":"=","DataType":"string","Editor":"text","Span":2},
+                {"FieldName":"statusFrom","Caption":"狀態起 >=","Condition":">=","DataType":"string","Editor":"text","DefaultValue":"00","Span":2},
+                {"FieldName":"statusTo","Caption":"狀態迄 <=","Condition":"<=","DataType":"string","Editor":"text","DefaultValue":"99","Span":2}
+            ]'
             pagination="true"
             page-size="20"
             row-numbers="true"
             query-auto-column="false"
             always-close="false"
-            not-init-grid="false"
+            not-init-grid="true"
             edit-mode="form"
             remote-name="Cmm"
             member-id="CMMGD16"
@@ -176,18 +132,16 @@
                 });
         }
 
+        function openCmmEmployeeLovQuery(fieldName, currentValue, queryValues) {
+            openGenericLov(_cmmEmployeeLov.title, _cmmEmployeeLov.api, _cmmEmployeeLov.columns, _cmmEmployeeLov.fields, null, null,
+                function (selected) {
+                    const employeeId = selected?.employee_id ?? "";
+                    if (queryValues && fieldName) queryValues[fieldName] = employeeId;
+                });
+        }
+
         document.addEventListener("alpine:init", () => {
             Alpine.data("cmmgd16App", () => ({
-                search: {
-                    agentNo: "",
-                    agentName: "",
-                    employeeId: "",
-                    bonusType: "",
-                    productLineId: "",
-                    agentAreaCode: "",
-                    statusFrom: "00",
-                    statusTo: "99"
-                },
                 recordMode: "view", // view | edit | create
                 formRecord: {},
                 init() {
@@ -195,7 +149,7 @@
                     window.cmmOpenCreate = () => window._cmmgd16App?.openCreate();
                     window.cmmViewRecord = (row) => window._cmmgd16App?.viewRecord(row);
                     window.cmmEditRecord = (row) => window._cmmgd16App?.editRecord(row);
-                    this.executeQuery();
+                    document.getElementById("cmmGrid")?.gDataGrid?.executeQuery?.();
                 },
                 normalizeRecord(row) {
                     return {
@@ -215,7 +169,7 @@
                 },
                 openCreate() {
                     this.recordMode = "create";
-                    this.formRecord = this.normalizeRecord({ AGENT_STATUS: this.search.statusFrom || "00" });
+                    this.formRecord = this.normalizeRecord({ AGENT_STATUS: "00" });
                     gDialogOpen("dlgCmmRecord");
                 },
                 viewRecord(row) {
@@ -255,31 +209,7 @@
                     }
                 },
                 async executeQuery() {
-                    const grid = document.getElementById("cmmGrid")?.gDataGrid;
-                    if (!grid) return;
-                    await grid.fetchData({
-                        agentNo: this.search.agentNo || "",
-                        agentName: this.search.agentName || "",
-                        employeeId: this.search.employeeId || "",
-                        bonusType: this.search.bonusType || "",
-                        productLineId: this.search.productLineId || "",
-                        agentAreaCode: this.search.agentAreaCode || "",
-                        statusFrom: this.search.statusFrom || "",
-                        statusTo: this.search.statusTo || ""
-                    });
-                },
-                async clearQuery() {
-                    this.search = {
-                        agentNo: "",
-                        agentName: "",
-                        employeeId: "",
-                        bonusType: "",
-                        productLineId: "",
-                        agentAreaCode: "",
-                        statusFrom: "00",
-                        statusTo: "99"
-                    };
-                    await this.executeQuery();
+                    document.getElementById("cmmGrid")?.gDataGrid?.executeQuery?.();
                 }
             }));
         });
