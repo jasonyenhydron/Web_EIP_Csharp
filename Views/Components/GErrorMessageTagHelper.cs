@@ -16,11 +16,11 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = null;
 
             var html = @"
-<div id='gErrorMessageRoot' class='hidden fixed inset-0 z-[120] uk-background-secondary backdrop-blur-sm items-center justify-center p-4'>
-  <div class='w-full max-w-3xl uk-background-default border border-slate-200 rounded-xl shadow-2xl overflow-hidden'>
-    <div class='px-4 py-3 border-b border-slate-200 uk-background-muted flex items-center justify-between'>
+<div id='gErrorMessageRoot' class='hidden fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4'>
+  <div class='w-full max-w-3xl bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden'>
+    <div class='px-4 py-3 border-b border-slate-200 bg-slate-100 flex items-center justify-between'>
       <div class='text-sm font-bold text-slate-800'>__TITLE__</div>
-      <button type='button' class='p-1.5 rounded uk-background-muted text-slate-500' onclick='gHideErrorMessage()' title='Close'>
+      <button type='button' class='p-1.5 rounded bg-slate-100 text-slate-500' onclick='gHideErrorMessage()' title='Close'>
         <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg>
       </button>
     </div>
@@ -32,11 +32,11 @@ namespace Web_EIP_Csharp.Views.Components
       </div>
       <div>
         <label class='block text-xs text-slate-500 mb-1'>Detail</label>
-        <pre id='gErrMsgDetail' class='max-h-72 overflow-auto text-xs uk-background-secondary text-slate-100 rounded-lg p-3 border border-slate-700 whitespace-pre-wrap'></pre>
+        <pre id='gErrMsgDetail' class='max-h-72 overflow-auto text-xs bg-slate-900/60 text-slate-100 rounded-lg p-3 border border-slate-700 whitespace-pre-wrap'></pre>
       </div>
       <div class='flex justify-end gap-2'>
-        <button type='button' onclick='gCopyErrorMessage()' class='px-3 py-1.5 text-xs rounded border border-slate-300 uk-background-default uk-background-muted text-slate-700'>Copy</button>
-        <button type='button' onclick='gHideErrorMessage()' class='px-3 py-1.5 text-xs rounded uk-background-primary text-white uk-background-primary'>Close</button>
+        <button type='button' onclick='gCopyErrorMessage()' class='px-3 py-1.5 text-xs rounded border border-slate-300 bg-white bg-slate-100 text-slate-700'>Copy</button>
+        <button type='button' onclick='gHideErrorMessage()' class='px-3 py-1.5 text-xs rounded bg-blue-600 text-white bg-blue-600'>Close</button>
       </div>
     </div>
   </div>

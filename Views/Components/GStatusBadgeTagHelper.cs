@@ -35,11 +35,11 @@ namespace Web_EIP_Csharp.Views.Components
             // Color palette mapping
             (string pingColor, string dotColor, string textColor, string bgColor, string borderColor) = Color?.ToLower() switch
             {
-                "green" => ("uk-background-primary",  "uk-background-primary",  "text-green-700",  "uk-background-primary",  "border-green-200"),
-                "blue"  => ("uk-background-primary",   "uk-background-primary",   "text-blue-700",   "uk-background-primary",   "border-blue-200"),
-                "red"   => ("uk-background-muted",    "uk-background-muted",    "text-red-700",    "uk-background-muted",    "border-red-200"),
-                "slate" => ("uk-background-muted",  "uk-background-muted",  "text-slate-700",  "uk-background-muted", "border-slate-200"),
-                _       => ("uk-background-muted",  "uk-background-muted",  "text-amber-600",  "uk-background-muted",  "border-amber-200"),
+                "green" => ("bg-blue-600",  "bg-blue-600",  "text-green-700",  "bg-blue-600",  "border-green-200"),
+                "blue"  => ("bg-blue-600",   "bg-blue-600",   "text-blue-700",   "bg-blue-600",   "border-blue-200"),
+                "red"   => ("bg-slate-100",    "bg-slate-100",    "text-red-700",    "bg-slate-100",    "border-red-200"),
+                "slate" => ("bg-slate-100",  "bg-slate-100",  "text-slate-700",  "bg-slate-100", "border-slate-200"),
+                _       => ("bg-slate-100",  "bg-slate-100",  "text-amber-600",  "bg-slate-100",  "border-amber-200"),
             };
 
             string pingHtml = NoPing

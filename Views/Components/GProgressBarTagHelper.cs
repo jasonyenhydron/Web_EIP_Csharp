@@ -20,12 +20,12 @@ namespace Web_EIP_Csharp.Views.Components
             var compId   = string.IsNullOrEmpty(Id) ? $"gpb_{Guid.NewGuid():N}" : Id;
             var barColor = Type switch
             {
-                "success" => "uk-background-primary",
-                "warning" => "uk-background-muted",
-                "danger"  => "uk-background-muted",
-                _         => "uk-background-primary"
+                "success" => "bg-blue-600",
+                "warning" => "bg-slate-100",
+                "danger"  => "bg-slate-100",
+                _         => "bg-blue-600"
             };
-            var stripedCls  = Striped ? @"uk-background-muted:1rem_1rem] uk-background-muted(45deg,rgba(255,255,255,.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.15)_50%,rgba(255,255,255,.15)_75%,transparent_75%,transparent)]" : "";
+            var stripedCls  = Striped ? @"bg-slate-100:1rem_1rem] bg-slate-100(45deg,rgba(255,255,255,.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.15)_50%,rgba(255,255,255,.15)_75%,transparent_75%,transparent)]" : "";
             var animatedCls = Animated ? "animate-[progress_1s_linear_infinite]" : "";
             var label       = !string.IsNullOrEmpty(Label) ? Label : $"{val}%";
 
@@ -34,7 +34,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("class", $"w-full {Class}");
 
             output.Content.SetHtmlContent($@"
-                <div class=""w-full uk-background-muted rounded-full overflow-hidden h-4 relative"">
+                <div class=""w-full bg-slate-100 rounded-full overflow-hidden h-4 relative"">
                     <div class=""{barColor} {stripedCls} {animatedCls} h-full rounded-full transition-all duration-500 ease-out flex items-center justify-center""
                          style=""width:{val}%"">
                         {(ShowLabel && val > 10 ? $@"<span class=""text-white text-xs font-semibold px-1"">{label}</span>" : "")}
@@ -66,7 +66,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("class", $"relative inline-block group {Class}");
             output.Content.SetHtmlContent($@"
                 {content}
-                <span class=""absolute {tooltipCls} z-[200] px-2 py-1 text-xs text-white uk-background-secondary rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg"">
+                <span class=""absolute {tooltipCls} z-[200] px-2 py-1 text-xs text-white bg-slate-900/60 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg"">
                     {System.Net.WebUtility.HtmlEncode(Text)}
                 </span>
             ");

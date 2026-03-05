@@ -2,59 +2,85 @@
 @{
     var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
     ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
+    ViewData["HidePopupFooterClose"] = true;
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
 }
 
-<div class="absolute inset-0 uk-section uk-section-xsmall uk-background-muted overflow-hidden" x-data="idmgd01App()" x-init="init()">
-<div class="flex flex-col h-full min-h-0">
+@section Styles {
+    <style>
+        .idmg-shell {
+            background: #e5e7eb;
+        }
+        .idmg-panel {
+            background: #f3f4f6;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+        }
+        .idmg-head {
+            background: linear-gradient(180deg, #4f5ee8 0%, #294dd5 100%);
+            border-top-left-radius: 14px;
+            border-top-right-radius: 14px;
+        }
+        .idmg-head-btn {
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.12);
+        }
+        .idmg-head-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .idmg-query {
+            background: #f3f4f6;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+        }
+        .idmg-block {
+            background: #f3f4f6;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+}
 
-    <div class="uk-card uk-card-default border-b border-slate-200 px-4 py-3 shrink-0">
-        <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-small-bottom">
-            <h4 class="uk-heading-bullet uk-margin-remove ukx-title">查詢條件</h4>
-            <span class="ukx-note">操作欄支援 檢視 / 編輯 / 刪除</span>
+<div class="absolute inset-0 p-4 idmg-shell overflow-hidden" x-data="idmgd01App()" x-init="init()">
+<div id="idmgRootPanel" class="idmg-panel flex flex-col h-full min-h-0 overflow-hidden">
+
+    <div class="idmg-head text-white px-4 py-3 shrink-0 flex items-center justify-between">
+        <div class="flex items-center gap-3 font-bold text-[36px] tracking-wide">
+            <span class="text-lg">&lt;/&gt;</span>
+            <span>IDMGD01 - 程式執行</span>
         </div>
-        <div class="uk-grid-small uk-flex-bottom" uk-grid>
-            <g-textbox label="程式編號"
-                       x-model="search.programNo"
-                       x-on-enter="executeQuery()"
-                       extra-class="w-36 uppercase"
-                       wrapper-class="uk-width-1-1 uk-width-1-4@m flex flex-col gap-1">
-            </g-textbox>
-
-            <g-lov-input label="員工編號"
-                         hidden-id="searchEmployeeId" x-model-hidden="search.employeeId"
-                         code-id="searchEmployeeNo" code-placeholder="員工" code-width="w-20"
-                         name-id="searchEmployeeName"
-                         wrapper-class="uk-width-1-1 uk-width-1-3@m"
-                         config="@Model.EmployeeLov">
-            </g-lov-input>
-
-            <g-combobox label="顯示碼"
-                        name="displayCode"
-                        x-model="search.displayCode"
-                        items="Y:Y,N:N"
-                        wrapper-class="uk-width-1-1 uk-width-1-4@m"
-                        placeholder="全部">
-            </g-combobox>
-
-            <div class="uk-width-auto">
-                <g-button text="查詢" icon="search" type="primary" onclick="window._idmApp?.executeQuery()"></g-button>
-            </div>
+        <div class="flex items-center gap-2">
+            <button type="button" class="idmg-head-btn h-9 w-9 rounded-md inline-flex items-center justify-center transition-colors"
+                    title="全螢幕" onclick="idmToggleFullscreen()">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H5a2 2 0 00-2 2v3m16-5h-3m3 0v3M3 16v3a2 2 0 002 2h3m11-5v3a2 2 0 01-2 2h-3"/>
+                </svg>
+            </button>
+            <button type="button" class="idmg-head-btn h-9 w-9 rounded-md inline-flex items-center justify-center transition-colors"
+                    title="關閉" onclick="gPopupTryClose()">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/>
+                </svg>
+            </button>
         </div>
     </div>
 
     <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
         <g-datagrid id="idmGrid"
                     api="/Idm/select?DataMember=IDMGD01"
-                    columns="PROGRAM_NO:程式編號:150:left:text::text,DISPLAY_CODE:顯示:80:center:select:Y=Y;N=N:select,EMPLOYEE_ID:員工編號:150:left:text::lov,PURPOSE:用途:220:left:text::text,PROGRAM_TYPE:程式型態:120:left:text::text,ENTRY_DATE:建檔日期:170:left:readonly::"
+                    columns="PROGRAM_NO:程式編號:150:left,EMPLOYEE_ID:員工:120:left,DISPLAY_CODE:顯示碼:80:center"
+                    query-columns='[
+                        {"FieldName":"programNo","Caption":"程式編號","Condition":"%","DataType":"string","Editor":"text","Span":3},
+                        {"FieldName":"employeeId","Caption":"員工編號","Condition":"=","DataType":"string","Editor":"text","Span":3},
+                        {"FieldName":"displayCode","Caption":"顯示碼","Condition":"=","DataType":"string","Editor":"infocombobox","EditorOptions":"Y=是;N=否","Span":2}
+                    ]'
                     pagination="true"
                     page-list="20,50,100"
                     page-size="20"
                     always-close="false"
-                    not-init-grid="false"
+                    not-init-grid="true"
                     row-numbers="true"
                     edit-mode="form"
-                    query-auto-column="true"
+                    query-auto-column="false"
                     allow-add="true"
                     allow-update="true"
                     allow-delete="true"
@@ -62,21 +88,21 @@
                     on-insert="idmOpenCreate"
                     on-view="idmViewRecord"
                     on-update="idmEditRecord"
+                    on-load-success="idmGridLoaded"
                     on-row-click="idmSelectProgram"
                     @@add="openCreate()"
                     @@view="viewRecord($event.detail.row)"
                     @@edit="editRecord($event.detail.row)"
                     @@delete="confirmDelete($event.detail.row)"
-                    @@query="executeQueryFromGrid($event.detail.filters)"
                     extra-class="flex-1 min-h-0 max-h-[52vh]"
                     clean-style="false"></g-datagrid>
 
-        <div class="uk-card uk-card-default border-t border-slate-200 px-3 py-2 text-sm text-slate-700">
+        <div class="idmg-block rounded-none border-x-0 border-t px-3 py-2 text-sm text-slate-700">
             主檔：<span class="font-semibold" x-text="selectedProgram?.PROGRAM_NO || '-'"></span>
             <span class="text-slate-400 ml-2" x-text="selectedProgram?.PURPOSE || '請先點選上方程式資料'"></span>
         </div>
 
-        <div class="uk-grid-small uk-grid-match p-3 pb-4 uk-background-muted border-t border-slate-200 min-h-[340px]" uk-grid>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch p-3 pb-4 bg-slate-200/60 border-t border-slate-300 min-h-[340px]">
             <g-datagrid id="roleGrid1"
                         title="位置一"
                         api="/Idm/selectRoleFunctionPrograms?DataMember=IDMGD01&positionNo=1"
@@ -88,7 +114,7 @@
                         allow-update="true"
                         allow-delete="true"
                         auto-apply="false"
-                        extra-class="uk-width-1-1 uk-width-1-3@l"
+                        extra-class="w-full"
                         on-insert="idmAddRole1"
                         on-update="idmEditRole1"
                         on-delete="idmDeleteRole">
@@ -105,7 +131,7 @@
                         allow-update="true"
                         allow-delete="true"
                         auto-apply="false"
-                        extra-class="uk-width-1-1 uk-width-1-3@l"
+                        extra-class="w-full"
                         on-insert="idmAddRole2"
                         on-update="idmEditRole2"
                         on-delete="idmDeleteRole">
@@ -122,11 +148,23 @@
                         allow-update="true"
                         allow-delete="true"
                         auto-apply="false"
-                        extra-class="uk-width-1-1 uk-width-1-3@l"
+                        extra-class="w-full"
                         on-insert="idmAddRole3"
                         on-update="idmEditRole3"
                         on-delete="idmDeleteRole">
             </g-datagrid>
+        </div>
+
+        <div class="px-4 pb-3 pt-2 border-t border-slate-300 bg-slate-200/60 flex justify-end">
+            <button type="button"
+                    class="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow"
+                    onclick="gPopupTryClose()"
+                    title="關閉">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/>
+                </svg>
+                關閉
+            </button>
         </div>
     </div>
 
@@ -246,6 +284,42 @@
 @section Scripts {
     <g-js profile="popup" include-alpine="true" alpine-version="3.x.x"></g-js>
     <script>
+        const _idmEmployeeLov = {
+            title: '@Model.EmployeeLov.Title',
+            api: '@Html.Raw(Model.EmployeeLov.Api)',
+            columns: '@Model.EmployeeLov.Columns',
+            fields: '@Model.EmployeeLov.Fields'
+        };
+
+        function idmQueryEmployeeLov(fieldName, currentValue, queryValues) {
+            const columns = (_idmEmployeeLov.columns || '').split(',').map(s => s.trim()).filter(Boolean);
+            const fields = (_idmEmployeeLov.fields || '').split(',').map(s => s.trim()).filter(Boolean);
+            if (!columns.length || !fields.length) return;
+
+            openGenericLov(
+                _idmEmployeeLov.title || '員工查詢',
+                _idmEmployeeLov.api,
+                columns,
+                fields,
+                null,
+                null,
+                (selected) => {
+                    const v = selected?.employee_id ?? selected?.employee_no ?? '';
+                    if (queryValues && fieldName) queryValues[fieldName] = v;
+                }
+            );
+        }
+
+        function idmToggleFullscreen() {
+            const root = document.getElementById('idmgRootPanel');
+            if (!root) return;
+            if (!document.fullscreenElement) {
+                root.requestFullscreen?.();
+            } else {
+                document.exitFullscreen?.();
+            }
+        }
+
         function toDateInput(v) {
             if (!v) return '';
             const s = String(v);
@@ -254,7 +328,6 @@
 
         document.addEventListener('alpine:init', () => {
             Alpine.data('idmgd01App', () => ({
-                search: { programNo: '', employeeId: '', displayCode: 'Y' },
                 programs: [],
                 selectedProgram: null,
                 recordMode: 'view', // view | edit | create
@@ -276,6 +349,7 @@
                     window.idmEditRole2 = (row) => window._idmApp?.editRoleRecord(row, 2);
                     window.idmEditRole3 = (row) => window._idmApp?.editRoleRecord(row, 3);
                     window.idmDeleteRole = (row) => window._idmApp?.deleteRoleRecord(row);
+                    window.idmGridLoaded = (rows) => window._idmApp?.onGridLoaded(rows);
                     console.log('[IDMGD01] app initialized');
                     this.executeQuery();
                 },
@@ -300,30 +374,22 @@
                 },
 
                 async executeQuery() {
-                    this.search.employeeId = document.getElementById('searchEmployeeId')?.value ?? this.search.employeeId;
-                    await this.executeQueryFromGrid({});
+                    const grid = document.getElementById('idmGrid')?.gDataGrid;
+                    if (!grid) return;
+                    if (typeof grid.executeQuery === 'function') {
+                        grid.executeQuery();
+                    } else {
+                        await grid.fetchData({});
+                    }
                 },
 
-                async executeQueryFromGrid(filters) {
-                    try {
-                        const grid = document.getElementById('idmGrid')?.gDataGrid;
-                        if (!grid) return;
-                        const query = {
-                            programNo: this.search.programNo,
-                            employeeId: this.search.employeeId,
-                            displayCode: this.search.displayCode,
-                            ...(filters || {})
-                        };
-                        await grid.fetchData(query);
-                        this.programs = grid.rows || [];
-                        if (this.programs.length > 0) {
-                            this.selectProgram(this.programs[0]);
-                        } else {
-                            this.selectedProgram = null;
-                            await this.reloadRoleGrids();
-                        }
-                    } catch (e) {
-                        this.showToast('查詢失敗: ' + e, 'error');
+                async onGridLoaded(rows) {
+                    this.programs = rows || [];
+                    if (this.programs.length > 0) {
+                        this.selectProgram(this.programs[0]);
+                    } else {
+                        this.selectedProgram = null;
+                        await this.reloadRoleGrids();
                     }
                 },
 
@@ -505,7 +571,3 @@
         });
     </script>
 }
-
-
-
-

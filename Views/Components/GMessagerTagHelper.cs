@@ -11,8 +11,8 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("id", "gMessagerRoot");
             output.Content.SetHtmlContent($@"
                 <!-- g-messager: Alert/Confirm/Prompt/Toast -->
-                <div id=""gMsgOverlay"" class=""fixed inset-0 uk-background-secondary backdrop-blur-sm z-[900] hidden items-center justify-center"">
-                    <div id=""gMsgBox"" class=""uk-background-default rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 transform transition-all"">
+                <div id=""gMsgOverlay"" class=""fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[900] hidden items-center justify-center"">
+                    <div id=""gMsgBox"" class=""bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 transform transition-all"">
                         <div class=""flex items-start gap-3 mb-4"">
                             <div id=""gMsgIcon"" class=""shrink-0 w-10 h-10 rounded-full flex items-center justify-center""></div>
                             <div class=""flex-1"">
@@ -30,10 +30,10 @@ namespace Web_EIP_Csharp.Views.Components
                 <script>
                 const gMsg = (function() {{
                     const icons = {{
-                        success: {{ bg:'uk-background-primary', color:'text-green-600', svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/>' }},
-                        error  : {{ bg:'uk-background-muted',   color:'text-red-600',   svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>' }},
-                        warning: {{ bg:'uk-background-muted', color:'text-amber-600', svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z""/>' }},
-                        info   : {{ bg:'uk-background-primary',  color:'text-blue-600',  svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z""/>' }}
+                        success: {{ bg:'bg-blue-600', color:'text-green-600', svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/>' }},
+                        error  : {{ bg:'bg-slate-100',   color:'text-red-600',   svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>' }},
+                        warning: {{ bg:'bg-slate-100', color:'text-amber-600', svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z""/>' }},
+                        info   : {{ bg:'bg-blue-600',  color:'text-blue-600',  svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z""/>' }}
                     }};
                     function mkBtn(text, cls, cb) {{
                         const b = document.createElement('button');
@@ -65,27 +65,27 @@ namespace Web_EIP_Csharp.Views.Components
                     }}
                     return {{
                         alert(title, msg, type='info', onOk) {{
-                            show(title, msg, type, [mkBtn('確定','uk-background-primary text-white', ()=>{{ hide(); onOk&&onOk(); }})]);
+                            show(title, msg, type, [mkBtn('確定','bg-blue-600 text-white', ()=>{{ hide(); onOk&&onOk(); }})]);
                         }},
                         confirm(title, msg, onOk, onCancel, type='warning') {{
                             show(title, msg, type, [
-                                mkBtn('取消','uk-background-muted text-slate-700', ()=>{{ hide(); onCancel&&onCancel(); }}),
-                                mkBtn('確定','uk-background-primary text-white',       ()=>{{ hide(); onOk&&onOk();     }})
+                                mkBtn('取消','bg-slate-100 text-slate-700', ()=>{{ hide(); onCancel&&onCancel(); }}),
+                                mkBtn('確定','bg-blue-600 text-white',       ()=>{{ hide(); onOk&&onOk();     }})
                             ]);
                         }},
                         prompt(title, defaultVal='', onOk, type='info') {{
                             const inpEl = document.getElementById('gMsgInput');
                             inpEl.value = defaultVal;
                             show(title, '', type, [
-                                mkBtn('取消','uk-background-muted text-slate-700', ()=>hide()),
-                                mkBtn('確定','uk-background-primary text-white',       ()=>{{ hide(); onOk&&onOk(inpEl.value); }})
+                                mkBtn('取消','bg-slate-100 text-slate-700', ()=>hide()),
+                                mkBtn('確定','bg-blue-600 text-white',       ()=>{{ hide(); onOk&&onOk(inpEl.value); }})
                             ], true);
                         }},
                         toast(msg, type='success', duration=3000) {{
                             const tc = icons[type] || icons.info;
-                            const bgMap = {{ success:'uk-background-primary', error:'uk-background-muted', warning:'uk-background-muted', info:'uk-background-primary' }};
+                            const bgMap = {{ success:'bg-blue-600', error:'bg-slate-100', warning:'bg-slate-100', info:'bg-blue-600' }};
                             const t = document.createElement('div');
-                            t.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 ${{bgMap[type]||'uk-background-secondary'}} text-white rounded-xl shadow-lg text-sm font-medium translate-y-4 opacity-0 transition-all duration-300`;
+                            t.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 ${{bgMap[type]||'bg-slate-900/60'}} text-white rounded-xl shadow-lg text-sm font-medium translate-y-4 opacity-0 transition-all duration-300`;
                             t.innerHTML = `<svg class=""w-4 h-4 shrink-0"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/></svg>${{msg}}`;
                             document.getElementById('gToastContainer').appendChild(t);
                             requestAnimationFrame(()=>{{ t.classList.remove('translate-y-4','opacity-0'); }});
@@ -134,7 +134,7 @@ namespace Web_EIP_Csharp.Views.Components
 
             output.TagName = "div";
             output.Attributes.SetAttribute("id", compId);
-            output.Attributes.SetAttribute("class", $"uk-background-default rounded-xl border border-slate-200 overflow-hidden {Class}");
+            output.Attributes.SetAttribute("class", $"bg-white rounded-xl border border-slate-200 overflow-hidden {Class}");
             output.Attributes.SetAttribute("x-data", $"{fn}()");
             output.Attributes.SetAttribute("x-init", "init()");
             output.Content.SetHtmlContent($@"
@@ -148,7 +148,7 @@ namespace Web_EIP_Csharp.Views.Components
                 <div x-show=""!loading && rows.length===0"" class=""py-8 text-center text-sm text-slate-400"">目前無資料</div>
                 <ul x-show=""!loading && rows.length>0"" class=""divide-y divide-slate-100"">
                     <template x-for=""(row, idx) in rows"" :key=""idx"">
-                        <li class=""px-4 py-3 uk-background-muted transition-colors {rowClick}"" {(!string.IsNullOrEmpty(OnClick) ? $@"@click=""({OnClick})(row)""" : "")}>
+                        <li class=""px-4 py-3 bg-slate-100 transition-colors {rowClick}"" {(!string.IsNullOrEmpty(OnClick) ? $@"@click=""({OnClick})(row)""" : "")}>
                             {rowTemplate}
                         </li>
                     </template>
@@ -208,29 +208,29 @@ namespace Web_EIP_Csharp.Views.Components
 
             var sb = new System.Text.StringBuilder();
             sb.Append(@"<table class=""min-w-full border-collapse"">");
-            sb.Append(@"<colgroup><col class=""w-1/3 uk-background-muted""><col class=""w-2/3""></colgroup>");
+            sb.Append(@"<colgroup><col class=""w-1/3 bg-slate-100""><col class=""w-2/3""></colgroup>");
 
             foreach (var (name, value, type) in pg.Rows)
             {
                 var valueHtml = type switch
                 {
-                    "badge" => $@"<span class=""inline-flex px-2 py-0.5 text-xs font-bold uk-background-primary text-blue-700 rounded-full"">{value}</span>",
+                    "badge" => $@"<span class=""inline-flex px-2 py-0.5 text-xs font-bold bg-blue-600 text-blue-700 rounded-full"">{value}</span>",
                     "link"  => $@"<a href=""{value}"" class=""text-blue-600 hover:underline text-sm"">{value}</a>",
                     _       => $@"<span class=""text-sm text-slate-800"">{value}</span>"
                 };
                 sb.Append($@"
                 <tr class=""border-b border-slate-200 last:border-0"">
-                    <td class=""px-3 py-2.5 text-xs font-semibold text-slate-500 uk-background-muted border-r border-slate-200"">{name}</td>
+                    <td class=""px-3 py-2.5 text-xs font-semibold text-slate-500 bg-slate-100 border-r border-slate-200"">{name}</td>
                     <td class=""px-3 py-2.5"">{valueHtml}</td>
                 </tr>");
             }
             sb.Append("</table>");
 
             output.TagName = "div";
-            output.Attributes.SetAttribute("class", $"uk-background-default rounded-xl border border-slate-200 overflow-hidden {Class}");
+            output.Attributes.SetAttribute("class", $"bg-white rounded-xl border border-slate-200 overflow-hidden {Class}");
 
             var headerHtml = !string.IsNullOrEmpty(Title)
-                ? $@"<div class=""px-4 py-2.5 uk-background-muted border-b border-slate-200 text-sm font-bold text-slate-700"">{Title}</div>"
+                ? $@"<div class=""px-4 py-2.5 bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-700"">{Title}</div>"
                 : "";
 
             // RWD: overflow-x-auto allows table to scroll horizontally on small screens
@@ -270,7 +270,7 @@ namespace Web_EIP_Csharp.Views.Components
                 var wStyle = string.IsNullOrEmpty(width) ? "" : $"width:{width}px;min-width:{width}px;";
                 var thAlignCls = align is "center" or "right" ? $"text-{align}" : "text-left";
                 var tdAlignCls = align is "center" or "right" ? $"text-{align}" : "text-left";
-                thSb.Append($@"<th style=""{wStyle}"" class=""px-3 py-2.5 {thAlignCls} text-xs font-bold text-slate-500 uppercase uk-background-muted border-b-2 border-slate-200"">{title}</th>");
+                thSb.Append($@"<th style=""{wStyle}"" class=""px-3 py-2.5 {thAlignCls} text-xs font-bold text-slate-500 uppercase bg-slate-100 border-b-2 border-slate-200"">{title}</th>");
 
                 if (first)
                 {
@@ -298,11 +298,11 @@ namespace Web_EIP_Csharp.Views.Components
                 ? $"@click=\"({OnRowClick})(row)\""
                 : "";
             var rowCursor = !string.IsNullOrEmpty(OnRowClick) ? "cursor-pointer" : "";
-            var striped   = Striped ? "uk-background-default uk-background-muted" : "";
+            var striped   = Striped ? "bg-white bg-slate-100" : "";
 
             output.TagName = "div";
             output.Attributes.SetAttribute("id", compId);
-            output.Attributes.SetAttribute("class", $"uk-background-default rounded-xl border border-slate-200 shadow-sm overflow-hidden {Class}");
+            output.Attributes.SetAttribute("class", $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden {Class}");
             output.Attributes.SetAttribute("x-data", $"{fn}()");
             output.Attributes.SetAttribute("x-init", "init()");
             output.Content.SetHtmlContent($@"
@@ -317,7 +317,7 @@ namespace Web_EIP_Csharp.Views.Components
                         <thead><tr>{thSb}</tr></thead>
                         <tbody>
                             <template x-for=""(row, idx) in visibleRows"" :key=""row['{IdField}']"">
-                                <tr class=""{striped} uk-background-primary transition-colors {rowCursor}"" {rowClick}>
+                                <tr class=""{striped} bg-blue-600 transition-colors {rowCursor}"" {rowClick}>
                                     {tdSb}
                                 </tr>
                             </template>

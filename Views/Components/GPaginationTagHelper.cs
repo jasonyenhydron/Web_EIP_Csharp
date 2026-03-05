@@ -29,19 +29,19 @@ namespace Web_EIP_Csharp.Views.Components
 
             output.TagName = "div";
             output.Attributes.SetAttribute("class",
-                "flex flex-wrap items-center justify-between gap-3 px-4 py-2 uk-background-muted border-t border-slate-200 text-sm select-none");
+                "flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-100 border-t border-slate-200 text-sm select-none");
             output.Content.SetHtmlContent($"""
                 <div class="flex items-center gap-3 flex-wrap">
                     {countHtml}
                     <select x-model="{AlpinePageSize}" @@change="currentPage=1"
-                            class="pl-2 pr-6 py-1 text-xs border border-slate-300 rounded-lg uk-background-default focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer">
+                            class="pl-2 pr-6 py-1 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer">
                         {string.Join("", opts)}
                     </select>
                 </div>
                 <div class="flex items-center gap-1">
                     <button type="button" @@click="{AlpinePrev}" :disabled="{AlpineCurrent}<=1"
-                            :class="{AlpineCurrent}<=1?'opacity-40 cursor-not-allowed':'uk-background-muted'"
-                            class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 uk-background-default text-slate-600 transition-colors">
+                            :class="{AlpineCurrent}<=1?'opacity-40 cursor-not-allowed':'bg-slate-100'"
+                            class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </button>
                     <div class="flex items-center gap-1.5 px-2">
@@ -53,8 +53,8 @@ namespace Web_EIP_Csharp.Views.Components
                         <span class="text-slate-400 text-xs">頁</span>
                     </div>
                     <button type="button" @@click="{AlpineNext}" :disabled="{AlpineCurrent}>={AlpineTotal}"
-                            :class="{AlpineCurrent}>={AlpineTotal}?'opacity-40 cursor-not-allowed':'uk-background-muted'"
-                            class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 uk-background-default text-slate-600 transition-colors">
+                            :class="{AlpineCurrent}>={AlpineTotal}?'opacity-40 cursor-not-allowed':'bg-slate-100'"
+                            class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </button>
                 </div>

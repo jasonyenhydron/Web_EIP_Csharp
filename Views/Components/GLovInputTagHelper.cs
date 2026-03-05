@@ -95,8 +95,8 @@ namespace Web_EIP_Csharp.Views.Components
                 string effectiveCodeWidth = hasName ? CodeWidth : "w-full";
                 string rounded = hasName ? "rounded-r-none" : "rounded-lg";
                 string codeInputStyle = Readonly
-                    ? @"text-blue-700 font-bold uk-background-primary cursor-pointer"
-                    : @"text-slate-700 uk-background-default";
+                    ? @"text-blue-700 font-bold bg-blue-600 cursor-pointer"
+                    : @"text-slate-700 bg-white";
                 codeHtml = $@"<input type=""text"" id=""{HtmlId(CodeId)}"" name=""{HtmlEncode(CodeId)}""
                        value=""{HtmlEncode(CodeValue)}""
                        placeholder=""{HtmlEncode(CodePlaceholder)}""{rdAttr}{onclick}{xmAttr}
@@ -116,7 +116,7 @@ namespace Web_EIP_Csharp.Views.Components
                        value=""{HtmlEncode(NameValue)}""
                        placeholder=""{HtmlEncode(NamePlaceholder)}""{rdAttr}{onclick}{xmAttr}
                        class=""block flex-1 px-3 py-2 border border-slate-300 {hasCode} {hasBtn} text-sm
-                              uk-background-muted cursor-pointer uk-background-muted
+                              bg-slate-100 cursor-pointer bg-slate-100
                               focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors"">";
             }
 
@@ -125,7 +125,7 @@ namespace Web_EIP_Csharp.Views.Components
             {
                 btnHtml = $@"<button type=""button""{onclick}
                         class=""px-3 border border-l-0 border-slate-300 rounded-r-lg
-                               uk-background-muted text-slate-600 transition-colors"">
+                               bg-slate-100 text-slate-600 transition-colors"">
                     <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
                               d=""M5 12h.01M12 12h.01M19 12h.01

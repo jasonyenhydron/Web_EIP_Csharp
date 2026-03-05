@@ -15,6 +15,8 @@
         };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <g-style profile="popup"></g-style>
     <style>
         html, body {
@@ -29,22 +31,28 @@
     </style>
     @RenderSection("Styles", required: false)
 </head>
-<body class="uk-background-muted min-h-screen flex flex-col">
+@{
+    var hidePopupFooterClose = (ViewData["HidePopupFooterClose"] as bool?) == true;
+}
+<body class="bg-slate-100 min-h-screen flex flex-col">
     @* SVG Icon Sprite *@
     <partial name="~/Views/Shared/_IconSprite.cshtml" />
 
-    <div class="g-popup-scroll-root flex-1 min-h-0 relative overflow-y-auto overflow-x-hidden overscroll-contain">
+    <div class="g-popup-scroll-root flex-1 min-h-0 relative overflow-y-auto overflow-x-auto overscroll-contain">
         @RenderBody()
     </div>
 
-    <div class="shrink-0 border-t border-slate-200 uk-background-default backdrop-blur px-4 py-2 flex justify-end">
-        <button type="button"
-                onclick="gPopupTryClose()"
-                class="uk-button uk-button-default"
-                title="關閉">
-            關閉
-        </button>
-    </div>
+    @if (!hidePopupFooterClose)
+    {
+        <div class="shrink-0 border-t border-slate-200 bg-white backdrop-blur px-4 py-2 flex justify-end">
+            <button type="button"
+                    onclick="gPopupTryClose()"
+                    class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    title="關閉">
+                關閉
+            </button>
+        </div>
+    }
 
     @* Global message / toast components *@
     <g-messager/>
@@ -123,8 +131,4 @@
     @RenderSection("Scripts", required: false)
 </body>
 </html>
-
-
-
-
 

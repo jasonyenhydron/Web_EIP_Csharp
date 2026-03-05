@@ -1,26 +1,26 @@
 ﻿@* Views/Shared/_LovModal.cshtml *@
-<div id="genericLovModal" class="fixed inset-0 uk-background-secondary backdrop-blur-sm hidden z-[75] items-center justify-center p-4 transition-opacity duration-200">
-    <div class="uk-background-default rounded-lg shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden border border-slate-300">
-        <div class="uk-background-primary text-white px-4 py-2 flex justify-between items-center cursor-move">
+<div id="genericLovModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[75] items-center justify-center p-4 transition-opacity duration-200">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden border border-slate-300">
+        <div class="bg-blue-600 text-white px-4 py-2 flex justify-between items-center cursor-move">
             <h3 class="text-sm font-bold flex items-center gap-2" id="genericLovTitle">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 查詢
             </h3>
-            <button class="uk-background-primary p-1 rounded transition-colors" onclick="closeGenericLov()">
+            <button class="bg-blue-600 p-1 rounded transition-colors" onclick="closeGenericLov()">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
-        <div class="p-4 flex-1 flex flex-col uk-background-muted">
+        <div class="p-4 flex-1 flex flex-col bg-slate-100">
             <div class="flex gap-2 items-center mb-4">
                 <label class="text-sm font-bold text-slate-700 whitespace-nowrap">查詢 %</label>
                 <input type="text" id="genericLovSearchInput" class="flex-1 border border-slate-300 px-3 py-1.5 rounded-sm shadow-inner text-sm focus:outline-none focus:border-blue-500" placeholder="輸入關鍵字後按 Enter 或查詢">
-                <button type="button" class="uk-background-muted border border-slate-400 px-4 py-1.5 rounded-sm text-sm font-bold text-slate-700 transition-colors shadow-sm" onclick="fetchGenericLovData()">查詢</button>
+                <button type="button" class="bg-slate-100 border border-slate-400 px-4 py-1.5 rounded-sm text-sm font-bold text-slate-700 transition-colors shadow-sm" onclick="fetchGenericLovData()">查詢</button>
             </div>
 
-            <div id="genericLovGridWrap" class="border border-slate-300 uk-background-default flex-1 overflow-auto rounded-sm min-h-[300px] max-h-[400px]">
+            <div id="genericLovGridWrap" class="border border-slate-300 bg-white flex-1 overflow-auto rounded-sm min-h-[300px] max-h-[400px]">
                 <table class="w-full text-left text-sm border-collapse">
-                    <thead class="uk-background-muted text-slate-700 sticky top-0 shadow-sm" id="genericLovThead">
+                    <thead class="bg-slate-100 text-slate-700 sticky top-0 shadow-sm" id="genericLovThead">
                         <tr></tr>
                     </thead>
                     <tbody id="genericLovTableBody"></tbody>
@@ -28,9 +28,9 @@
             </div>
         </div>
 
-        <div class="uk-background-muted border-t border-slate-300 px-4 py-3 flex justify-center gap-4">
-            <button type="button" class="uk-background-default border text-blue-700 border-slate-400 px-6 py-1.5 rounded-sm shadow-sm uk-background-primary text-sm font-bold transition-colors" onclick="confirmGenericLovSelection()">確定</button>
-            <button type="button" class="uk-background-default border text-slate-700 border-slate-400 px-6 py-1.5 rounded-sm shadow-sm uk-background-muted text-sm font-bold transition-colors" onclick="closeGenericLov()">取消</button>
+        <div class="bg-slate-100 border-t border-slate-300 px-4 py-3 flex justify-center gap-4">
+            <button type="button" class="bg-white border text-blue-700 border-slate-400 px-6 py-1.5 rounded-sm shadow-sm bg-blue-600 text-sm font-bold transition-colors" onclick="confirmGenericLovSelection()">確定</button>
+            <button type="button" class="bg-white border text-slate-700 border-slate-400 px-6 py-1.5 rounded-sm shadow-sm bg-slate-100 text-sm font-bold transition-colors" onclick="closeGenericLov()">取消</button>
         </div>
     </div>
 </div>
@@ -119,7 +119,7 @@
                 const isCurrent = genericLovState.sortKey === key;
                 const indicator = !sortable ? '' : (isCurrent ? (genericLovState.sortDir === 'asc' ? '▲' : '▼') : '↕');
                 const th = document.createElement('th');
-                th.className = `border-b border-r border-slate-300 px-3 py-2 font-bold whitespace-nowrap ${sortable ? 'cursor-pointer select-none uk-background-primary' : ''}`;
+                th.className = `border-b border-r border-slate-300 px-3 py-2 font-bold whitespace-nowrap ${sortable ? 'cursor-pointer select-none bg-blue-600' : ''}`;
                 th.innerHTML = `
                     <span class="inline-flex items-center gap-1">
                         <span>${col}</span>
@@ -241,7 +241,7 @@
 
         sorted.forEach((item, index) => {
             const tr = document.createElement('tr');
-            const rowBaseClass = `cursor-pointer transition-colors border-b border-slate-200 uk-background-primary ${(index % 2 === 0) ? 'uk-background-default' : 'uk-background-muted'}`;
+            const rowBaseClass = `cursor-pointer transition-colors border-b border-slate-200 bg-blue-600 ${(index % 2 === 0) ? 'bg-white' : 'bg-slate-100'}`;
             tr.className = rowBaseClass;
             tr.dataset.rowBaseClass = rowBaseClass;
             tr.onclick = function () { selectGenericLovRow(tr, item); };
@@ -264,7 +264,7 @@
 
     function selectGenericLovRow(rowElement, rowData) {
         document.querySelectorAll('#genericLovTableBody tr').forEach((tr) => {
-            const baseClass = tr.dataset.rowBaseClass || 'cursor-pointer transition-colors border-b border-slate-200 uk-background-primary uk-background-default';
+            const baseClass = tr.dataset.rowBaseClass || 'cursor-pointer transition-colors border-b border-slate-200 bg-blue-600 bg-white';
             tr.className = baseClass;
             tr.querySelectorAll('td').forEach(td => td.classList.remove('text-white'));
             tr.querySelector('td:nth-child(1)')?.classList.add('text-blue-700');
@@ -272,8 +272,8 @@
         });
 
         genericLovState.currentRow = rowElement;
-        genericLovState.currentRow.classList.remove('uk-background-primary', 'uk-background-default', 'uk-background-muted');
-        genericLovState.currentRow.classList.add('uk-background-primary', 'text-white');
+        genericLovState.currentRow.classList.remove('bg-blue-600', 'bg-white', 'bg-slate-100');
+        genericLovState.currentRow.classList.add('bg-blue-600', 'text-white');
         genericLovState.currentRow.querySelectorAll('td').forEach(td => {
             td.classList.remove('text-blue-700', 'text-slate-700', 'text-slate-500');
             td.classList.add('text-white');

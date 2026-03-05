@@ -13,10 +13,12 @@
         };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <g-style profile="layout"></g-style>
     @RenderSection("Styles", required: false)
 </head>
-<body class="uk-background-muted">
+<body class="bg-slate-100">
     @* SVG Icon Sprite（全站共用，放 body 最前，不佔版面）*@
     <partial name="~/Views/Shared/_IconSprite.cshtml" />
 
@@ -29,4 +31,3 @@
     @RenderSection("Scripts", required: false)
 </body>
 </html>
-

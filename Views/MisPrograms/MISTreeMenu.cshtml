@@ -41,8 +41,7 @@
         <main class="flex-1 overflow-auto p-5 space-y-4">
             @if (!string.IsNullOrWhiteSpace(ViewBag.Error as string))
             {
-                <div class="uk-alert-danger" uk-alert>
-                    <a href class="uk-alert-close" uk-close></a>
+                <div class="rounded-lg border border-red-200 bg-red-50 text-red-700 px-4 py-3">
                     <p>@ViewBag.Error</p>
                 </div>
             }
@@ -88,9 +87,9 @@
                         </select>
                     </div>
                     <div class="flex gap-2">
-                        <button type="submit" class="uk-button uk-button-primary">查詢</button>
-                        <a href="/mis/programs" class="uk-button uk-button-default">清除</a>
-                        <button type="button" class="uk-button uk-button-secondary" onclick="runProgram()">執行</button>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700">查詢</button>
+                        <a href="/mis/programs" class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">清除</a>
+                        <button type="button" class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200" onclick="runProgram()">執行</button>
                     </div>
                 </form>
             </section>
@@ -173,15 +172,15 @@
 
 <div id="programModal" class="fixed inset-0 bg-slate-900/45 hidden items-center justify-center p-4 z-50" style="display:none;">
     <div id="modalContent" class="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-200">
-        <div class="uk-background-primary text-white px-5 py-3 flex items-center justify-between">
+        <div class="bg-blue-600 text-white px-5 py-3 flex items-center justify-between">
             <div class="font-semibold text-lg">程式詳細資料</div>
             <div class="flex items-center gap-2">
-                <button type="button" class="uk-icon-button" onclick="toggleMaximizeModal()" aria-label="切換全螢幕">
+                <button type="button" class="inline-flex items-center justify-center h-9 w-9 rounded-full hover:bg-slate-100 transition-colors" onclick="toggleMaximizeModal()" aria-label="切換全螢幕">
                     <svg id="maximizeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" /></svg>
                     <svg id="restoreIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8h8v8H8z" /></svg>
                 </button>
-                <button type="button" class="uk-icon-button" onclick="closeProgramModal()" aria-label="關閉">
-                    <span uk-icon="close"></span>
+                <button type="button" class="inline-flex items-center justify-center h-9 w-9 rounded-full hover:bg-slate-100 transition-colors" onclick="closeProgramModal()" aria-label="關閉">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
             </div>
         </div>
@@ -201,7 +200,7 @@
                 <div><div class="mis-meta-label">實際工時</div><div id="modal-real-hours" class="mis-meta-value">-</div></div>
             </div>
             <div class="mt-5 text-right">
-                <button id="btnOpenProgram" type="button" class="uk-button uk-button-primary">開啟程式</button>
+                <button id="btnOpenProgram" type="button" class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700">開啟程式</button>
             </div>
         </div>
     </div>
@@ -209,15 +208,15 @@
 
 <div id="executionModal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center p-4 z-[60]" style="display:none;">
     <div id="executionModalContent" class="w-full max-w-7xl h-[95vh] bg-white rounded-2xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-200 flex flex-col">
-        <div class="uk-background-secondary text-white px-5 py-3 flex items-center justify-between">
+        <div id="executionModalHeader" class="bg-slate-900/60 text-white px-5 py-3 flex items-center justify-between">
             <div id="executionModalTitle" class="font-semibold text-lg">程式執行</div>
             <div class="flex items-center gap-2">
-                <button type="button" class="uk-icon-button" onclick="toggleExecutionMaximize()" aria-label="切換全螢幕">
+                <button type="button" class="inline-flex items-center justify-center h-9 w-9 rounded-full hover:bg-slate-100 transition-colors" onclick="toggleExecutionMaximize()" aria-label="切換全螢幕">
                     <svg id="execMaximizeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" /></svg>
                     <svg id="execRestoreIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8h8v8H8z" /></svg>
                 </button>
-                <button type="button" class="uk-icon-button" onclick="closeExecutionModal()" aria-label="關閉">
-                    <span uk-icon="close"></span>
+                <button type="button" class="inline-flex items-center justify-center h-9 w-9 rounded-full hover:bg-slate-100 transition-colors" onclick="closeExecutionModal()" aria-label="關閉">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
             </div>
         </div>

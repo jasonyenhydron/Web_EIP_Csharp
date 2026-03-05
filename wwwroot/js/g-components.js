@@ -67,7 +67,7 @@ function gLayoutToggle(panelId) {
 
 // gToast('訊息內容', 'success')
 function gToast(message, type = 'success') {
-    const colors = { success:'uk-background-primary', error:'uk-background-muted', warning:'uk-background-muted', info:'uk-background-primary' };
+    const colors = { success:'bg-blue-600', error:'bg-slate-100', warning:'bg-slate-100', info:'bg-blue-600' };
     const icons  = {
         success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>',
         error  : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>',
@@ -88,12 +88,12 @@ function gConfirm(message, title = '系統提示') {
     return new Promise(resolve => {
         const id = `_gc_${Date.now()}`;
         const ov = document.createElement('div');
-        ov.className = 'fixed inset-0 uk-background-secondary backdrop-blur-sm z-[900] flex items-center justify-center p-4';
+        ov.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[900] flex items-center justify-center p-4';
         ov.innerHTML = `
-            <div class="uk-background-default rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm transform scale-95 opacity-0 transition-all duration-200" id="${id}-box">
+            <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm transform scale-95 opacity-0 transition-all duration-200" id="${id}-box">
                 <div class="px-5 pt-5 pb-4">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 rounded-full uk-background-muted flex items-center justify-center shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                             <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                         <h3 class="text-base font-bold text-slate-800">${title}</h3>
@@ -101,8 +101,8 @@ function gConfirm(message, title = '系統提示') {
                     <p class="text-sm text-slate-600 leading-relaxed">${message}</p>
                 </div>
                 <div class="flex justify-end gap-2 px-5 pb-5">
-                    <button id="${id}-cancel" class="px-4 py-2 text-sm font-semibold rounded-lg uk-background-muted text-slate-700 transition-colors">取消</button>
-                    <button id="${id}-ok" class="px-4 py-2 text-sm font-semibold rounded-lg uk-background-primary text-white transition-colors">確定</button>
+                    <button id="${id}-cancel" class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 text-slate-700 transition-colors">取消</button>
+                    <button id="${id}-ok" class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white transition-colors">確定</button>
                 </div>
             </div>`;
         document.body.appendChild(ov);
@@ -142,25 +142,25 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
     };
 
     const ov = document.createElement("div");
-    ov.className = "fixed inset-0 uk-background-secondary backdrop-blur-sm z-[950] flex items-center justify-center p-4";
+    ov.className = "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[950] flex items-center justify-center p-4";
     ov.innerHTML = `
-      <div class="uk-background-default rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl h-[75vh] flex flex-col overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between uk-background-primary text-white">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl h-[75vh] flex flex-col overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-blue-600 text-white">
           <h3 class="text-base font-bold">${escapeHtml(title || "查詢視窗")}</h3>
-          <button type="button" id="${lovId}_close" class="p-1 rounded uk-background-default">關閉</button>
+          <button type="button" id="${lovId}_close" class="p-1 rounded bg-white">關閉</button>
         </div>
         <div class="p-3 border-b border-slate-100 flex items-center gap-2">
           <input id="${lovId}_q" type="text" class="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="請輸入關鍵字後按 Enter 查詢">
-          <button id="${lovId}_search" class="px-4 py-2 text-sm rounded uk-background-secondary text-white uk-background-secondary">查詢</button>
+          <button id="${lovId}_search" class="px-4 py-2 text-sm rounded bg-slate-900/60 text-white bg-slate-900/60">查詢</button>
         </div>
         <div class="flex-1 min-h-0 overflow-auto" id="${lovId}_scroll">
           <table class="w-full text-sm">
-            <thead class="sticky top-0 uk-background-muted border-b border-slate-200">
+            <thead class="sticky top-0 bg-slate-100 border-b border-slate-200">
               <tr>
                 ${columns.map((c, i) => {
                     const key = fields[i];
                     const sortable = sortEnabled && !!key;
-                    return `<th data-sort-idx="${i}" class="text-left px-3 py-2 font-semibold text-slate-600 ${sortable ? "cursor-pointer select-none uk-background-primary" : ""}">
+                    return `<th data-sort-idx="${i}" class="text-left px-3 py-2 font-semibold text-slate-600 ${sortable ? "cursor-pointer select-none bg-blue-600" : ""}">
                         <span class="inline-flex items-center gap-1">
                             <span>${escapeHtml(c)}</span>
                             ${sortable ? `<span class="text-[11px] text-slate-400" data-sort-indicator="${i}">↕</span>` : ``}
@@ -176,13 +176,13 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
         </div>
         <div class="px-4 py-3 border-t border-slate-200 flex items-center justify-between gap-3">
           <div id="${lovId}_pager" class="${bufferView ? "hidden" : "flex"} items-center gap-2 text-xs text-slate-600">
-            <button id="${lovId}_prev" type="button" class="px-2 py-1 rounded border border-slate-300 uk-background-default uk-background-muted disabled:opacity-50 disabled:cursor-not-allowed">上一頁</button>
+            <button id="${lovId}_prev" type="button" class="px-2 py-1 rounded border border-slate-300 bg-white bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed">上一頁</button>
             <span id="${lovId}_pageText">第 1 頁</span>
-            <button id="${lovId}_next" type="button" class="px-2 py-1 rounded border border-slate-300 uk-background-default uk-background-muted disabled:opacity-50 disabled:cursor-not-allowed">下一頁</button>
+            <button id="${lovId}_next" type="button" class="px-2 py-1 rounded border border-slate-300 bg-white bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed">下一頁</button>
           </div>
           <div class="flex items-center gap-2 ml-auto">
-            <button id="${lovId}_ok" class="px-4 py-2 rounded uk-background-primary text-white uk-background-primary text-sm">確定</button>
-            <button id="${lovId}_cancel" class="px-4 py-2 rounded uk-background-muted text-slate-700 uk-background-muted text-sm">取消</button>
+            <button id="${lovId}_ok" class="px-4 py-2 rounded bg-blue-600 text-white bg-blue-600 text-sm">確定</button>
+            <button id="${lovId}_cancel" class="px-4 py-2 rounded bg-slate-100 text-slate-700 bg-slate-100 text-sm">取消</button>
           </div>
         </div>
       </div>`;
@@ -228,23 +228,23 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
         renderData.forEach((row, localIdx) => {
             const rowIndex = startIndex + localIdx;
             const tr = document.createElement("tr");
-            const rowBaseClass = `border-b border-slate-100 uk-background-primary cursor-pointer ${(rowIndex % 2 === 0) ? "uk-background-default" : "uk-background-muted"}`;
+            const rowBaseClass = `border-b border-slate-100 bg-blue-600 cursor-pointer ${(rowIndex % 2 === 0) ? "bg-white" : "bg-slate-100"}`;
             tr.className = rowBaseClass;
             tr.dataset.rowBaseClass = rowBaseClass;
             tr.innerHTML = fields.map((f) => `<td class="px-3 py-2">${escapeHtml(row[f] ?? "")}</td>`).join("");
             tr.addEventListener("click", () => {
                 state.selected = row;
                 tbody.querySelectorAll("tr").forEach((r) => {
-                    r.className = r.dataset.rowBaseClass || "border-b border-slate-100 uk-background-primary cursor-pointer uk-background-default";
+                    r.className = r.dataset.rowBaseClass || "border-b border-slate-100 bg-blue-600 cursor-pointer bg-white";
                 });
-                tr.classList.add("uk-background-primary");
+                tr.classList.add("bg-blue-600");
             });
             tr.addEventListener("dblclick", () => {
                 state.selected = row;
                 tbody.querySelectorAll("tr").forEach((r) => {
-                    r.className = r.dataset.rowBaseClass || "border-b border-slate-100 uk-background-primary cursor-pointer uk-background-default";
+                    r.className = r.dataset.rowBaseClass || "border-b border-slate-100 bg-blue-600 cursor-pointer bg-white";
                 });
-                tr.classList.add("uk-background-primary");
+                tr.classList.add("bg-blue-600");
                 commitSelection();
             });
             tbody.appendChild(tr);
@@ -510,15 +510,15 @@ function setupGFileUploader(el) {
     dropzone.addEventListener("dragover", (e) => {
         if (disabled) return;
         e.preventDefault();
-        dropzone.classList.add("border-blue-400", "uk-background-primary");
+        dropzone.classList.add("border-blue-400", "bg-blue-600");
     });
     dropzone.addEventListener("dragleave", () => {
-        dropzone.classList.remove("border-blue-400", "uk-background-primary");
+        dropzone.classList.remove("border-blue-400", "bg-blue-600");
     });
     dropzone.addEventListener("drop", (e) => {
         if (disabled) return;
         e.preventDefault();
-        dropzone.classList.remove("border-blue-400", "uk-background-primary");
+        dropzone.classList.remove("border-blue-400", "bg-blue-600");
         const dropped = Array.from(e.dataTransfer?.files || []);
         applySelectedFiles(dropped);
     });
@@ -676,7 +676,7 @@ function setupGFileUploader(el) {
         emptyEl.classList.add("hidden");
         state.files.forEach((f) => {
             const row = document.createElement("div");
-            row.className = "flex items-center justify-between rounded border border-slate-200 uk-background-default px-2 py-1";
+            row.className = "flex items-center justify-between rounded border border-slate-200 bg-white px-2 py-1";
             const sizeKb = (f.size / 1024).toFixed(1);
             row.innerHTML = `<span class="truncate pr-2">${escapeHtml(f.name)}</span><span class="text-xs text-slate-400">${sizeKb} KB</span>`;
             listEl.appendChild(row);
@@ -984,7 +984,7 @@ function setupGCardView(el) {
 
     function createCard(row) {
         const card = document.createElement("article");
-        card.className = "group rounded-xl border border-slate-200 uk-background-default shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden";
+        card.className = "group rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden";
         const cover = coverField ? `${row?.[coverField] ?? ""}` : "";
         const coverAlt = coverAltField ? `${row?.[coverAltField] ?? ""}` : "cover";
         const title = titleField ? `${row?.[titleField] ?? ""}` : `${row?.[keyField] ?? ""}`;
@@ -995,13 +995,13 @@ function setupGCardView(el) {
             .map((f) => {
                 const value = `${row?.[f] ?? ""}`.trim();
                 if (!value) return "";
-                return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] uk-background-muted text-slate-600">${escapeHtml(value)}</span>`;
+                return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">${escapeHtml(value)}</span>`;
             })
             .filter((x) => !!x)
             .join("");
 
         card.innerHTML = `
-            ${cover ? `<div class="h-36 uk-background-muted overflow-hidden"><img src="${escapeHtml(cover)}" alt="${escapeHtml(coverAlt)}" class="w-full h-full object-cover"></div>` : ""}
+            ${cover ? `<div class="h-36 bg-slate-100 overflow-hidden"><img src="${escapeHtml(cover)}" alt="${escapeHtml(coverAlt)}" class="w-full h-full object-cover"></div>` : ""}
             <div class="p-4 space-y-2">
                 <div class="min-h-10">
                     <h4 class="text-sm font-bold text-slate-800 truncate">${escapeHtml(title || "(未命名)")}</h4>
@@ -1011,8 +1011,8 @@ function setupGCardView(el) {
                 ${metaHtml ? `<div class="flex flex-wrap gap-1">${metaHtml}</div>` : ""}
                 ${(primaryActionText || secondaryActionText) ? `
                     <div class="pt-2 flex items-center gap-2">
-                        ${primaryActionText ? `<button type="button" data-role="primary-action" class="px-2.5 py-1.5 rounded-lg uk-background-primary text-white text-xs font-semibold uk-background-primary inline-flex items-center gap-1">${iconHtml(primaryActionIcon)}<span>${escapeHtml(primaryActionText)}</span></button>` : ""}
-                        ${secondaryActionText ? `<button type="button" data-role="secondary-action" class="px-2.5 py-1.5 rounded-lg uk-background-muted text-slate-700 text-xs font-semibold uk-background-muted inline-flex items-center gap-1">${iconHtml(secondaryActionIcon)}<span>${escapeHtml(secondaryActionText)}</span></button>` : ""}
+                        ${primaryActionText ? `<button type="button" data-role="primary-action" class="px-2.5 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold bg-blue-600 inline-flex items-center gap-1">${iconHtml(primaryActionIcon)}<span>${escapeHtml(primaryActionText)}</span></button>` : ""}
+                        ${secondaryActionText ? `<button type="button" data-role="secondary-action" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold bg-slate-100 inline-flex items-center gap-1">${iconHtml(secondaryActionIcon)}<span>${escapeHtml(secondaryActionText)}</span></button>` : ""}
                     </div>
                 ` : ""}
             </div>

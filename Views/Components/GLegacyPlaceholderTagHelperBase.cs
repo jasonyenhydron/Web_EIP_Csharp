@@ -38,7 +38,7 @@ namespace Web_EIP_Csharp.Views.Components
             var child = (await output.GetChildContentAsync()).GetContent();
             var title = string.IsNullOrWhiteSpace(Title) ? DefaultTitle : Title;
             var cls = string.IsNullOrWhiteSpace(Class)
-                ? "rounded-xl border border-dashed border-amber-300 uk-background-muted/50 p-3 text-xs text-amber-700"
+                ? "rounded-xl border border-dashed border-amber-300 bg-slate-100/50 p-3 text-xs text-amber-700"
                 : Class;
             var compId = string.IsNullOrWhiteSpace(Id) ? $"legacy_{Guid.NewGuid():N}" : Id;
             var xData = string.IsNullOrWhiteSpace(XData) ? "{ open: true }" : XData;
@@ -63,7 +63,7 @@ namespace Web_EIP_Csharp.Views.Components
             var actionHtml = (!string.IsNullOrWhiteSpace(Url) || !string.IsNullOrWhiteSpace(OnClick))
                 ? $@"<div class=""mt-2 flex items-center gap-2"">
                     <button type=""button"" {(string.IsNullOrWhiteSpace(OnClick) ? "" : $@"onclick=""{WebUtility.HtmlEncode(OnClick)}""")}
-                            class=""px-2 py-1 rounded border border-amber-300 uk-background-default transition-colors"">
+                            class=""px-2 py-1 rounded border border-amber-300 bg-white transition-colors"">
                         {(string.IsNullOrWhiteSpace(Text) ? "執行" : WebUtility.HtmlEncode(Text))}
                     </button>
                     {(string.IsNullOrWhiteSpace(Url)
@@ -85,7 +85,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Content.SetHtmlContent($@"
 <div class=""flex items-center justify-between gap-2"">
     <div class=""font-semibold flex items-center gap-1""><span>{WebUtility.HtmlEncode(Icon)}</span><span>{WebUtility.HtmlEncode(title)} (legacy placeholder)</span></div>
-    <button type=""button"" @click=""open=!open"" class=""px-2 py-0.5 rounded border border-amber-300 uk-background-default transition-colors""><span x-text=""open ? '收合' : '展開'""></span></button>
+    <button type=""button"" @click=""open=!open"" class=""px-2 py-0.5 rounded border border-amber-300 bg-white transition-colors""><span x-text=""open ? '收合' : '展開'""></span></button>
 </div>
 <div x-show=""open"" class=""mt-2 space-y-1"">
     {textHtml}

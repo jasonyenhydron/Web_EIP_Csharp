@@ -24,14 +24,14 @@ namespace Web_EIP_Csharp.Views.Components
         {
             var colorClass = Type switch
             {
-                "primary"   => "uk-button-primary",
-                "secondary" => "uk-button-default",
-                "danger"    => "uk-button-danger",
-                "warning"   => "uk-button-default",
-                "success"   => "uk-button-primary",
-                "info"      => "uk-button-primary",
-                "ghost"     => "uk-button-text",
-                _           => "uk-button-primary"
+                "primary"   => "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700",
+                "secondary" => "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200",
+                "danger"    => "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-red-600 text-white hover:bg-red-700",
+                "warning"   => "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200",
+                "success"   => "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700",
+                "info"      => "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700",
+                "ghost"     => "inline-flex items-center justify-center rounded-lg px-2 py-1 text-sm font-medium transition-colors bg-transparent text-blue-700 hover:text-blue-800",
+                _           => "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
             };
             var sizeClass = Size switch
             {
@@ -39,7 +39,7 @@ namespace Web_EIP_Csharp.Views.Components
                 "lg" => "g-btn-lg",
                 _    => ""
             };
-            var disabledC = Disabled ? "uk-disabled" : "";
+            var disabledC = Disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "";
             var iconHtml  = GetIconSvg(Icon);
             bool isLink = !string.IsNullOrEmpty(Href);
             output.TagName = isLink ? "a" : "button";
@@ -55,7 +55,7 @@ namespace Web_EIP_Csharp.Views.Components
                 if (Disabled) output.Attributes.SetAttribute("disabled", "disabled");
             }
 
-            var defaultClass = $"uk-button {colorClass} {sizeClass} {disabledC}".Trim();
+            var defaultClass = $"inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors {colorClass} {sizeClass} {disabledC}".Trim();
             var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
             output.Attributes.SetAttribute("class", finalClass);
 

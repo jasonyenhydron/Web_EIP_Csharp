@@ -32,11 +32,11 @@ namespace Web_EIP_Csharp.Views.Components
             var overflowCls  = AllowOverflow ? "overflow-visible" : "overflow-hidden";
 
             output.TagName = "div";
-            var defaultClass = $"uk-background-default rounded-xl border border-slate-200 shadow-sm {overflowCls}";
+            var defaultClass = $"bg-white rounded-xl border border-slate-200 shadow-sm {overflowCls}";
             var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
             output.Attributes.SetAttribute("class", finalClass);
             output.Content.SetHtmlContent($@"
-                <div class=""flex items-center gap-2 px-4 py-3 uk-background-muted border-b border-slate-200"">
+                <div class=""flex items-center gap-2 px-4 py-3 bg-slate-100 border-b border-slate-200"">
                     {iconSvg}
                     <span class=""text-sm font-bold text-slate-700 flex-1"">{Title}</span>
                     {colBtn}

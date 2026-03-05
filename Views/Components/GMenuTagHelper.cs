@@ -32,9 +32,9 @@ namespace Web_EIP_Csharp.Views.Components
 
             var textColor = Type switch
             {
-                "danger"  => "text-red-600 uk-background-muted hover:text-red-700",
-                "warning" => "text-amber-600 uk-background-muted",
-                _         => "text-slate-700 uk-background-primary hover:text-blue-700"
+                "danger"  => "text-red-600 bg-slate-100 hover:text-red-700",
+                "warning" => "text-amber-600 bg-slate-100",
+                _         => "text-slate-700 bg-blue-600 hover:text-blue-700"
             };
             var disAttr     = Disabled ? "pointer-events-none opacity-40" : "";
             var iconHtml    = !string.IsNullOrEmpty(Icon) ? GButtonTagHelper.GetIconSvg(Icon, "w-4 h-4 shrink-0") : @"<span class=""w-4 h-4""></span>";
@@ -99,7 +99,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("class", $"relative inline-block {Class}");
             output.Content.SetHtmlContent($@"
                 <div id=""{menuId}_list""
-                     class=""absolute {posT} {posL} z-[100] uk-background-default rounded-xl border border-slate-200 shadow-xl py-1.5 px-1 hidden min-w-[160px] animate-in fade-in slide-in-from-top-1"">
+                     class=""absolute {posT} {posL} z-[100] bg-white rounded-xl border border-slate-200 shadow-xl py-1.5 px-1 hidden min-w-[160px] animate-in fade-in slide-in-from-top-1"">
                     {items}
                 </div>
                 <script>
@@ -153,8 +153,8 @@ namespace Web_EIP_Csharp.Views.Components
             output.Content.SetHtmlContent($@"
                 <input type=""checkbox"" id=""{inputId}"" name=""{Name}"" {chkAttr} {disAttr} {xmodel} {onChange}
                        class=""sr-only peer"">
-                <div class=""relative w-11 h-6 uk-background-muted uk-background-primary rounded-full transition-colors duration-200 peer-focus:ring-2 peer-focus:ring-blue-300
-                              after:content-[''] after:absolute after:top-0.5 after:left-0.5 uk-background-default after:rounded-full after:h-5 after:w-5
+                <div class=""relative w-11 h-6 bg-slate-100 bg-blue-600 rounded-full transition-colors duration-200 peer-focus:ring-2 peer-focus:ring-blue-300
+                              after:content-[''] after:absolute after:top-0.5 after:left-0.5 bg-white after:rounded-full after:h-5 after:w-5
                               after:transition-transform after:duration-200 peer-checked:after:translate-x-5"">
                 </div>
                 {(string.IsNullOrEmpty(Label) ? "" : $@"<span class=""text-sm text-slate-700""><span class=""peer-checked:hidden"">{LabelOff}</span><span class=""hidden peer-checked:inline"">{LabelOn}</span></span>")}

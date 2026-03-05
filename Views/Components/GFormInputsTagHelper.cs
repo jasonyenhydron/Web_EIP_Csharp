@@ -112,7 +112,7 @@ namespace Web_EIP_Csharp.Views.Components
             if (!string.IsNullOrEmpty(Onchange))    attrs.Append($@" onchange=""{Onchange}""");
 
             var required  = Required ? @"<span class=""text-red-500 ml-0.5 font-bold"">*</span>" : "";
-            var extraCls  = Readonly ? " uk-background-muted text-slate-500 cursor-not-allowed" : "";
+            var extraCls  = Readonly ? " bg-slate-100 text-slate-500 cursor-not-allowed" : "";
             var labelHtml = !string.IsNullOrEmpty(Label)
                 ? $@"<label for=""{inputId}"" class=""block text-xs font-semibold text-slate-600 mb-1"">{Label}{required}</label>"
                 : "";
@@ -173,11 +173,11 @@ namespace Web_EIP_Csharp.Views.Components
             {
                 output.Content.SetHtmlContent($@"
                     {labelHtml}
-                    <div class=""flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 uk-background-default"">
-                        {(string.IsNullOrEmpty(Prefix) ? "" : $@"<span class=""px-2 text-sm text-slate-500 uk-background-muted border-r border-slate-300"">{Prefix}</span>")}
+                    <div class=""flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 bg-white"">
+                        {(string.IsNullOrEmpty(Prefix) ? "" : $@"<span class=""px-2 text-sm text-slate-500 bg-slate-100 border-r border-slate-300"">{Prefix}</span>")}
                         <input type=""number"" id=""{inputId}"" name=""{Name}"" value=""{Value}"" {attrs}
-                               class=""flex-1 px-2 py-2 text-sm border-0 focus:outline-none uk-background-muted"">
-                        {(string.IsNullOrEmpty(Suffix) ? "" : $@"<span class=""px-2 text-sm text-slate-500 uk-background-muted border-l border-slate-300"">{Suffix}</span>")}
+                               class=""flex-1 px-2 py-2 text-sm border-0 focus:outline-none bg-slate-100"">
+                        {(string.IsNullOrEmpty(Suffix) ? "" : $@"<span class=""px-2 text-sm text-slate-500 bg-slate-100 border-l border-slate-300"">{Suffix}</span>")}
                     </div>
                 ");
             }
@@ -220,16 +220,16 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("class", $"flex flex-col gap-1 {colClass} {Class}");
             output.Content.SetHtmlContent($@"
                 {labelHtml}
-                <div class=""flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 uk-background-default"">
+                <div class=""flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 bg-white"">
                     <button type=""button"" {disAttr}
                             onclick=""const i=document.getElementById('{inputId}');const v=parseInt(i.value||0);if(v>{Min}-1){{i.value=Math.max({Min},v-{Step});i.dispatchEvent(new Event('change'));}}""
-                            class=""px-2.5 py-2 text-slate-600 uk-background-muted transition-colors border-r border-slate-300 font-bold text-lg leading-none disabled:opacity-40"">-</button>
+                            class=""px-2.5 py-2 text-slate-600 bg-slate-100 transition-colors border-r border-slate-300 font-bold text-lg leading-none disabled:opacity-40"">-</button>
                     <input type=""number"" id=""{inputId}"" name=""{Name}"" value=""{Value}""
                            min=""{Min}"" max=""{Max}"" step=""{Step}"" {xmodel} {disAttr}
-                           class=""flex-1 text-center text-sm border-0 focus:outline-none uk-background-muted py-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"">
+                           class=""flex-1 text-center text-sm border-0 focus:outline-none bg-slate-100 py-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"">
                     <button type=""button"" {disAttr}
                             onclick=""const i=document.getElementById('{inputId}');const v=parseInt(i.value||0);if(v<{Max}+1){{i.value=Math.min({Max},v+{Step});i.dispatchEvent(new Event('change'));}}""
-                            class=""px-2.5 py-2 text-slate-600 uk-background-muted transition-colors border-l border-slate-300 font-bold text-lg leading-none disabled:opacity-40"">+</button>
+                            class=""px-2.5 py-2 text-slate-600 bg-slate-100 transition-colors border-l border-slate-300 font-bold text-lg leading-none disabled:opacity-40"">+</button>
                 </div>
             ");
         }

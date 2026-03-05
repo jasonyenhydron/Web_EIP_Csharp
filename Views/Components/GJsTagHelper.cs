@@ -65,23 +65,17 @@ namespace Web_EIP_Csharp.Views.Components
                 case "popup":
                     return new[]
                     {
-                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit.min.js",
-                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit-icons.min.js",
                         "~/js/g-components.js"
                     };
                 case "main":
                     return new[]
                     {
-                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit.min.js",
-                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit-icons.min.js",
                         "~/js/g-components.js",
                         "~/js/sidebar.js"
                     };
                 case "mis-programs":
                     return new[]
                     {
-                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit.min.js",
-                        "https://cdn.jsdelivr.net/npm/uikit@3.21.16/dist/js/uikit-icons.min.js",
                         "~/js/g-components.js",
                         "~/js/sidebar.js",
                         "~/js/mis_programs.js"
@@ -113,4 +107,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-

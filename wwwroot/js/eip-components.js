@@ -51,10 +51,10 @@ function eipDialogClose(dialogId) {
 
 function eipToast(message, type = 'success') {
     const colors = {
-        success: 'uk-background-primary',
-        error: 'uk-background-muted',
-        warning: 'uk-background-muted',
-        info: 'uk-background-primary'
+        success: 'bg-blue-600',
+        error: 'bg-slate-100',
+        warning: 'bg-slate-100',
+        info: 'bg-blue-600'
     };
     const icons = {
         success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>',
@@ -95,12 +95,12 @@ function eipConfirm(message, title = '系統提示') {
         const id = `_eipConfirm_${Date.now()}`;
         const overlay = document.createElement('div');
         overlay.id = id;
-        overlay.className = 'fixed inset-0 uk-background-secondary backdrop-blur-sm z-[900] flex items-center justify-center p-4';
+        overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[900] flex items-center justify-center p-4';
         overlay.innerHTML = `
-            <div class="uk-background-default rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm transform scale-95 opacity-0 transition-all duration-200" id="${id}-box">
+            <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm transform scale-95 opacity-0 transition-all duration-200" id="${id}-box">
                 <div class="px-5 pt-5 pb-4">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 rounded-full uk-background-muted flex items-center justify-center shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                             <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
@@ -110,8 +110,8 @@ function eipConfirm(message, title = '系統提示') {
                     <p class="text-sm text-slate-600 leading-relaxed">${message}</p>
                 </div>
                 <div class="flex justify-end gap-2 px-5 pb-5">
-                    <button id="${id}-cancel" class="px-4 py-2 text-sm font-semibold rounded-lg uk-background-muted text-slate-700 transition-colors">取消</button>
-                    <button id="${id}-ok" class="px-4 py-2 text-sm font-semibold rounded-lg uk-background-primary text-white transition-colors">確定</button>
+                    <button id="${id}-cancel" class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 text-slate-700 transition-colors">取消</button>
+                    <button id="${id}-ok" class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white transition-colors">確定</button>
                 </div>
             </div>
         `;

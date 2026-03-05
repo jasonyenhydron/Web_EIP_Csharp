@@ -6,17 +6,17 @@
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
 }
 
-<div class="absolute inset-0 uk-section uk-section-xsmall uk-background-muted overflow-hidden" x-data="prmpq11App()" x-init="init()">
-    <div class="uk-card uk-card-default uk-card-small h-full flex flex-col min-h-0 overflow-hidden">
+<div class="absolute inset-0 p-2 bg-slate-100 overflow-hidden" x-data="prmpq11App()" x-init="init()">
+    <div class="bg-white rounded-xl border border-slate-200 h-full flex flex-col min-h-0 overflow-hidden">
     <g-accordion id="prmpq11SearchAccordion" exclusive="true" auto-collapse-selector="#btnPrmPq11Search">
         <g-accordion-panel title="查詢條件" icon="filter" active="true">
-            <div class="uk-grid-small grid grid-cols-1 md:grid-cols-4 gap-3" uk-grid>
+            <div class=" grid grid-cols-1 md:grid-cols-4 gap-3">
                 <g-textbox label="廠商編號" x-model="search.vendorId"></g-textbox>
                 <g-textbox label="送貨單號" x-model="search.vendorShipNo"></g-textbox>
                 <g-textbox label="收料日期起" type="date" x-model="search.receiptDateFrom"></g-textbox>
                 <g-textbox label="收料日期迄" type="date" x-model="search.receiptDateTo"></g-textbox>
             </div>
-            <div class="mt-3 uk-flex uk-flex-middle gap-2">
+            <div class="mt-3 flex items-center gap-2">
                 <g-button id="btnPrmPq11Search" text="查詢" icon="search" type="primary" onclick="window._prmpq11App?.executeQuery()"></g-button>
             </div>
         </g-accordion-panel>

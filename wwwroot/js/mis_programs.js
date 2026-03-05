@@ -145,7 +145,7 @@ function openProgramModal(input) {
     }
 
     const modalBody = modal.querySelector('.overflow-y-auto');
-    const header = modal.querySelector('.uk-background-primary');
+    const header = modal.querySelector('.bg-blue-600');
     if (modalBody && header) {
         modalBody.onscroll = function () {
             if (modalBody.scrollTop > 10) {
@@ -379,9 +379,26 @@ function openExecutionModal(url, title) {
     const modal = document.getElementById('executionModal');
     const iframe = document.getElementById('executionIframe');
     const titleEl = document.getElementById('executionModalTitle');
+    const modalContent = document.getElementById('executionModalContent');
+    const modalHeader = document.getElementById('executionModalHeader');
+
+    const code = String(title || '').trim().toUpperCase().split(/[\s-]+/)[0];
+    const hideOuterHeader = code === 'IDMGD01' || String(url || '').toUpperCase().includes('/IDM/IDMGD01');
 
     titleEl.textContent = title ? `${title} - 程式執行` : '程式執行';
     iframe.src = url;
+
+    if (modalHeader && modalContent) {
+        if (hideOuterHeader) {
+            modalHeader.classList.add('hidden');
+            modalContent.classList.remove('h-[95vh]');
+            modalContent.classList.add('h-[98vh]');
+        } else {
+            modalHeader.classList.remove('hidden');
+            modalContent.classList.remove('h-[98vh]');
+            modalContent.classList.add('h-[95vh]');
+        }
+    }
 
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
@@ -389,10 +406,9 @@ function openExecutionModal(url, title) {
     lockBackgroundScroll();
 
     setTimeout(() => {
-        const content = document.getElementById('executionModalContent');
-        content.classList.remove('scale-95');
-        content.classList.add('scale-100');
-        content.style.overscrollBehavior = 'contain';
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
+        modalContent.style.overscrollBehavior = 'contain';
     }, 10);
 
     closeProgramModal();
@@ -431,4 +447,3 @@ function toggleExecutionMaximize() {
         restoreIcon.classList.add('hidden');
     }
 }
-

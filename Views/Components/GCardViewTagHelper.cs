@@ -45,7 +45,7 @@ namespace Web_EIP_Csharp.Views.Components
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
             var compId = string.IsNullOrWhiteSpace(Id) ? $"gcv_{Guid.NewGuid():N}" : Id.Trim();
-            var defaultWrapperClass = "uk-background-default rounded-xl border border-slate-200 shadow-sm overflow-hidden";
+            var defaultWrapperClass = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden";
             var finalWrapperClass = string.IsNullOrWhiteSpace(WrapperClass)
                 ? TagHelperClassResolver.Resolve(defaultWrapperClass, Class, ExtraClass)
                 : WrapperClass.Trim();
@@ -91,7 +91,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("data-on-secondary-action", OnSecondaryAction ?? "");
 
             output.Content.SetHtmlContent($@"
-                <div class=""px-4 py-3 border-b border-slate-200 uk-background-muted flex items-center justify-between gap-3 flex-wrap"">
+                <div class=""px-4 py-3 border-b border-slate-200 bg-slate-100 flex items-center justify-between gap-3 flex-wrap"">
                     <h3 class=""text-sm font-bold text-slate-700 flex items-center gap-2"">
                         <svg class=""w-4 h-4 text-blue-600"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M3 7h18M3 12h18M3 17h18""></path></svg>
                         <span>{headerTitle}</span>
@@ -99,14 +99,14 @@ namespace Web_EIP_Csharp.Views.Components
                     <div class=""flex items-center gap-2 flex-wrap"">
                         <div class=""relative {(ShowSearch ? "" : "hidden")}"" data-role=""search-wrap"">
                             <input type=""text"" data-role=""search"" placeholder=""搜尋...""
-                                   class=""w-56 pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded-lg uk-background-default focus:outline-none focus:ring-1 focus:ring-blue-400"">
+                                   class=""w-56 pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"">
                             <svg class=""w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""></path>
                             </svg>
                         </div>
                         <div class=""flex items-center gap-1 {(ShowSorting ? "" : "hidden")}"" data-role=""sort-wrap"">
-                            <select data-role=""sort-field"" class=""pl-2 pr-6 py-1.5 text-xs border border-slate-300 rounded-lg uk-background-default focus:outline-none focus:ring-1 focus:ring-blue-400""></select>
-                            <button type=""button"" data-role=""sort-dir"" class=""w-8 h-8 rounded-lg border border-slate-300 uk-background-default uk-background-muted text-slate-600"" title=""切換排序方向"">↑</button>
+                            <select data-role=""sort-field"" class=""pl-2 pr-6 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-400""></select>
+                            <button type=""button"" data-role=""sort-dir"" class=""w-8 h-8 rounded-lg border border-slate-300 bg-white bg-slate-100 text-slate-600"" title=""切換排序方向"">↑</button>
                         </div>
                     </div>
                 </div>
@@ -115,12 +115,12 @@ namespace Web_EIP_Csharp.Views.Components
                     <div data-role=""empty"" class=""hidden text-sm text-slate-400 py-8 text-center"">{WebUtility.HtmlEncode(safeEmptyText)}</div>
                     <div data-role=""cards"" class=""grid gap-4""></div>
                 </div>
-                <div data-role=""pager-wrap"" class=""px-4 py-2 border-t border-slate-200 uk-background-muted flex items-center justify-between gap-2 text-xs {(ShowPager ? "" : "hidden")}"">
+                <div data-role=""pager-wrap"" class=""px-4 py-2 border-t border-slate-200 bg-slate-100 flex items-center justify-between gap-2 text-xs {(ShowPager ? "" : "hidden")}"">
                     <div class=""text-slate-500"">共 <span data-role=""total-count"" class=""font-semibold text-slate-700"">0</span> 筆</div>
                     <div class=""flex items-center gap-1"">
-                        <button type=""button"" data-role=""prev"" class=""px-2 py-1 rounded border border-slate-300 uk-background-default uk-background-muted disabled:opacity-40 disabled:cursor-not-allowed"">上一頁</button>
+                        <button type=""button"" data-role=""prev"" class=""px-2 py-1 rounded border border-slate-300 bg-white bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"">上一頁</button>
                         <span data-role=""page-info"" class=""px-2 text-slate-600"">1 / 1</span>
-                        <button type=""button"" data-role=""next"" class=""px-2 py-1 rounded border border-slate-300 uk-background-default uk-background-muted disabled:opacity-40 disabled:cursor-not-allowed"">下一頁</button>
+                        <button type=""button"" data-role=""next"" class=""px-2 py-1 rounded border border-slate-300 bg-white bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"">下一頁</button>
                     </div>
                 </div>
             ");

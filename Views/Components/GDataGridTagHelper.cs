@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 
 /*
  * GDataGridTagHelper
@@ -24,6 +27,28 @@ namespace Web_EIP_Csharp.Views.Components
     [HtmlTargetElement("g-datagrid")]
     public class GDataGridTagHelper : TagHelper
     {
+        private sealed class QueryColumnDefinition
+        {
+            public string FieldName { get; set; } = "";
+            public string Caption { get; set; } = "";
+            public string Condition { get; set; } = "=";
+            public string AndOr { get; set; } = "AND";
+            public string DataType { get; set; } = "string";
+            public string DefaultMethod { get; set; } = "";
+            public string DefaultValue { get; set; } = "";
+            public string Editor { get; set; } = "text";
+            public string EditorOptions { get; set; } = "";
+            public string Format { get; set; } = "";
+            public bool IsNvarChar { get; set; } = false;
+            public bool NewLine { get; set; } = false;
+            public bool RemoteMethod { get; set; } = false;
+            public int RowSpan { get; set; } = 1;
+            public int Span { get; set; } = 3;
+            public string TableName { get; set; } = "";
+            public int Width { get; set; } = 0;
+            public bool Api { get; set; } = false;
+        }
+
         public string Id           { get; set; } = "";
         [HtmlAttributeName("api")]
         public string Api          { get; set; } = "";
@@ -113,7 +138,7 @@ namespace Web_EIP_Csharp.Views.Components
         {
             var compId   = string.IsNullOrEmpty(Id) ? $"grid_{Guid.NewGuid():N}" : Id;
             var fnName   = $"gDataGrid_{compId}";
-            var striped  = Striped ? "uk-background-default uk-background-muted" : "";
+            var zebraClassExpr = Striped ? "(rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50')" : "''";
             var rowClick = !string.IsNullOrEmpty(OnRowClick)
                 ? $"@click.stop=\"({OnRowClick.Replace("\"","&quot;")})(row)\""
                 : "";
@@ -152,6 +177,13 @@ namespace Web_EIP_Csharp.Views.Components
             var actualNotInitGrid = AlwaysClose || NotInitGrid;
             _ = ColumnsHibeable || ColumnsHideable; // reserved option, not rendered yet
             var actualTotalCaption = !string.IsNullOrEmpty(TotalCaption) ? TotalCaption : TotalCpation;
+            var queryColumns = ParseQueryColumns(QueryColumns);
+            var queryColumnsJson = JsonSerializer.Serialize(queryColumns, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+            var queryPanelHtml = BuildQueryPanelHtml(queryColumns);
 
             // --- Option: Title ---
             var titleHeaderHtml = "";
@@ -159,34 +191,34 @@ namespace Web_EIP_Csharp.Views.Components
             {
                 var helpIcon = !string.IsNullOrEmpty(HelpLink) ? $"<a href='{HelpLink}' target='_blank' class='text-slate-400 hover:text-blue-500 transition-colors' title='Help'><svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/></svg></a>" : "";
                 var titleSortButtons = TitleSortEnabled
-                    ? @"<div class='inline-flex items-center rounded-lg border border-slate-200 uk-background-default overflow-hidden'>
-                            <button type='button' @click='setTitleSort(""asc"")' :class='(sortKey===titleSortField && sortDir===""asc"") ? ""text-blue-600 uk-background-muted"" : ""text-slate-500 uk-background-muted""' class='w-8 h-8 inline-flex items-center justify-center transition-colors' title='升冪'>
+                    ? @"<div class='inline-flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden'>
+                            <button type='button' @click='setTitleSort(""asc"")' :class='(sortKey===titleSortField && sortDir===""asc"") ? ""text-blue-600 bg-slate-100"" : ""text-slate-500 bg-slate-100""' class='w-8 h-8 inline-flex items-center justify-center transition-colors' title='升冪'>
                                 <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 15l7-7 7 7'/></svg>
                             </button>
-                            <button type='button' @click='setTitleSort(""desc"")' :class='(sortKey===titleSortField && sortDir===""desc"") ? ""text-blue-600 uk-background-muted"" : ""text-slate-500 uk-background-muted""' class='w-8 h-8 inline-flex items-center justify-center border-l border-slate-200 transition-colors' title='降冪'>
+                            <button type='button' @click='setTitleSort(""desc"")' :class='(sortKey===titleSortField && sortDir===""desc"") ? ""text-blue-600 bg-slate-100"" : ""text-slate-500 bg-slate-100""' class='w-8 h-8 inline-flex items-center justify-center border-l border-slate-200 transition-colors' title='降冪'>
                                 <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/></svg>
                             </button>
                         </div>"
                     : "";
-                titleHeaderHtml = $"<div class='px-4 py-3 uk-background-muted border-b border-slate-200 flex justify-between items-center'><h3 class='font-bold text-slate-700 text-sm flex items-center gap-2'><svg class='w-4 h-4 text-blue-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 10h16M4 14h16M4 18h16'/></svg>{Title}</h3><div class='flex items-center gap-2'>{titleSortButtons}{helpIcon}</div></div>";
+                titleHeaderHtml = $"<div class='px-4 py-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center'><h3 class='font-bold text-slate-700 text-sm flex items-center gap-2'><svg class='w-4 h-4 text-blue-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 10h16M4 14h16M4 18h16'/></svg>{Title}</h3><div class='flex items-center gap-2'>{titleSortButtons}{helpIcon}</div></div>";
             }
 
             if (actualShowRowNum)
             {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider uk-background-muted border-b-2 border-slate-200 w-10 shrink-0"">#</th>");
+                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 w-10 shrink-0"">#</th>");
                 if (actualShowFilter)
                 {
-                    filterHtml.Append(@"<th class=""px-3 py-2 uk-background-muted border-b-2 border-slate-200""></th>");
+                    filterHtml.Append(@"<th class=""px-3 py-2 bg-slate-100 border-b-2 border-slate-200""></th>");
                 }
                 tdHtml.Append(@"<td class=""px-3 py-2 text-center text-xs text-slate-400 border-b border-slate-100"" x-text=""(currentPage-1)*pageSize+rowIdx+1""></td>");
             }
 
             if (MultiSelect)
             {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center uk-background-muted border-b-2 border-slate-200 w-10 shrink-0""><input type=""checkbox"" @change=""toggleAll($event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer""></th>");
+                thHtml.Append(@"<th class=""px-3 py-2.5 text-center bg-slate-100 border-b-2 border-slate-200 w-10 shrink-0""><input type=""checkbox"" @change=""toggleAll($event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer""></th>");
                 if (actualShowFilter)
                 {
-                    filterHtml.Append(@"<th class=""px-3 py-2 uk-background-muted border-b-2 border-slate-200""></th>");
+                    filterHtml.Append(@"<th class=""px-3 py-2 bg-slate-100 border-b-2 border-slate-200""></th>");
                 }
                 tdHtml.Append($@"<td class=""px-3 py-2 text-center border-b border-slate-100"" @click.stop><input type=""checkbox"" :value=""row['{actualIdField}']"" x-model=""selectedIds"" @change=""onSelectRow(row, $event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer""></td>");
             }
@@ -197,25 +229,25 @@ namespace Web_EIP_Csharp.Views.Components
                 var thAlign = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
                 var tdAlign = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
                 var isSortable = sortableFieldSet.Contains(col.Field);
-                var sortableHeaderClass = isSortable ? "cursor-pointer uk-background-muted" : "cursor-default";
+                var sortableHeaderClass = isSortable ? "cursor-pointer bg-slate-100" : "cursor-default";
                 var filterIconBtn = actualTitleFilterEnabled
                     ? $@"<button type=""button"" @click.stop=""openHeaderFilter('{col.Field}', $event)"" title=""欄位篩選""
-                               class=""ml-1 inline-flex items-center justify-center w-5 h-5 rounded uk-background-muted text-blue-600 transition-colors"">
+                               class=""ml-1 inline-flex items-center justify-center w-5 h-5 rounded bg-slate-100 text-blue-600 transition-colors"">
                             <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><use href=""#icon-filter""></use></svg>
                        </button>"
                     : "";
 
                 var sortIconBtns = $@"
-                            <span x-show=""isSortableField('{col.Field}')"" class=""inline-flex items-center rounded border border-slate-200 uk-background-default overflow-hidden"">
+                            <span x-show=""isSortableField('{col.Field}')"" class=""inline-flex items-center rounded border border-slate-200 bg-white overflow-hidden"">
                                 <button type=""button"" @click.stop=""setSort('{col.Field}', 'asc')"" title=""升冪""
-                                        :class=""isSorted('{col.Field}', 'asc') ? 'text-blue-600 uk-background-muted' : 'text-slate-400 uk-background-muted'""
+                                        :class=""isSorted('{col.Field}', 'asc') ? 'text-blue-600 bg-slate-100' : 'text-slate-400 bg-slate-100'""
                                         class=""w-4 h-4 inline-flex items-center justify-center transition-colors"">
                                     <svg class=""w-3 h-3"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 15l7-7 7 7""/>
                                     </svg>
                                 </button>
                                 <button type=""button"" @click.stop=""setSort('{col.Field}', 'desc')"" title=""降冪""
-                                        :class=""isSorted('{col.Field}', 'desc') ? 'text-blue-600 uk-background-muted' : 'text-slate-400 uk-background-muted'""
+                                        :class=""isSorted('{col.Field}', 'desc') ? 'text-blue-600 bg-slate-100' : 'text-slate-400 bg-slate-100'""
                                         class=""w-4 h-4 inline-flex items-center justify-center border-l border-slate-200 transition-colors"">
                                     <svg class=""w-3 h-3"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M19 9l-7 7-7-7""/>
@@ -224,7 +256,7 @@ namespace Web_EIP_Csharp.Views.Components
                             </span>";
 
                 thHtml.Append($@"<th @dblclick=""toggleSort('{col.Field}')"" style=""{wStyle}""
-                        class=""px-3 py-2.5 {thAlign} text-xs font-bold text-slate-500 uppercase tracking-wider uk-background-muted border-b-2 border-slate-200 {sortableHeaderClass} transition-colors select-none whitespace-nowrap group"">
+                        class=""px-3 py-2.5 {thAlign} text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 {sortableHeaderClass} transition-colors select-none whitespace-nowrap group"">
                         <span class=""inline-flex items-center gap-1"">
                             {col.Title}
                             <span x-show=""multiSortEnabled && getSortOrder('{col.Field}') > 0""
@@ -236,7 +268,7 @@ namespace Web_EIP_Csharp.Views.Components
                     </th>");
                 if (ShowFilter)
                 {
-                    filterHtml.Append($@"<th class=""px-2 py-1.5 uk-background-muted border-b border-slate-200"">");
+                    filterHtml.Append($@"<th class=""px-2 py-1.5 bg-slate-100 border-b border-slate-200"">");
                     if (col.FilterType == "text")
                     {
                         filterHtml.Append($@"<input type=""text"" x-model=""filters['{col.Field}']"" @keydown.enter=""applyFilter()"" class=""w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
@@ -307,18 +339,18 @@ namespace Web_EIP_Csharp.Views.Components
             }
             if (!string.IsNullOrEmpty(EditMode) && (AllowUpdate || AllowDelete || UpdateCommandVisible || DeleteCommandVisible || ViewCommandVisible))
             {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider uk-background-muted border-b-2 border-slate-200 w-24 shrink-0 sticky right-0"">操作</th>");
+                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 w-24 shrink-0 sticky right-0"">操作</th>");
                 if (actualShowFilter)
                 {
-                    filterHtml.Append(@"<th class=""px-3 py-2 uk-background-muted border-b-2 border-slate-200 sticky right-0 text-center"">
+                    filterHtml.Append(@"<th class=""px-3 py-2 bg-slate-100 border-b-2 border-slate-200 sticky right-0 text-center"">
                         <button type=""button"" @click=""applyFilter()"" title=""套用欄位篩選""
-                                class=""inline-flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 text-blue-600 uk-background-muted transition-colors"">
+                                class=""inline-flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 text-blue-600 bg-slate-100 transition-colors"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><use href=""#icon-filter""></use></svg>
                         </button>
                     </th>");
                 }
 
-                tdHtml.Append($@"<td class=""px-3 py-2 text-center text-sm border-b border-slate-100 whitespace-nowrap sticky right-0 uk-background-default uk-background-default uk-background-muted transition-colors"">
+                tdHtml.Append($@"<td class=""px-3 py-2 text-center text-sm border-b border-slate-100 whitespace-nowrap sticky right-0 bg-white bg-white bg-slate-100 transition-colors"">
                     <div class=""flex items-center justify-center gap-2"">");
 
                 var btnViewHtml = ViewCommandVisible ? $@"
@@ -367,7 +399,7 @@ namespace Web_EIP_Csharp.Views.Components
             theadHtml.Append($@"<tr>{thHtml}</tr>");
             if (ShowFilter)
             {
-               theadHtml.Append($@"<tr class=""uk-background-muted"">{filterHtml}</tr>");
+               theadHtml.Append($@"<tr class=""bg-slate-100"">{filterHtml}</tr>");
             }
 
             var paginationHtml = "";
@@ -385,18 +417,18 @@ namespace Web_EIP_Csharp.Views.Components
 
                 paginationHtml = $@"
                 <!-- Pagination -->
-                <div class=""flex flex-wrap items-center justify-between gap-3 px-4 py-2 uk-background-muted border-t border-slate-200 text-sm shrink-0 select-none"">
+                <div class=""flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-100 border-t border-slate-200 text-sm shrink-0 select-none"">
                     <div class=""flex items-center gap-2"">
                         <select x-model=""pageSize"" @change=""currentPage=1""
-                                class=""pl-2 pr-6 py-1 text-xs border border-slate-300 rounded-lg uk-background-default focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"">
+                                class=""pl-2 pr-6 py-1 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"">
                             {pageListOpts}
                         </select>
                     </div>
                     <div class=""flex items-center gap-1"">
                         <span class=""text-xs text-slate-500 whitespace-nowrap pr-1"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-700"" x-text=""rows.length""></span> 筆</span>
                         <button type=""button"" @click=""prevPage()"" :disabled=""currentPage<=1""
-                                :class=""currentPage<=1?'opacity-40 cursor-not-allowed':'uk-background-muted'""
-                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 uk-background-default text-slate-600 transition-colors"">
+                                :class=""currentPage<=1?'opacity-40 cursor-not-allowed':'bg-slate-100'""
+                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15 19l-7-7 7-7""/></svg>
                         </button>
                         <div class=""flex items-center gap-1.5 px-2"">
@@ -408,8 +440,8 @@ namespace Web_EIP_Csharp.Views.Components
                             <span class=""text-slate-400 text-xs"">頁</span>
                         </div>
                         <button type=""button"" @click=""nextPage()"" :disabled=""currentPage>=totalPages""
-                                :class=""currentPage>=totalPages?'opacity-40 cursor-not-allowed':'uk-background-muted'""
-                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 uk-background-default text-slate-600 transition-colors"">
+                                :class=""currentPage>=totalPages?'opacity-40 cursor-not-allowed':'bg-slate-100'""
+                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
                             <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M9 5l7 7-7 7""/></svg>
                         </button>
                     </div>
@@ -419,26 +451,26 @@ namespace Web_EIP_Csharp.Views.Components
             output.TagName = "div";
             output.Attributes.SetAttribute("id", compId);
             var cleanStyleClass = CleanStyle ? "flex-1 border-0 rounded-none w-full shadow-none" : "";
-            var defaultClass = $"uk-background-default rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative min-h-0 {cleanStyleClass}".Trim();
+            var defaultClass = $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative min-h-0 w-full {cleanStyleClass}".Trim();
             var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
             output.Attributes.SetAttribute("class", finalClass);
             output.Attributes.SetAttribute("x-data", $"{fnName}()");
             output.Attributes.SetAttribute("x-init", "init()");
 
-            output.Content.SetHtmlContent($@"
-                {titleHeaderHtml}
-                <!-- Toolbar -->
-                <div class=""g-grid-toolbar flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 uk-background-muted shrink-0 flex-wrap"">
+	            output.Content.SetHtmlContent($@"
+	                {titleHeaderHtml}
+	                <!-- Toolbar -->
+                <div class=""g-grid-toolbar flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-100 shrink-0 flex-wrap"">
                     <div class=""flex items-center gap-2"">
                         {ToolbarHtml}
                         {((AllowAdd && !string.IsNullOrEmpty(EditMode)) ? $@"
-                        <button type=""button"" @click=""addRow()"" class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-white uk-background-muted rounded-lg shadow-sm transition-colors font-medium"">
+                        <button type=""button"" @click=""addRow()"" class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-white bg-slate-100 rounded-lg shadow-sm transition-colors font-medium"">
                             <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 4v16m8-8H4""/></svg>
                             新增
                         </button>
                         " : "")}
                         <button type=""button"" @click=""fetchData()"" title=""重新載入""
-                                class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 hover:text-blue-700 uk-background-muted rounded-lg border border-slate-200 uk-background-default transition-colors font-medium"">
+                                class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 hover:text-blue-700 bg-slate-100 rounded-lg border border-slate-200 bg-white transition-colors font-medium"">
                             <svg class=""w-3.5 h-3.5"" :class=""loading?'animate-spin':''"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15""/>
                             </svg>
@@ -446,12 +478,13 @@ namespace Web_EIP_Csharp.Views.Components
                         </button>
                         
                     </div>
-                    {(!Pagination ? $@"<span class=""text-xs text-slate-400"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-600"" x-text=""rows.length""></span> 筆</span>" : "")}
-                </div>
-                <div x-show=""headerFilter.open""
-                     x-transition
-                     @click.away=""cancelHeaderFilter()""
-                     class=""absolute z-40 uk-background-default border border-slate-200 rounded-xl shadow-xl w-64""
+	                    {(!Pagination ? $@"<span class=""text-xs text-slate-400"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-600"" x-text=""rows.length""></span> 筆</span>" : "")}
+	                </div>
+                    {queryPanelHtml}
+	                <div x-show=""headerFilter.open""
+	                     x-transition
+	                     @click.away=""cancelHeaderFilter()""
+                     class=""absolute z-40 bg-white border border-slate-200 rounded-xl shadow-xl w-64""
                      :style=""`left:${{headerFilter.x}}px; top:${{headerFilter.y}}px;`""
                      style=""display:none;"">
                     <div class=""px-3 py-2 border-b border-slate-100 text-sm font-semibold text-slate-700 flex items-center justify-between"">
@@ -500,13 +533,13 @@ namespace Web_EIP_Csharp.Views.Components
                         </template>
                     </div>
                     <div class=""px-3 py-2 border-t border-slate-100 flex justify-end gap-2"">
-                        <button type=""button"" @click=""confirmHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md uk-background-muted text-white uk-background-muted"">OK</button>
-                        <button type=""button"" @click=""cancelHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 uk-background-muted"">Cancel</button>
+                        <button type=""button"" @click=""confirmHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md bg-slate-100 text-white bg-slate-100"">OK</button>
+                        <button type=""button"" @click=""cancelHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 bg-slate-100"">Cancel</button>
                     </div>
                 </div>
                 <!-- Table -->
                 <div class=""g-grid-body overflow-x-auto overflow-y-auto flex-1 min-h-0"" style=""min-height:120px; max-height: var(--g-grid-body-max-height, 52vh); scrollbar-gutter: stable both-edges;"">
-                    <div x-show=""loading"" class=""absolute inset-0 z-20 uk-background-default backdrop-blur-[1px] flex items-center justify-center text-blue-600 gap-2"">
+                    <div x-show=""loading"" class=""absolute inset-0 z-20 bg-white backdrop-blur-[1px] flex items-center justify-center text-blue-600 gap-2"">
                         <svg class=""w-8 h-8 animate-spin"" fill=""none"" viewBox=""0 0 24 24"">
                             <circle class=""opacity-25"" cx=""12"" cy=""12"" r=""10"" stroke=""currentColor"" stroke-width=""4""/>
                             <path class=""opacity-75"" fill=""currentColor"" d=""M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z""/>
@@ -523,8 +556,8 @@ namespace Web_EIP_Csharp.Views.Components
                         <thead class=""sticky top-0 z-10"">{theadHtml}</thead>
                         <tbody>
                             <template x-for=""(row, rowIdx) in pagedRows"" :key=""rowIdx"">
-                                <tr class=""group {striped} uk-background-muted transition-colors {rowCursor}""
-                                    :class=""selectedRow===row?'uk-background-muted outline outline-1 outline-blue-400':''""
+                                <tr class=""group transition-colors {rowCursor}""
+                                    :class=""[{zebraClassExpr}, 'hover:bg-slate-100', selectedRow===row?'bg-slate-100 outline outline-1 outline-blue-400':'']""
                                     {rowDbl}
                                     @click=""selectedRow=row; {(!string.IsNullOrEmpty(OnRowClick) ? $"({OnRowClick.Replace("\"", "&quot;")})(row);" : "")} {(!string.IsNullOrEmpty(OnSelect) ? $"window['{OnSelect}'] && window['{OnSelect}'](row);" : "")}"">
                                     {tdHtml}
@@ -548,11 +581,14 @@ namespace Web_EIP_Csharp.Views.Components
                         multiSortEnabled: {(MultiSortEnabled ? "true" : "false")},
                         sortableFields: [{string.Join(",", sortableFields.Select(f => $"'{f}'"))}],
                         sortRules: [],
-                        currentPage: 1,
-                        pageSize   : {PageSize},
-                        selectedRow: null,
-                        currentParams: '',
+	                        currentPage: 1,
+	                        pageSize   : {PageSize},
+	                        selectedRow: null,
+	                        currentParams: '',
                         selectedIds: [], // ??踐? MultiSelect
+                        queryColumns: {queryColumnsJson},
+                        queryValues: {{}},
+                        queryPanelOpen: true,
 
                         // Editor / Filter states
                         editingId  : null,
@@ -601,18 +637,69 @@ namespace Web_EIP_Csharp.Views.Components
                             return this.sortedRows.slice(s, s + Number(this.pageSize));
                         }},
 
-                        async init()     {{
-                            this.$el.gDataGrid = this; // Expose API to DOM element
-                            if (this.titleSortEnabled && this.titleSortField && !this.sortKey) {{
-                                this.setSort(this.titleSortField, 'asc');
-                            }}
+	                        async init()     {{
+	                            this.$el.gDataGrid = this; // Expose API to DOM element
+                                this.initQueryColumns();
+	                            if (this.titleSortEnabled && this.titleSortField && !this.sortKey) {{
+	                                this.setSort(this.titleSortField, 'asc');
+	                            }}
                             if ({(!actualNotInitGrid).ToString().ToLower()}) {{
                                 await this.fetchData();
-                            }}
-                        }},
-                        onSelectRow(row, isChecked) {{
-                            {(!string.IsNullOrEmpty(OnSelect) ? $"if (isChecked) window['{OnSelect}'] && window['{OnSelect}'](row);" : "")}
-                        }},
+	                            }}
+	                        }},
+                            initQueryColumns() {{
+                                if (!Array.isArray(this.queryColumns) || this.queryColumns.length === 0) return;
+                                for (const col of this.queryColumns) {{
+                                    const key = col?.fieldName;
+                                    if (!key) continue;
+                                    const dv = col?.defaultValue ?? '';
+                                    this.queryValues[key] = dv;
+                                }}
+                            }},
+                            invokeQueryDefaultMethod(fieldName) {{
+                                const col = (this.queryColumns || []).find(x => x.fieldName === fieldName);
+                                if (!col || !col.defaultMethod) return;
+                                if (col.remoteMethod || col.api) return;
+                                const fnText = String(col.defaultMethod).trim();
+                                if (!fnText) return;
+                                try {{
+                                    if (fnText.includes('(')) {{
+                                        // Supports inline call expression.
+                                        (new Function(fnText))();
+                                    }} else if (typeof window[fnText] === 'function') {{
+                                        const ret = window[fnText](fieldName, this.queryValues[fieldName], this.queryValues);
+                                        if (ret !== undefined && ret !== null) this.queryValues[fieldName] = ret;
+                                    }}
+                                }} catch (e) {{
+                                    console.error('[GDataGrid] invokeQueryDefaultMethod error:', e);
+                                }}
+                            }},
+                            buildQueryParams() {{
+                                const params = {{}};
+                                for (const col of (this.queryColumns || [])) {{
+                                    const key = col?.fieldName;
+                                    if (!key) continue;
+                                    const raw = this.queryValues[key];
+                                    if (raw === null || raw === undefined || `${{raw}}`.trim() === '') continue;
+                                    params[key] = raw;
+                                    params[`${{key}}_condition`] = col.condition || '=';
+                                    params[`${{key}}_andOr`] = col.andOr || 'AND';
+                                    params[`${{key}}_dataType`] = col.dataType || 'string';
+                                }}
+                                return params;
+                            }},
+                            executeQuery() {{
+                                const queryParams = this.buildQueryParams();
+                                this.$dispatch('query', {{ filters: queryParams }});
+                                {(!string.IsNullOrEmpty(OnFilter) ? $"window['{OnFilter}'] && window['{OnFilter}'](queryParams);" : "")}
+                                this.fetchData(queryParams);
+                            }},
+                            toggleQueryPanel() {{
+                                this.queryPanelOpen = !this.queryPanelOpen;
+                            }},
+	                        onSelectRow(row, isChecked) {{
+	                            {(!string.IsNullOrEmpty(OnSelect) ? $"if (isChecked) window['{OnSelect}'] && window['{OnSelect}'](row);" : "")}
+	                        }},
                         toggleAll(isChecked) {{
                             if (isChecked) {{
                                 this.selectedIds = this.rows.map(r => r['{actualIdField}']);
@@ -666,18 +753,19 @@ namespace Web_EIP_Csharp.Views.Components
                         }},
 
                         // Filter actions
-                        applyFilter() {{
-                            // clean up empty string properties from filters object
-                            const cleanFilters = Object.fromEntries(
-                                Object.entries(this.filters).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
-                            );
-                            this.$dispatch('query', {{ filters: cleanFilters }});
-                            {(!string.IsNullOrEmpty(OnFilter) ? $"window['{OnFilter}'] && window['{OnFilter}'](cleanFilters);" : "")}
-                            // If user doesn't catch the @query event to do a custom fetch,
-                            // we do a default fetch with URLSearchParams.
-                            const params = new URLSearchParams(cleanFilters).toString();
-                            this.fetchData(params);
-                        }},
+	                        applyFilter() {{
+	                            // clean up empty string properties from filters object
+	                            const cleanFilters = Object.fromEntries(
+	                                Object.entries(this.filters).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+	                            );
+                                const mergedParams = {{ ...this.buildQueryParams(), ...cleanFilters }};
+	                            this.$dispatch('query', {{ filters: mergedParams }});
+	                            {(!string.IsNullOrEmpty(OnFilter) ? $"window['{OnFilter}'] && window['{OnFilter}'](mergedParams);" : "")}
+	                            // If user doesn't catch the @query event to do a custom fetch,
+	                            // we do a default fetch with URLSearchParams.
+	                            const params = new URLSearchParams(mergedParams).toString();
+	                            this.fetchData(params);
+	                        }},
                         openHeaderFilter(field, event) {{
                             if (!{(actualTitleFilterEnabled ? "true" : "false")}) return;
                             const titleNode = event?.currentTarget?.closest('th')?.querySelector('span');
@@ -964,6 +1052,204 @@ namespace Web_EIP_Csharp.Views.Components
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
+        private static List<QueryColumnDefinition> ParseQueryColumns(string raw)
+        {
+            var result = new List<QueryColumnDefinition>();
+            if (string.IsNullOrWhiteSpace(raw)) return result;
+
+            try
+            {
+                var list = JsonSerializer.Deserialize<List<QueryColumnDefinition>>(raw, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                if (list != null) result.AddRange(list);
+            }
+            catch
+            {
+                try
+                {
+                    var one = JsonSerializer.Deserialize<QueryColumnDefinition>(raw, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (one != null) result.Add(one);
+                }
+                catch
+                {
+                    return new List<QueryColumnDefinition>();
+                }
+            }
+
+            foreach (var q in result)
+            {
+                q.FieldName = (q.FieldName ?? string.Empty).Trim();
+                q.Caption = string.IsNullOrWhiteSpace(q.Caption) ? q.FieldName : q.Caption.Trim();
+                q.Condition = NormalizeQueryCondition(q.Condition);
+                q.AndOr = NormalizeAndOr(q.AndOr);
+                q.DataType = NormalizeDataType(q.DataType);
+                q.Editor = NormalizeEditor(q.Editor);
+                q.Span = Math.Clamp(q.Span <= 0 ? 3 : q.Span, 1, 12);
+                q.RowSpan = q.RowSpan <= 0 ? 1 : q.RowSpan;
+            }
+
+            return result.Where(q => !string.IsNullOrWhiteSpace(q.FieldName)).ToList();
+        }
+
+        private static string NormalizeEditor(string? editor)
+        {
+            var e = (editor ?? string.Empty).Trim().ToLowerInvariant();
+            return e switch
+            {
+                "checkbox" => "checkbox",
+                "numberbox" => "numberbox",
+                "validatebox" => "validatebox",
+                "datebox" => "datebox",
+                "infocombobox" => "gcombobox",
+                "gcombobox" => "gcombobox",
+                "infocombogrid" => "gcombogrid",
+                "gcombogrid" => "gcombogrid",
+                "inforefval" => "lovinput",
+                "glovinput" => "lovinput",
+                "lovinput" => "lovinput",
+                "password" => "password",
+                _ => "text"
+            };
+        }
+
+        private static string NormalizeQueryCondition(string? condition)
+        {
+            var c = (condition ?? string.Empty).Trim();
+            return c switch
+            {
+                "=" => "=",
+                "!=" => "!=",
+                "<>" => "!=",
+                ">" => ">",
+                ">=" => ">=",
+                "<" => "<",
+                "<=" => "<=",
+                "%" => "%",
+                "%%" => "%%",
+                _ => "="
+            };
+        }
+
+        private static string NormalizeAndOr(string? andOr) =>
+            string.Equals((andOr ?? "").Trim(), "OR", StringComparison.OrdinalIgnoreCase) ? "OR" : "AND";
+
+        private static string NormalizeDataType(string? dataType)
+        {
+            var t = (dataType ?? string.Empty).Trim().ToLowerInvariant();
+            return t switch
+            {
+                "number" => "number",
+                "datetime" => "datetime",
+                "guid" => "guid",
+                _ => "string"
+            };
+        }
+
+        private static List<(string Value, string Text)> ParseEditorOptions(string options)
+        {
+            var result = new List<(string, string)>();
+            if (string.IsNullOrWhiteSpace(options)) return result;
+            foreach (var part in options.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var idx = part.IndexOf('=');
+                if (idx <= 0)
+                {
+                    result.Add((part, part));
+                    continue;
+                }
+                var value = part[..idx].Trim();
+                var text = part[(idx + 1)..].Trim();
+                result.Add((value, string.IsNullOrWhiteSpace(text) ? value : text));
+            }
+            return result;
+        }
+
+        private static string BuildQueryPanelHtml(List<QueryColumnDefinition> queryColumns)
+        {
+            if (queryColumns.Count == 0) return string.Empty;
+
+            var sb = new StringBuilder();
+            sb.AppendLine(@"<div class=""border-b border-slate-200 bg-white shrink-0"">");
+            sb.AppendLine(@"  <div class=""flex items-center justify-between px-4 py-3 bg-slate-100 border-b border-slate-200"">");
+            sb.AppendLine(@"    <div class=""inline-flex items-center gap-2 text-slate-700 font-semibold"">");
+            sb.AppendLine(@"      <svg class=""w-4 h-4 text-violet-500"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M7 7h10l-4 5v5l-2-1v-4L7 7z""/></svg>");
+            sb.AppendLine(@"      <span>查詢條件</span>");
+            sb.AppendLine(@"    </div>");
+            sb.AppendLine(@"    <button type=""button"" @click=""toggleQueryPanel()"" class=""inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors"">");
+            sb.AppendLine(@"      <svg class=""w-3.5 h-3.5 transition-transform"" :class=""queryPanelOpen ? '' : 'rotate-180'"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M19 9l-7 7-7-7""/></svg>");
+            sb.AppendLine(@"      <span x-text=""queryPanelOpen ? '收合' : '展開'""></span>");
+            sb.AppendLine(@"    </button>");
+            sb.AppendLine(@"  </div>");
+            sb.AppendLine(@"  <div x-show=""queryPanelOpen"" class=""px-4 py-3 bg-slate-50"">");
+            sb.AppendLine(@"    <div class=""grid grid-cols-1 md:grid-cols-12 gap-3"">");
+
+            foreach (var col in queryColumns)
+            {
+                var field = System.Net.WebUtility.HtmlEncode(col.FieldName);
+                var caption = System.Net.WebUtility.HtmlEncode(col.Caption);
+                var span = Math.Clamp(col.Span <= 0 ? 3 : col.Span, 1, 12);
+
+                sb.AppendLine($@"    <div class=""md:col-span-{span} flex flex-col gap-1"">");
+                sb.AppendLine($@"      <label class=""text-xs font-semibold text-slate-600"">{caption}</label>");
+
+                var model = $"queryValues['{field}']";
+                switch (col.Editor)
+                {
+                    case "numberbox":
+                        sb.AppendLine($@"      <input type=""number"" x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
+                        break;
+                    case "datebox":
+                        sb.AppendLine($@"      <input type=""date"" x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
+                        break;
+                    case "password":
+                        sb.AppendLine($@"      <input type=""password"" x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
+                        break;
+                    case "checkbox":
+                        sb.AppendLine($@"      <label class=""inline-flex items-center gap-2 py-2""><input type=""checkbox"" :checked=""{model}==='Y' || {model}===true || {model}===1"" @change=""{model} = $event.target.checked ? 'Y' : 'N'"" class=""w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500""><span class=""text-sm text-slate-600"">是/否</span></label>");
+                        break;
+                    case "gcombobox":
+                        sb.AppendLine($@"      <select x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
+                        sb.AppendLine(@"        <option value="""">請選擇</option>");
+                        foreach (var opt in ParseEditorOptions(col.EditorOptions))
+                        {
+                            sb.AppendLine($@"        <option value=""{System.Net.WebUtility.HtmlEncode(opt.Value)}"">{System.Net.WebUtility.HtmlEncode(opt.Text)}</option>");
+                        }
+                        sb.AppendLine(@"      </select>");
+                        break;
+                    case "gcombogrid":
+                    case "lovinput":
+                        sb.AppendLine(@"      <div class=""relative flex"">");
+                        sb.AppendLine($@"        <input type=""text"" x-model=""{model}"" class=""w-full pr-10 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
+                        sb.AppendLine($@"        <button type=""button"" @click=""invokeQueryDefaultMethod('{field}')"" class=""absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600"" title=""選取"">");
+                        sb.AppendLine(@"          <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/></svg>");
+                        sb.AppendLine(@"        </button>");
+                        sb.AppendLine(@"      </div>");
+                        break;
+                    default:
+                        sb.AppendLine($@"      <input type=""text"" x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
+                        break;
+                }
+                sb.AppendLine(@"    </div>");
+            }
+
+            sb.AppendLine(@"    </div>");
+            sb.AppendLine(@"    <div class=""flex items-center gap-2 mt-3"">");
+            sb.AppendLine(@"      <button type=""button"" @click=""executeQuery()"" class=""inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"">");
+            sb.AppendLine(@"        <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/></svg>");
+            sb.AppendLine(@"        <span>查詢</span>");
+            sb.AppendLine(@"      </button>");
+            sb.AppendLine(@"    </div>");
+            sb.AppendLine(@"  </div>");
+            sb.AppendLine(@"</div>");
+
+            return sb.ToString();
+        }
+
         private static List<(string Field, string Title, string Width, string Align, string EditorType, string EditorOptions, string FilterType)> ParseColumns(string cols)
         {
             if (string.IsNullOrWhiteSpace(cols)) return new();
@@ -986,6 +1272,9 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
+
+
+
 
 
 

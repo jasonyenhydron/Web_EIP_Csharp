@@ -26,7 +26,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("id", Id);
             output.Attributes.SetAttribute(
                 "class",
-                "fixed inset-0 uk-background-secondary backdrop-blur-sm hidden z-[60] items-center justify-center p-4 transition-all duration-300");
+                "fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[60] items-center justify-center p-4 transition-all duration-300");
 
             var gradientClass = Gradient?.ToLower() switch
             {
@@ -51,10 +51,10 @@ namespace Web_EIP_Csharp.Views.Components
                 <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/></svg>";
 
             var html = $@"
-<div class=""uk-background-default rounded-2xl shadow-2xl w-full max-w-7xl flex flex-col overflow-hidden border border-slate-200 transform scale-95 transition-transform duration-300""
+<div class=""bg-white rounded-2xl shadow-2xl w-full max-w-7xl flex flex-col overflow-hidden border border-slate-200 transform scale-95 transition-transform duration-300""
      id=""{HtmlEncode(ModalContentId)}"" style=""height:{HtmlEncode(Height)}"">
 
-    <div class=""uk-background-primary {gradientClass} text-white px-4 py-3 flex items-center justify-between shadow-lg shrink-0"">
+    <div class=""bg-blue-600 {gradientClass} text-white px-4 py-3 flex items-center justify-between shadow-lg shrink-0"">
         <h2 class=""text-lg font-bold flex items-center gap-3"">
             {titleIconSvg}
             <span id=""{HtmlEncode(TitleId)}"">{HtmlEncode(Title)}</span>
@@ -63,19 +63,19 @@ namespace Web_EIP_Csharp.Views.Components
             <button type=""button""
                     id=""{HtmlEncode(MaximizeBtnId)}""
                     onclick=""{HtmlAttr(MaximizeFn)}""
-                    class=""text-white/70 hover:text-white uk-background-default w-8 h-8 flex items-center justify-center rounded-lg transition-all relative"">
+                    class=""text-white/70 hover:text-white bg-white w-8 h-8 flex items-center justify-center rounded-lg transition-all relative"">
                 <span id=""{HtmlEncode(MaximizeIconId)}"">{maximizeSvg}</span>
                 {restoreSvg}
             </button>
             <button type=""button""
                     onclick=""{HtmlAttr(CloseFn)}""
-                    class=""text-white/70 hover:text-white uk-background-default p-1.5 rounded-lg transition-all"">
+                    class=""text-white/70 hover:text-white bg-white p-1.5 rounded-lg transition-all"">
                 {closeSvg}
             </button>
         </div>
     </div>
 
-    <div class=""flex-1 uk-background-muted relative min-h-0"">
+    <div class=""flex-1 bg-slate-100 relative min-h-0"">
         <iframe id=""{HtmlEncode(IframeId)}"" src=""""
                 class=""absolute inset-0 w-full h-full border-0 rounded-b-2xl"" scrolling=""auto"">
         </iframe>
