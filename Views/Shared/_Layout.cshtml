@@ -23,10 +23,13 @@
             }
         })();
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script defer src="/js/theme.js"></script>
+    <g-js profile="main"
+          include-tailwind="true"
+          include-htmx="true"
+          htmx-version="1.9.12"
+          include-alpine="true"
+          include-theme="true"
+          alpine-version="3.x.x"></g-js>
     <g-style profile="layout"></g-style>
     @RenderSection("Styles", required: false)
 </head>

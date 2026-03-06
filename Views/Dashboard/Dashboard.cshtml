@@ -11,28 +11,6 @@
     var dow = now.ToString("ddd, MMM dd").ToUpperInvariant();
 }
 
-@section Styles {
-    <style>
-        .dash-shell { background: #f1f5f9; }
-        .dash-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px rgba(2, 6, 23, .04); }
-        .dash-hero {
-            background: linear-gradient(100deg, #3b6fe3 0%, #3d63df 35%, #4f46e5 100%);
-            color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, .22);
-        }
-        .dash-hero-left { border-right: 1px solid rgba(255,255,255,.15); }
-        .dash-chip { background: rgba(59, 130, 246, .35); border: 1px solid rgba(255,255,255,.2); }
-        .quick-item { background: #f8fafc; border: 1px solid #edf2f7; border-radius: 10px; }
-        .clock-card {
-            border-radius: 12px;
-            color: #fff;
-            background: linear-gradient(140deg, #1f2f4f 0%, #0f172a 100%);
-        }
-        #sidebar { width: 230px; }
-    </style>
-}
-
 <div class="flex h-screen dash-shell overflow-hidden">
     <partial name="Components/_Sidebar" />
 

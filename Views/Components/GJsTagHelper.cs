@@ -16,6 +16,17 @@ namespace Web_EIP_Csharp.Views.Components
         public bool IncludeAlpine { get; set; } = false;
         public string AlpineVersion { get; set; } = "3.x.x";
 
+        // Optional CDN HTMX include.
+        public bool IncludeHtmx { get; set; } = false;
+        public string HtmxVersion { get; set; } = "1.9.12";
+
+        // Optional Tailwind CDN include.
+        public bool IncludeTailwind { get; set; } = false;
+
+        // Optional theme.js include.
+        public bool IncludeTheme { get; set; } = false;
+        public string ThemeScriptPath { get; set; } = "~/js/theme.js";
+
         // Optional local script version suffix, e.g. "20260303".
         public string LocalVersion { get; set; } = "";
 
@@ -46,6 +57,26 @@ namespace Web_EIP_Csharp.Views.Components
             {
                 var alpine = $"https://cdn.jsdelivr.net/npm/alpinejs@{AlpineVersion}/dist/cdn.min.js";
                 sb.AppendLine($@"<script src=""{alpine}"" defer></script>");
+            }
+
+            if (IncludeHtmx)
+            {
+                var htmx = $"https://unpkg.com/htmx.org@{HtmxVersion}";
+                sb.AppendLine($@"<script src=""{htmx}""></script>");
+            }
+
+            if (IncludeTailwind)
+            {
+                sb.AppendLine(@"<script src=""https://cdn.tailwindcss.com""></script>");
+            }
+
+            if (IncludeTheme)
+            {
+                var themeSrc = NormalizeUrl(ThemeScriptPath);
+                if (!string.IsNullOrWhiteSpace(themeSrc))
+                {
+                    sb.AppendLine($@"<script src=""{themeSrc}"" defer></script>");
+                }
             }
 
             foreach (var script in uniqueScripts)

@@ -36,17 +36,8 @@ FROM (
 WHERE rn > :offset AND rn <= :endRow");
 }
 
-<div class="min-h-screen p-2 bg-slate-100 font-sans">
+<div class="min-h-full p-0">
     <div class="w-full space-y-5">
-
-        <!-- ====================== 頁首（g-page-header）====================== -->
-        <g-page-header title="@ViewData["Title"]"
-                        icon="calendar"
-                        subtitle="永勝光學 ERP / 人資管理系統"
-                        user-id="@ViewBag.UserId"
-                        user-name="@ViewBag.UserName"
-                        date="@DateTime.Now.ToString("yyyy-MM-dd")">
-        </g-page-header>
 
         <!-- ====================== 查詢條件 ====================== -->
         <g-panel title="查詢條件（過濾部門）" icon="filter" collapsible="true">
@@ -445,5 +436,4 @@ WHERE rn > :offset AND rn <= :endRow");
         });
     </script>
 }
-
 

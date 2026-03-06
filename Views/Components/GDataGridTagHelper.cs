@@ -350,7 +350,7 @@ namespace Web_EIP_Csharp.Views.Components
                     </th>");
                 }
 
-                tdHtml.Append($@"<td class=""px-3 py-2 text-center text-sm border-b border-slate-100 whitespace-nowrap sticky right-0 bg-white bg-white bg-slate-100 transition-colors"">
+                tdHtml.Append($@"<td class=""px-3 py-2 text-center text-sm border-b border-slate-100 whitespace-nowrap sticky right-0 transition-colors"">
                     <div class=""flex items-center justify-center gap-2"">");
 
                 var btnViewHtml = ViewCommandVisible ? $@"
@@ -458,7 +458,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Attributes.SetAttribute("x-init", "init()");
 
 	            output.Content.SetHtmlContent($@"
-	                {titleHeaderHtml}
+                    {queryPanelHtml}
 	                <!-- Toolbar -->
                 <div class=""g-grid-toolbar flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-100 shrink-0 flex-wrap"">
                     <div class=""flex items-center gap-2"">
@@ -480,7 +480,7 @@ namespace Web_EIP_Csharp.Views.Components
                     </div>
 	                    {(!Pagination ? $@"<span class=""text-xs text-slate-400"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-600"" x-text=""rows.length""></span> 筆</span>" : "")}
 	                </div>
-                    {queryPanelHtml}
+                    {titleHeaderHtml}
 	                <div x-show=""headerFilter.open""
 	                     x-transition
 	                     @click.away=""cancelHeaderFilter()""
@@ -1174,10 +1174,10 @@ namespace Web_EIP_Csharp.Views.Components
             if (queryColumns.Count == 0) return string.Empty;
 
             var sb = new StringBuilder();
-            sb.AppendLine(@"<div class=""border-b border-slate-200 bg-white shrink-0"">");
-            sb.AppendLine(@"  <div class=""flex items-center justify-between px-4 py-3 bg-slate-100 border-b border-slate-200"">");
-            sb.AppendLine(@"    <div class=""inline-flex items-center gap-2 text-slate-700 font-semibold"">");
-            sb.AppendLine(@"      <svg class=""w-4 h-4 text-violet-500"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M7 7h10l-4 5v5l-2-1v-4L7 7z""/></svg>");
+            sb.AppendLine(@"<div class=""g-grid-query border-b border-slate-200 shrink-0"">");
+            sb.AppendLine(@"  <div class=""g-grid-query-head flex items-center justify-between px-4 py-3 border-b border-slate-200"">");
+            sb.AppendLine(@"    <div class=""inline-flex items-center gap-2 text-blue-600 font-semibold"">");
+            sb.AppendLine(@"      <svg class=""w-4 h-4 text-blue-600"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M7 7h10l-4 5v5l-2-1v-4L7 7z""/></svg>");
             sb.AppendLine(@"      <span>查詢條件</span>");
             sb.AppendLine(@"    </div>");
             sb.AppendLine(@"    <button type=""button"" @click=""toggleQueryPanel()"" class=""inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors"">");
@@ -1185,7 +1185,7 @@ namespace Web_EIP_Csharp.Views.Components
             sb.AppendLine(@"      <span x-text=""queryPanelOpen ? '收合' : '展開'""></span>");
             sb.AppendLine(@"    </button>");
             sb.AppendLine(@"  </div>");
-            sb.AppendLine(@"  <div x-show=""queryPanelOpen"" class=""px-4 py-3 bg-slate-50"">");
+            sb.AppendLine(@"  <div x-show=""queryPanelOpen"" class=""g-grid-query-body px-4 py-3"">");
             sb.AppendLine(@"    <div class=""grid grid-cols-1 md:grid-cols-12 gap-3"">");
 
             foreach (var col in queryColumns)
@@ -1272,7 +1272,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
 
 
 
