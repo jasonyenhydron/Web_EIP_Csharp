@@ -53,9 +53,9 @@ namespace Web_EIP_Csharp.Views.Components
         [HtmlAttributeName("api")]
         public string Api          { get; set; } = "";
         public string ApiUrl       { get; set; } = "";
-        public string RemoteName   { get; set; } = ""; // ?謘餉爸 controller name
+        public string RemoteName   { get; set; } = ""; // legacy mapping controller name
         [HtmlAttributeName("member-id")]
-        public string DataMember   { get; set; } = ""; // ?謘餉爸 action name
+        public string DataMember   { get; set; } = ""; // legacy mapping action name
 
         public string Columns      { get; set; } = "";
         public int    PageSize     { get; set; } = 20;
@@ -93,7 +93,7 @@ namespace Web_EIP_Csharp.Views.Components
         public bool   Pagination   { get; set; } = true;
         public string PageList     { get; set; } = "10,20,50,100";
         public string QueryMode    { get; set; } = "Panel";
-        public string QueryTitle   { get; set; } = "?鈭亙眺";
+        public string QueryTitle   { get; set; } = "查詢條件";
         public int    QueryLeft    { get; set; } = 0;
         public int    QueryTop     { get; set; } = 0;
         public string QueryColumns { get; set; } = "";
@@ -121,18 +121,18 @@ namespace Web_EIP_Csharp.Views.Components
         public bool   DeleteCommandVisible { get; set; } = true;
         public bool   ViewCommandVisible   { get; set; } = true;
 
-        // --- JS ?哨?颲?Callback (Alpine.js integration) ---
+        // --- JS callbacks (Alpine.js integration) ---
         public string OnLoadSuccess{ get; set; } = ""; // callback after load success
-        public string OnSelect     { get; set; } = ""; // ?綜等???
-        public string OnInsert     { get; set; } = ""; // ?????
-        public string OnInserted   { get; set; } = ""; // ????謅?
+        public string OnSelect     { get; set; } = ""; // callback on row select
+        public string OnInsert     { get; set; } = ""; // callback before insert
+        public string OnInserted   { get; set; } = ""; // callback after insert
         public string OnUpdate     { get; set; } = ""; // callback before update
         public string OnUpdated    { get; set; } = ""; // callback after update
-        public string OnDelete     { get; set; } = ""; // ??畸???
-        public string OnDeleted    { get; set; } = ""; // ??畸??謅?
-        public string OnDeleting   { get; set; } = ""; // ??畸??謅?
-        public string OnFilter     { get; set; } = ""; // ?剜?蹓?
-        public string OnView       { get; set; } = ""; // ?潘撩?
+        public string OnDelete     { get; set; } = ""; // callback before delete
+        public string OnDeleted    { get; set; } = ""; // callback after delete
+        public string OnDeleting   { get; set; } = ""; // callback while deleting
+        public string OnFilter     { get; set; } = ""; // callback on filter apply
+        public string OnView       { get; set; } = ""; // callback on view action
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
@@ -148,7 +148,7 @@ namespace Web_EIP_Csharp.Views.Components
             var rowCursor = (!string.IsNullOrEmpty(OnRowClick) || !string.IsNullOrEmpty(OnRowDblClick))
                 ? "cursor-pointer" : "";
 
-            // ??? columns
+            // Parse columns
             var cols = ParseColumns(Columns);
             var sortableFieldSet = ParseSortableFields(SortableColumns, cols);
             var sortableFields = cols
@@ -301,7 +301,7 @@ namespace Web_EIP_Csharp.Views.Components
                     filterHtml.Append("</th>");
                 }
 
-                // --- 3. ??寞???(Td) ---
+                // --- 3. Build table body cells (td) ---
                 tdHtml.Append($@"<td class=""px-3 py-2 {tdAlign} text-sm text-slate-700 border-b border-slate-100 whitespace-nowrap"">");
 
                 if (EditMode == "row" && (col.EditorType == "text" || col.EditorType == "select"))
@@ -585,7 +585,7 @@ namespace Web_EIP_Csharp.Views.Components
 	                        pageSize   : {PageSize},
 	                        selectedRow: null,
 	                        currentParams: '',
-                        selectedIds: [], // ??踐? MultiSelect
+                        selectedIds: [], // selected ids for multi-select
                         queryColumns: {queryColumnsJson},
                         queryValues: {{}},
                         queryPanelOpen: true,
@@ -1272,7 +1272,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
 
 
 

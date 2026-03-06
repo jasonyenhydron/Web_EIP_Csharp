@@ -7,7 +7,7 @@ namespace Web_EIP_Csharp.Views.Components
     public class GJsTagHelper : TagHelper
     {
         // Profile controls required scripts. Required scripts are always included.
-        public string Profile { get; set; } = "none"; // none | popup | main | mis-programs | datagrid
+        public string Profile { get; set; } = "none"; // none | popup | main | mis-programs | datagrid | lovinput
 
         // Optional extra scripts, separated by comma/semicolon/newline.
         public string Extras { get; set; } = "";
@@ -112,6 +112,7 @@ namespace Web_EIP_Csharp.Views.Components
                         "~/js/mis_programs.js"
                     };
                 case "datagrid":
+                case "lovinput":
                     return new[]
                     {
                         "~/js/g-components.js"

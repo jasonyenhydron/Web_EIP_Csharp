@@ -59,6 +59,8 @@ namespace Web_EIP_Csharp.Views.Components
         public int? LovPageSize { get; set; }
         [HtmlAttributeName("lov-sort-enabled")]
         public bool? LovSortEnabled { get; set; }
+        [HtmlAttributeName("lov-request-mode")]
+        public string LovRequestMode { get; set; } = "auto"; // auto | htmx | fetch
 
         public bool ShowButton { get; set; } = false;
         public bool Readonly { get; set; } = true;
@@ -195,7 +197,9 @@ namespace Web_EIP_Csharp.Views.Components
             var pageSize = (LovPageSize ?? 50) <= 0 ? 50 : (LovPageSize ?? 50);
             var bufferView = LovBufferView ?? true;
             var sortEnabled = LovSortEnabled ?? false;
-            var options = $"{{ bufferView: {(bufferView ? "true" : "false")}, pageSize: {pageSize}, sortEnabled: {(sortEnabled ? "true" : "false")} }}";
+            var requestMode = string.IsNullOrWhiteSpace(LovRequestMode) ? "auto" : LovRequestMode.Trim().ToLowerInvariant();
+            if (requestMode != "htmx" && requestMode != "fetch") requestMode = "auto";
+            var options = $"{{ bufferView: {(bufferView ? "true" : "false")}, pageSize: {pageSize}, sortEnabled: {(sortEnabled ? "true" : "false")}, requestMode: '{requestMode}' }}";
 
             return $"openGenericLov('{EscapeJs(title)}','{EscapeJs(LovApi)}',{colsJs},{fieldsJs},{map},{formatFn},{callback},{options})";
         }
@@ -263,5 +267,4 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string s) => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
-
 

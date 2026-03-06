@@ -129,6 +129,7 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
     const pageSize = Number(opts.pageSize || 50) > 0 ? Number(opts.pageSize || 50) : 50;
     const bufferView = opts.bufferView !== false;
     const sortEnabled = opts.sortEnabled === true;
+    const requestMode = String(opts.requestMode || "auto").toLowerCase(); // auto | htmx | fetch
     const state = {
         page: 1,
         hasMore: true,
@@ -269,6 +270,55 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
         return `${url}${sep}query=${encodeURIComponent(query || "")}&page=${page}&pageSize=${size}`;
     }
 
+    async function requestLovJson(url) {
+        const useHtmx = (requestMode === "htmx" || requestMode === "auto") && !!window.htmx;
+        if (!useHtmx) {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (!res.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${res.status}`);
+            return data;
+        }
+
+        return await new Promise((resolve, reject) => {
+            const source = document.createElement("div");
+            source.className = "hidden";
+            ov.appendChild(source);
+
+            const cleanup = () => {
+                document.body.removeEventListener("htmx:afterRequest", onAfter);
+                document.body.removeEventListener("htmx:responseError", onError);
+                document.body.removeEventListener("htmx:sendError", onError);
+                source.remove();
+            };
+
+            const onAfter = (evt) => {
+                if (evt.detail.elt !== source) return;
+                const xhr = evt.detail.xhr;
+                cleanup();
+                if (!xhr || xhr.status < 200 || xhr.status >= 300) {
+                    reject(new Error(`HTTP ${xhr?.status ?? "error"}`));
+                    return;
+                }
+                try {
+                    resolve(JSON.parse(xhr.responseText || "{}"));
+                } catch {
+                    reject(new Error("LOV response is not valid JSON"));
+                }
+            };
+
+            const onError = (evt) => {
+                if (evt.detail.elt !== source) return;
+                cleanup();
+                reject(new Error(evt.detail?.error || "HTMX request failed"));
+            };
+
+            document.body.addEventListener("htmx:afterRequest", onAfter);
+            document.body.addEventListener("htmx:responseError", onError);
+            document.body.addEventListener("htmx:sendError", onError);
+            htmx.ajax("GET", url, { source: source, target: source, swap: "none" });
+        });
+    }
+
     function updatePager() {
         if (bufferView || !pageTextEl) return;
         pageTextEl.textContent = `第 ${state.page} 頁`;
@@ -294,9 +344,7 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
         setLoading(true);
         try {
             const url = appendQuery(api, state.query, state.page, pageSize);
-            const res = await fetch(url);
-            const data = await res.json();
-            if (!res.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${res.status}`);
+            const data = await requestLovJson(url);
 
             const pageRows = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
             if (bufferView) {
@@ -1132,7 +1180,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.initGFileUploaders = initGFileUploaders;
 window.initGCardViews = initGCardViews;
-
 
 
 

@@ -9,27 +9,6 @@
 
 @section Styles {
     <g-style profile="datagrid"></g-style>
-    <style>
-        .idmg-shell {
-            background: transparent;
-        }
-        .idmg-panel {
-            background: #f3f4f6;
-            border: 0;
-            border-radius: 0;
-            box-shadow: none;
-        }
-        .idmg-query {
-            background: #f3f4f6;
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
-        }
-        .idmg-block {
-            background: #f3f4f6;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-        }
-    </style>
 }
 
 <div class="absolute inset-0 p-0 idmg-shell overflow-hidden" x-data="idmgd01App()" x-init="init()">
@@ -238,45 +217,121 @@
     </div>
 </g-dialog>
 
+<form id="idmgHtmxForm"
+      class="hidden"
+      hx-ext="json-enc"
+      hx-target="#idmgHtmxSink"
+      hx-swap="none"></form>
+<div id="idmgHtmxSink" class="hidden" aria-hidden="true"></div>
+
 </div>
 </div>
 
 @section Scripts {
-    <g-js profile="datagrid" include-alpine="true" alpine-version="3.x.x"></g-js>
+    <g-js profile="datagrid"
+          include-alpine="true"
+          alpine-version="3.x.x"
+          include-htmx="true"
+          htmx-version="1.9.12"
+          extras="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></g-js>
     <script>
-        const _idmEmployeeLov = {
-            title: '@Model.EmployeeLov.Title',
-            api: '@Html.Raw(Model.EmployeeLov.Api)',
-            columns: '@Model.EmployeeLov.Columns',
-            fields: '@Model.EmployeeLov.Fields'
-        };
-
-        function idmQueryEmployeeLov(fieldName, currentValue, queryValues) {
-            const columns = (_idmEmployeeLov.columns || '').split(',').map(s => s.trim()).filter(Boolean);
-            const fields = (_idmEmployeeLov.fields || '').split(',').map(s => s.trim()).filter(Boolean);
-            if (!columns.length || !fields.length) return;
-
-            openGenericLov(
-                _idmEmployeeLov.title || '員工查詢',
-                _idmEmployeeLov.api,
-                columns,
-                fields,
-                null,
-                null,
-                (selected) => {
-                    const v = selected?.employee_id ?? selected?.employee_no ?? '';
-                    if (queryValues && fieldName) queryValues[fieldName] = v;
-                }
-            );
-        }
-
-        function toDateInput(v) {
-            if (!v) return '';
-            const s = String(v);
-            return s.length >= 10 ? s.slice(0, 10) : '';
-        }
-
         document.addEventListener('alpine:init', () => {
+            Alpine.store('idmgd01', {
+                employeeLov: {
+                    title: '@Model.EmployeeLov.Title',
+                    api: '@Html.Raw(Model.EmployeeLov.Api)',
+                    columns: '@Model.EmployeeLov.Columns',
+                    fields: '@Model.EmployeeLov.Fields'
+                },
+                toDateInput(v) {
+                    if (!v) return '';
+                    const s = String(v);
+                    return s.length >= 10 ? s.slice(0, 10) : '';
+                },
+                async htmxJson(method, url, payload) {
+                    if (!window.htmx) {
+                        const res = await fetch(url, {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: payload ? JSON.stringify(payload) : undefined
+                        });
+                        let json = null;
+                        try { json = await res.json(); } catch { json = null; }
+                        return { ok: res.ok, status: res.status, json };
+                    }
+
+                    const form = document.getElementById('idmgHtmxForm');
+                    const sink = document.getElementById('idmgHtmxSink');
+                    if (!form || !sink) throw new Error('HTMX form not found');
+
+                    ['hx-get', 'hx-post', 'hx-put', 'hx-delete', 'hx-patch'].forEach((a) => form.removeAttribute(a));
+                    form.setAttribute(`hx-${String(method || 'POST').toLowerCase()}`, url);
+                    form.innerHTML = '';
+
+                    const data = payload || {};
+                    Object.entries(data).forEach(([k, v]) => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = k;
+                        input.value = v == null ? '' : String(v);
+                        form.appendChild(input);
+                    });
+
+                    htmx.process(form);
+
+                    return await new Promise((resolve, reject) => {
+                        const onAfter = (evt) => {
+                            if (evt.detail.elt !== form) return;
+                            cleanup();
+                            const xhr = evt.detail.xhr;
+                            let json = null;
+                            try { json = JSON.parse(xhr.responseText || '{}'); } catch { json = null; }
+                            resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json });
+                        };
+
+                        const onError = (evt) => {
+                            if (evt.detail.elt !== form) return;
+                            cleanup();
+                            reject(new Error(evt.detail?.error || 'HTMX request failed'));
+                        };
+
+                        const cleanup = () => {
+                            document.body.removeEventListener('htmx:afterRequest', onAfter);
+                            document.body.removeEventListener('htmx:sendError', onError);
+                            document.body.removeEventListener('htmx:responseError', onError);
+                        };
+
+                        document.body.addEventListener('htmx:afterRequest', onAfter);
+                        document.body.addEventListener('htmx:sendError', onError);
+                        document.body.addEventListener('htmx:responseError', onError);
+                        htmx.trigger(form, 'submit');
+                    });
+                },
+                openEmployeeLov(fieldName, queryValues) {
+                    const lov = this.employeeLov;
+                    const columns = (lov.columns || '').split(',').map(s => s.trim()).filter(Boolean);
+                    const fields = (lov.fields || '').split(',').map(s => s.trim()).filter(Boolean);
+                    if (!columns.length || !fields.length) return;
+
+                    openGenericLov(
+                        lov.title || '員工查詢',
+                        lov.api,
+                        columns,
+                        fields,
+                        null,
+                        null,
+                        (selected) => {
+                            const v = selected?.employee_id ?? selected?.employee_no ?? '';
+                            if (queryValues && fieldName) queryValues[fieldName] = v;
+                        }
+                    );
+                }
+            });
+
+            window.idmQueryEmployeeLov = (fieldName, currentValue, queryValues) => {
+                Alpine.store('idmgd01').openEmployeeLov(fieldName, queryValues);
+            };
+
             Alpine.data('idmgd01App', () => ({
                 programs: [],
                 selectedProgram: null,
@@ -314,10 +369,10 @@
                         EMPLOYEE_ID: row?.EMPLOYEE_ID ?? '',
                         PURPOSE: row?.PURPOSE ?? '',
                         PROGRAM_TYPE: row?.PROGRAM_TYPE ?? '',
-                        PLAN_START_DEVELOP_DATE: toDateInput(row?.PLAN_START_DEVELOP_DATE),
-                        PLAN_FINISH_DEVELOP_DATE: toDateInput(row?.PLAN_FINISH_DEVELOP_DATE),
-                        REAL_START_DEVELOP_DATE: toDateInput(row?.REAL_START_DEVELOP_DATE),
-                        REAL_FINISH_DEVELOP_DATE: toDateInput(row?.REAL_FINISH_DEVELOP_DATE),
+                        PLAN_START_DEVELOP_DATE: this.$store.idmgd01.toDateInput(row?.PLAN_START_DEVELOP_DATE),
+                        PLAN_FINISH_DEVELOP_DATE: this.$store.idmgd01.toDateInput(row?.PLAN_FINISH_DEVELOP_DATE),
+                        REAL_START_DEVELOP_DATE: this.$store.idmgd01.toDateInput(row?.REAL_START_DEVELOP_DATE),
+                        REAL_FINISH_DEVELOP_DATE: this.$store.idmgd01.toDateInput(row?.REAL_FINISH_DEVELOP_DATE),
                         PLAN_WORK_HOURS: row?.PLAN_WORK_HOURS ?? '',
                         REAL_WORK_HOURS: row?.REAL_WORK_HOURS ?? ''
                     };
@@ -400,14 +455,10 @@
                     const ok = await gConfirm(`確定刪除角色 ${row?.ROLE_NO || ''} / 功能 ${row?.FUNCTION_NO || ''}？`, '刪除確認');
                     if (!ok) return;
                     try {
-                        const res = await fetch('/Idm/deleteRoleFunctionProgram?DataMember=IDMGD01', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(row || {})
-                        });
-                        const result = await res.json();
+                        const res = await this.$store.idmgd01.htmxJson('POST', '/Idm/deleteRoleFunctionProgram?DataMember=IDMGD01', row || {});
+                        const result = res.json || {};
                         if (!res.ok || result.status !== 'success') {
-                            this.showToast('刪除失敗: ' + (result.message || res.statusText), 'error');
+                            this.showToast('刪除失敗: ' + (result.message || `HTTP ${res.status}`), 'error');
                             return;
                         }
                         this.showToast('刪除成功', 'success');
@@ -432,14 +483,10 @@
                         return;
                     }
                     try {
-                        const res = await fetch('/Idm/upsertRoleFunctionProgram?DataMember=IDMGD01', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        const result = await res.json();
+                        const res = await this.$store.idmgd01.htmxJson('POST', '/Idm/upsertRoleFunctionProgram?DataMember=IDMGD01', payload);
+                        const result = res.json || {};
                         if (!res.ok || result.status !== 'success') {
-                            this.showToast('儲存失敗: ' + (result.message || res.statusText), 'error');
+                            this.showToast('儲存失敗: ' + (result.message || `HTTP ${res.status}`), 'error');
                             return;
                         }
                         gDialogClose('dlgRoleRecord');
@@ -478,14 +525,10 @@
                     try {
                         const isCreate = this.recordMode === 'create';
                         const api = isCreate ? '/Idm/insert?DataMember=IDMGD01' : '/Idm/update?DataMember=IDMGD01';
-                        const res = await fetch(api, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        const result = await res.json();
+                        const res = await this.$store.idmgd01.htmxJson('POST', api, payload);
+                        const result = res.json || {};
                         if (!res.ok || result.status !== 'success') {
-                            this.showToast('儲存失敗: ' + (result.message || res.statusText), 'error');
+                            this.showToast('儲存失敗: ' + (result.message || `HTTP ${res.status}`), 'error');
                             return;
                         }
 
@@ -501,14 +544,10 @@
                     const ok = await gConfirm(`確定刪除程式 ${row.PROGRAM_NO}？\n此操作無法還原。`, '刪除確認');
                     if (!ok) return;
                     try {
-                        const res = await fetch('/Idm/delete?DataMember=IDMGD01', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(row)
-                        });
-                        const result = await res.json();
+                        const res = await this.$store.idmgd01.htmxJson('POST', '/Idm/delete?DataMember=IDMGD01', row);
+                        const result = res.json || {};
                         if (!res.ok || result.status !== 'success') {
-                            this.showToast('刪除失敗: ' + (result.message || res.statusText), 'error');
+                            this.showToast('刪除失敗: ' + (result.message || `HTTP ${res.status}`), 'error');
                             return;
                         }
                         this.showToast('刪除成功', 'success');

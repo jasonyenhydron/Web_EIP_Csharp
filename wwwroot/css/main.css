@@ -259,6 +259,30 @@ body {
     line-height: 1.2;
 }
 
+/* IDMGD01 (moved from inline style to g-style/main.css) */
+.idmg-shell {
+    background: transparent;
+}
+
+.idmg-panel {
+    background: #f3f4f6;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.idmg-query {
+    background: #f3f4f6;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+}
+
+.idmg-block {
+    background: #f3f4f6;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+}
+
 .g-btn-lg {
     padding: 10px 20px;
     font-size: 16px;
