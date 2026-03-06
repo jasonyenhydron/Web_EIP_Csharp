@@ -12,13 +12,25 @@
             originalWarn.apply(console, arguments);
         };
     </script>
+    <script>
+        (function () {
+            try {
+                var key = "eip.theme";
+                var saved = localStorage.getItem(key) || "blue-white";
+                document.documentElement.setAttribute("data-theme", saved);
+            } catch (e) {
+                document.documentElement.setAttribute("data-theme", "blue-white");
+            }
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="/js/theme.js"></script>
     <g-style profile="layout"></g-style>
     @RenderSection("Styles", required: false)
 </head>
-<body class="bg-slate-100">
+<body>
     @* SVG Icon Sprite（全站共用，放 body 最前，不佔版面）*@
     <partial name="~/Views/Shared/_IconSprite.cshtml" />
 

@@ -381,6 +381,8 @@ function openExecutionModal(url, title) {
     const titleEl = document.getElementById('executionModalTitle');
     const modalContent = document.getElementById('executionModalContent');
     const modalHeader = document.getElementById('executionModalHeader');
+    const maxIcon = document.getElementById('execMaximizeIcon');
+    const restoreIcon = document.getElementById('execRestoreIcon');
 
     const code = String(title || '').trim().toUpperCase().split(/[\s-]+/)[0];
     const hideOuterHeader = code === 'IDMGD01' || String(url || '').toUpperCase().includes('/IDM/IDMGD01');
@@ -388,13 +390,24 @@ function openExecutionModal(url, title) {
     titleEl.textContent = title ? `${title} - 程式執行` : '程式執行';
     iframe.src = url;
 
+    // Always reset to normal mode on open.
+    modal.classList.remove('p-0');
+    modal.classList.add('p-4');
+    modalContent.classList.remove('w-full', 'h-screen', 'rounded-none', 'max-w-none', 'max-h-none');
+    modalContent.classList.add('w-full', 'max-w-7xl', 'rounded-2xl');
+    if (maxIcon && restoreIcon) {
+        maxIcon.classList.remove('hidden');
+        restoreIcon.classList.add('hidden');
+    }
+
     if (modalHeader && modalContent) {
         if (hideOuterHeader) {
             modalHeader.classList.add('hidden');
-            modalContent.classList.remove('h-[95vh]');
+            modalContent.classList.remove('h-screen', 'h-[95vh]');
             modalContent.classList.add('h-[98vh]');
         } else {
             modalHeader.classList.remove('hidden');
+            modalContent.classList.remove('h-screen', 'h-[98vh]');
             modalContent.classList.remove('h-[98vh]');
             modalContent.classList.add('h-[95vh]');
         }
@@ -431,19 +444,33 @@ function closeExecutionModal() {
 }
 
 function toggleExecutionMaximize() {
+    const modal = document.getElementById('executionModal');
     const modalContent = document.getElementById('executionModalContent');
+    const modalHeader = document.getElementById('executionModalHeader');
     const maxIcon = document.getElementById('execMaximizeIcon');
     const restoreIcon = document.getElementById('execRestoreIcon');
+    const isMaximized = modalContent.classList.contains('h-screen');
+    const isHeaderHidden = modalHeader?.classList.contains('hidden');
 
-    if (modalContent.classList.contains('max-w-7xl')) {
-        modalContent.classList.remove('max-w-7xl', 'h-[95vh]', 'rounded-2xl');
-        modalContent.classList.add('w-full', 'h-screen', 'rounded-none');
-        maxIcon.classList.add('hidden');
-        restoreIcon.classList.remove('hidden');
+    if (!isMaximized) {
+        modal.classList.remove('p-4');
+        modal.classList.add('p-0');
+        modalContent.classList.remove('max-w-7xl', 'h-[95vh]', 'h-[98vh]', 'rounded-2xl');
+        modalContent.classList.add('w-full', 'h-screen', 'max-w-none', 'max-h-none', 'rounded-none');
+        if (maxIcon && restoreIcon) {
+            maxIcon.classList.add('hidden');
+            restoreIcon.classList.remove('hidden');
+        }
     } else {
-        modalContent.classList.add('max-w-7xl', 'h-[95vh]', 'rounded-2xl');
-        modalContent.classList.remove('w-full', 'h-screen', 'rounded-none');
-        maxIcon.classList.remove('hidden');
-        restoreIcon.classList.add('hidden');
+        modal.classList.remove('p-0');
+        modal.classList.add('p-4');
+        modalContent.classList.remove('w-full', 'h-screen', 'max-w-none', 'max-h-none', 'rounded-none');
+        modalContent.classList.add('w-full', 'max-w-7xl', 'rounded-2xl');
+        modalContent.classList.remove('h-[95vh]', 'h-[98vh]');
+        modalContent.classList.add(isHeaderHidden ? 'h-[98vh]' : 'h-[95vh]');
+        if (maxIcon && restoreIcon) {
+            maxIcon.classList.remove('hidden');
+            restoreIcon.classList.add('hidden');
+        }
     }
 }

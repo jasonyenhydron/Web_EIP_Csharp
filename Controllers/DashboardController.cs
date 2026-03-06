@@ -31,6 +31,11 @@ namespace Web_EIP_Csharp.Controllers
             return RenderDashboard("~/Views/Dashboard/sigoncenter.cshtml");
         }
 
+        public IActionResult Settings()
+        {
+            return RenderDashboard("~/Views/Dashboard/Settings.cshtml");
+        }
+
         private IActionResult RenderDashboard(string viewName)
         {
             var username = HttpContext.Session.GetString("username");

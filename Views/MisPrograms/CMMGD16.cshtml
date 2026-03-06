@@ -9,14 +9,24 @@
 
 @section Styles {
     <style>
+        .cmm-shell {
+            background: transparent;
+        }
+        #cmmRootPanel {
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
         #cmmGrid {
             --g-grid-body-max-height: 24vh;
+            border-radius: 0 !important;
+            box-shadow: none !important;
         }
     </style>
 }
 
-<div class="absolute inset-0 p-2 bg-slate-100 overflow-hidden" x-data="cmmgd16App()" x-init="init()">
-    <div id="cmmRootPanel" class="bg-white rounded-xl border border-slate-200 h-full flex flex-col min-h-0 overflow-hidden">
+<div class="absolute inset-0 p-0 cmm-shell overflow-hidden" x-data="cmmgd16App()" x-init="init()">
+    <div id="cmmRootPanel" class="bg-white h-full flex flex-col min-h-0 overflow-hidden">
         <div class="border-b border-slate-200 px-4 py-2.5">
             <h4 class="m-0 text-base font-semibold text-slate-700">業務員維護查詢</h4>
         </div>
@@ -54,7 +64,6 @@
             extra-class="flex-1 min-h-0 w-full">
         </g-datagrid>
     </div>
-</div>
 
 <g-dialog id="dlgCmmRecord" title="業務員資料" width="lg">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -112,6 +121,7 @@
         <g-button text="儲存" icon="save" type="success" x-show="recordMode!=='view'" onclick="window._cmmgd16App?.saveRecord()"></g-button>
     </div>
 </g-dialog>
+</div>
 
 @section Scripts {
     <g-js profile="popup" include-alpine="true" alpine-version="3.x.x"></g-js>
