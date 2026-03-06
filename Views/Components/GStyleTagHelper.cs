@@ -7,7 +7,7 @@ namespace Web_EIP_Csharp.Views.Components
     public class GStyleTagHelper : TagHelper
     {
         // Profile controls required styles. Required styles are always included.
-        public string Profile { get; set; } = "none"; // none | layout | popup | mis-programs
+        public string Profile { get; set; } = "none"; // none | layout | popup | mis-programs | datagrid
 
         // Optional extra stylesheets, separated by comma/semicolon/newline.
         public string Extras { get; set; } = "";
@@ -49,6 +49,7 @@ namespace Web_EIP_Csharp.Views.Components
             {
                 case "layout":
                 case "popup":
+                case "datagrid":
                     return new[]
                     {
                         "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
@@ -83,4 +84,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
