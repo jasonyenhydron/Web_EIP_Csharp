@@ -3,38 +3,9 @@
     ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
     ViewData["ShowPopupTitleBar"] = false;
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
-    var leaveTypeLovSql = Uri.EscapeDataString(@"
-SELECT leave_id, leave_name
-FROM (
-    SELECT leave_id, leave_name,
-           ROW_NUMBER() OVER (ORDER BY leave_id ASC) AS rn
-    FROM hrm_leave_l
-    WHERE language_id = 1
-      AND (UPPER(TO_CHAR(leave_id)) LIKE :q OR UPPER(leave_name) LIKE :q)
-)
-WHERE rn > :offset AND rn <= :endRow");
-    var employeeLovSql = Uri.EscapeDataString(@"
-SELECT employee_id, employee_no, employee_name
-FROM (
-    SELECT employee_id, employee_no, employee_name,
-           ROW_NUMBER() OVER (ORDER BY employee_no ASC) AS rn
-    FROM hrm_employee_v
-    WHERE (UPPER(employee_no) LIKE :q OR UPPER(employee_name) LIKE :q)
-)
-WHERE rn > :offset AND rn <= :endRow");
-    var bookingDeptLovSql = Uri.EscapeDataString(@"
-SELECT department_id, department_no, department_name
-FROM (
-    SELECT booking_department_id AS department_id,
-           booking_department_no AS department_no,
-           booking_department_name AS department_name,
-           ROW_NUMBER() OVER (ORDER BY booking_department_no ASC) AS rn
-    FROM hrm_booking_department_v
-    WHERE language_id = 1
-      AND (UPPER(booking_department_no) LIKE :q OR UPPER(booking_department_name) LIKE :q)
-      AND (:employeeId IS NULL OR employee_id = :employeeId)
-)
-WHERE rn > :offset AND rn <= :endRow");
+    var leaveTypeLovApi = (ViewBag.LeaveTypeLovApi?.ToString() ?? "/api/lov/hrm/leave-types");
+    var employeeLovApi = (ViewBag.EmployeeLovApi?.ToString() ?? "/api/lov/hrm/employees");
+    var bookingDeptLovApi = (ViewBag.BookingDeptLovApi?.ToString() ?? "/api/lov/hrm/booking-departments");
 }
 
 <div class="min-h-full p-0">
@@ -53,18 +24,31 @@ WHERE rn > :offset AND rn <= :endRow");
 
                 <!-- 員工編號名稱（g-lov-input）-->
                 <g-lov-input label="員工編號名稱"
-                             hidden-id="filterEmployeeId"    hidden-value="@ViewBag.NumericUserId"
-                             code-id="filterEmployeeNo"      code-value="@ViewBag.UserId"
-                             name-id="filterEmployeeName"    name-value="@ViewBag.UserName"
-                             lov-fn="openEmployeeLov('filterEmployeeId','filterEmployeeNo','filterEmployeeName')">
+                             lov-name="hrmgd47-filter-employee"
+                             name-value=""
+                             lov-title="尋找員工 (Employee)"
+                             lov-api="@employeeLovApi"
+                             lov-columns="編號,名稱,ID"
+                             lov-fields="employee_no,employee_name,employee_id"
+                             lov-return-value-field="employee_id"
+                             lov-return-display-field="employee_name"
+                             lov-key-hidden="employee_id"
+                             lov-key-code="employee_no"
+                             lov-key-name="employee_name"
+                             selectonly="false">
                 </g-lov-input>
 
                 <!-- 部門（g-lov-input：code 欄可輸入）-->
                 <g-lov-input label="部門編號 / 名稱"
                              code-id="deptNo"   code-placeholder="輸入部門編號"
                              name-id="deptName"
-                             lov-fn="openDepartmentLov()"
-                             readonly="false"
+                             lov-title="尋找預約部門"
+                             lov-api="@bookingDeptLovApi"
+                             lov-columns="部門ID,部門編號,部門名稱"
+                             lov-fields="department_id,department_no,department_name"
+                             lov-key-code="department_no"
+                             lov-key-name="department_name"
+                             readonly="false" selectonly="false"
                              col-span="2">
                 </g-lov-input>
 
@@ -117,11 +101,21 @@ WHERE rn > :offset AND rn <= :endRow");
                                    placeholder="自動產生" readonly="true" col-span="1"></g-textbox>
 
                         <!-- 申請員工（g-lov-input）-->
-                        <g-lov-input label="申請員工" required="true"
+                <g-lov-input label="申請員工" required="true"
                                      hidden-id="employeeId"  hidden-value="@ViewBag.NumericUserId"
                                      code-id="employeeNo"    code-value="@ViewBag.UserId"
                                      name-id="employeeName"  name-value="@ViewBag.UserName"
-                                     lov-fn="openEmployeeLov('employeeId','employeeNo','employeeName')"
+                                     lov-title="尋找員工 (Employee)"
+                                     lov-api="@employeeLovApi"
+                                     lov-columns="編號,名稱,ID"
+                                     lov-fields="employee_no,employee_name,employee_id"
+                                     lov-return-value-field="employee_id"
+                                     lov-return-display-field="employee_name"
+                                     lov-key-hidden="employee_id"
+                                     lov-key-code="employee_no"
+                                     lov-key-name="employee_name"
+                                     selectonly="false"
+                                     column-matches='[{"SourceFieldName":"employee_name","TargetFieldName":"agentEmployeeName","RemoteMethod":false}]'
                                      col-span="3">
                         </g-lov-input>
 
@@ -129,7 +123,13 @@ WHERE rn > :offset AND rn <= :endRow");
                         <g-lov-input label="假別" required="true"
                                      hidden-id="leaveId"
                                      name-id="leaveTypeDisplay"  name-placeholder="請選擇假別"
-                                     lov-fn="openLeaveTypeLov()"  show-button="true"
+                                     lov-title="尋找假別 (Leave Type)"
+                                     lov-api="@leaveTypeLovApi"
+                                     lov-columns="假別編號,假別名稱"
+                                     lov-fields="leave_id,leave_name"
+                                     lov-key-hidden="leave_id"
+                                     lov-display-format="{leave_id} - {leave_name}"
+                                     show-button="true"
                                      col-span="2">
                         </g-lov-input>
 
@@ -155,7 +155,15 @@ WHERE rn > :offset AND rn <= :endRow");
                                      hidden-id="agentEmployeeId"
                                      code-id="agentEmployeeNo"   code-placeholder="員工編號" code-width="w-1/3"
                                      name-id="agentEmployeeName" name-placeholder="姓名"
-                                     lov-fn="openEmployeeLov('agentEmployeeId','agentEmployeeNo','agentEmployeeName')"
+                                     lov-title="尋找員工 (Employee)"
+                                     lov-api="@employeeLovApi"
+                                     lov-columns="編號,名稱,ID"
+                                     lov-fields="employee_no,employee_name,employee_id"
+                                     lov-return-value-field="employee_id"
+                                     lov-return-display-field="employee_name"
+                                     lov-key-hidden="employee_id"
+                                     lov-key-code="employee_no"
+                                     lov-key-name="employee_name"
                                      col-span="2">
                         </g-lov-input>
 
@@ -335,29 +343,11 @@ WHERE rn > :offset AND rn <= :endRow");
 @section Scripts {
     <g-js profile="popup"></g-js>
     <script>
-        // ---- LOV 開啟函式 ----
-        function openLeaveTypeLov() {
-            openGenericLov(
-                '尋找假別 (Leave Type)', '/api/lov/query?sql=@leaveTypeLovSql',
-                ['假別編號', '假別名稱'], ['leave_id', 'leave_name'],
-                { 'leave_id': 'leaveId', 'FORMATTED_DISPLAY': 'leaveTypeDisplay' },
-                function(d) { return `${d.leave_id} - ${d.leave_name}`; }
-            );
-        }
-        function openEmployeeLov(targetId, targetNo, targetName) {
-            openGenericLov(
-                '尋找員工 (Employee)', '/api/lov/query?sql=@employeeLovSql',
-                ['編號', '名稱', 'ID'], ['employee_no', 'employee_name', 'employee_id'],
-                { 'employee_id': targetId, 'employee_no': targetNo, 'employee_name': targetName }
-            );
-        }
-        function openDepartmentLov() {
-            const empId = document.getElementById('employeeId')?.value || '';
-            openGenericLov(
-                '尋找預約部門', `/api/lov/query?sql=@bookingDeptLovSql&employeeId=${encodeURIComponent(empId)}`,
-                ['部門ID', '部門編號', '部門名稱'], ['department_id', 'department_no', 'department_name'],
-                { 'department_no': 'deptNo', 'department_name': 'deptName' }
-            );
+        function getHrmCurrentEmployeeId() {
+            return document.getElementById('employeeId')?.value
+                || document.querySelector('[data-lov-name=\"hrmgd47-filter-employee\"] [data-lov-slot=\"hidden\"]')?.value
+                || document.getElementById('filterEmployeeId')?.value
+                || '';
         }
 
         function onHrmAttachmentUploaded(payload) {

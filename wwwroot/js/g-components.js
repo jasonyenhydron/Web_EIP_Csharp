@@ -124,6 +124,27 @@ window.eipPanelToggle = gPanelToggle;
 
 // Generic LOV modal (for <g-lov-input>)
 function openGenericLov(title, api, columns, fields, map, displayFormatter, onConfirm, options) {
+    if (title && typeof title === "object" && !Array.isArray(title)) {
+        const cfg = title;
+        return openGenericLov(
+            cfg.title || cfg.lovTitle || "查詢",
+            cfg.api || cfg.apiUrl || cfg.lovApi || "",
+            Array.isArray(cfg.columns) ? cfg.columns : (Array.isArray(cfg.lovColumns) ? cfg.lovColumns : []),
+            Array.isArray(cfg.fields) ? cfg.fields : (Array.isArray(cfg.dataFields) ? cfg.dataFields : []),
+            cfg.map || cfg.targetInputs || null,
+            cfg.formatDisplay || cfg.formatter || null,
+            cfg.onConfirm || cfg.onConfirmCallback || null,
+            cfg.options || null
+        );
+    }
+
+    // If shared LOV modal exists, delegate to it.
+    if (typeof window.__openGenericLovFromModal === "function") {
+        return window.__openGenericLovFromModal(title, api, columns, fields, map, displayFormatter, onConfirm, options);
+    }
+
+    const safeColumns = Array.isArray(columns) ? columns : [];
+    const safeFields = Array.isArray(fields) ? fields : [];
     const lovId = `_lov_${Date.now()}`;
     const opts = options || {};
     const pageSize = Number(opts.pageSize || 50) > 0 ? Number(opts.pageSize || 50) : 50;
@@ -158,8 +179,8 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
           <table class="w-full text-sm">
             <thead class="sticky top-0 bg-slate-100 border-b border-slate-200">
               <tr>
-                ${columns.map((c, i) => {
-                    const key = fields[i];
+                ${safeColumns.map((c, i) => {
+                    const key = safeFields[i];
                     const sortable = sortEnabled && !!key;
                     return `<th data-sort-idx="${i}" class="text-left px-3 py-2 font-semibold text-slate-600 ${sortable ? "cursor-pointer select-none bg-blue-600" : ""}">
                         <span class="inline-flex items-center gap-1">
@@ -229,23 +250,23 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
         renderData.forEach((row, localIdx) => {
             const rowIndex = startIndex + localIdx;
             const tr = document.createElement("tr");
-            const rowBaseClass = `border-b border-slate-100 bg-blue-600 cursor-pointer ${(rowIndex % 2 === 0) ? "bg-white" : "bg-slate-100"}`;
+            const rowBaseClass = `border-b border-slate-100 cursor-pointer ${(rowIndex % 2 === 0) ? "bg-white" : "bg-slate-50"}`;
             tr.className = rowBaseClass;
             tr.dataset.rowBaseClass = rowBaseClass;
-            tr.innerHTML = fields.map((f) => `<td class="px-3 py-2">${escapeHtml(row[f] ?? "")}</td>`).join("");
+            tr.innerHTML = safeFields.map((f) => `<td class="px-3 py-2">${escapeHtml(row[f] ?? "")}</td>`).join("");
             tr.addEventListener("click", () => {
                 state.selected = row;
                 tbody.querySelectorAll("tr").forEach((r) => {
-                    r.className = r.dataset.rowBaseClass || "border-b border-slate-100 bg-blue-600 cursor-pointer bg-white";
+                    r.className = r.dataset.rowBaseClass || "border-b border-slate-100 cursor-pointer bg-white";
                 });
-                tr.classList.add("bg-blue-600");
+                tr.classList.add("bg-blue-100", "ring-1", "ring-inset", "ring-blue-400");
             });
             tr.addEventListener("dblclick", () => {
                 state.selected = row;
                 tbody.querySelectorAll("tr").forEach((r) => {
-                    r.className = r.dataset.rowBaseClass || "border-b border-slate-100 bg-blue-600 cursor-pointer bg-white";
+                    r.className = r.dataset.rowBaseClass || "border-b border-slate-100 cursor-pointer bg-white";
                 });
-                tr.classList.add("bg-blue-600");
+                tr.classList.add("bg-blue-100", "ring-1", "ring-inset", "ring-blue-400");
                 commitSelection();
             });
             tbody.appendChild(tr);
@@ -257,7 +278,7 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
         if (!headerRow || !state.sortEnabled) return;
         headerRow.querySelectorAll("[data-sort-indicator]").forEach((el) => {
             const idx = Number(el.getAttribute("data-sort-indicator"));
-            const key = fields[idx];
+            const key = safeFields[idx];
             const isCurrent = state.sortKey === key;
             el.textContent = isCurrent ? (state.sortDir === "asc" ? "↑" : "↓") : "↕";
             el.classList.toggle("text-blue-600", isCurrent);
@@ -360,7 +381,7 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
             updatePager();
         } catch (e) {
             if (tbody.children.length === 0) {
-                tbody.innerHTML = `<tr><td class="px-3 py-3 text-red-600" colspan="${fields.length}">${escapeHtml(e.message || String(e))}</td></tr>`;
+                tbody.innerHTML = `<tr><td class="px-3 py-3 text-red-600" colspan="${safeFields.length || 1}">${escapeHtml(e.message || String(e))}</td></tr>`;
             }
             state.hasMore = false;
             updatePager();
@@ -391,7 +412,7 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
                 if (key === "FORMATTED_DISPLAY") {
                     const displayVal = typeof displayFormatter === "function"
                         ? displayFormatter(selected)
-                        : fields.map((f) => selected[f] ?? "").join(" - ");
+                        : safeFields.map((f) => selected[f] ?? "").join(" - ");
                     assignValue(targetId, displayVal);
                 } else {
                     assignValue(targetId, selected[key]);
@@ -423,7 +444,7 @@ function openGenericLov(title, api, columns, fields, map, displayFormatter, onCo
         headerRow.querySelectorAll("[data-sort-idx]").forEach((th) => {
             th.addEventListener("click", () => {
                 const idx = Number(th.getAttribute("data-sort-idx"));
-                const key = fields[idx];
+                const key = safeFields[idx];
                 if (!key) return;
                 if (state.sortKey === key) {
                     state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
@@ -475,6 +496,46 @@ function escapeHtml(v) {
 }
 
 window.openGenericLov = openGenericLov;
+
+if (!window.gLov) window.gLov = {};
+if (typeof window.gLov.open !== "function") {
+    window.gLov.open = (config) => {
+        if (config && typeof config === "object") {
+            return openGenericLov(
+                config.title || config.lovTitle || "查詢",
+                config.api || config.apiUrl || config.lovApi || "",
+                config.columns || config.lovColumns || [],
+                config.fields || config.dataFields || [],
+                config.map || config.targetInputs || null,
+                config.formatDisplay || config.formatter || null,
+                config.onConfirm || config.onConfirmCallback || null,
+                config.options || null
+            );
+        }
+        return openGenericLov(...arguments);
+    };
+}
+if (typeof window.gLov.openLegacy !== "function") {
+    window.gLov.openLegacy = (...args) => openGenericLov(...args);
+}
+if (typeof window.gLov.define !== "function") {
+    const registry = {};
+    window.gLov._registry = registry;
+    window.gLov.define = (name, cfg) => {
+        const key = String(name || "").trim();
+        if (!key) return;
+        registry[key] = { ...(cfg || {}) };
+    };
+    window.gLov.openByName = (name, overrides) => {
+        const key = String(name || "").trim();
+        const base = registry[key];
+        if (!base) return;
+        const cfg = { ...base, ...(overrides || {}) };
+        cfg.map = { ...(base.map || {}), ...((overrides || {}).map || {}) };
+        cfg.options = { ...(base.options || {}), ...((overrides || {}).options || {}) };
+        return window.gLov.open(cfg);
+    };
+}
 
 function initGFileUploaders(root) {
     const host = root || document;
@@ -1180,7 +1241,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.initGFileUploaders = initGFileUploaders;
 window.initGCardViews = initGCardViews;
-
-
-
 

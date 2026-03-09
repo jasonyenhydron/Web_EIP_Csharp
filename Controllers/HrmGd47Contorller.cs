@@ -34,44 +34,9 @@ namespace Web_EIP_Csharp.Controllers
             var numericId = new string(username.Where(char.IsDigit).ToArray());
             ViewBag.NumericUserId = string.IsNullOrEmpty(numericId) ? username : numericId;
 
-            var leaveTypeLovSql = Uri.EscapeDataString(@"
-SELECT leave_id, leave_name
-FROM (
-    SELECT leave_id, leave_name,
-           ROW_NUMBER() OVER (ORDER BY leave_id ASC) AS rn
-    FROM hrm_leave_l
-    WHERE language_id = 1
-      AND (UPPER(TO_CHAR(leave_id)) LIKE :q OR UPPER(leave_name) LIKE :q)
-)
-WHERE rn > :offset AND rn <= :endRow");
-
-            var employeeLovSql = Uri.EscapeDataString(@"
-SELECT employee_id, employee_no, employee_name
-FROM (
-    SELECT employee_id, employee_no, employee_name,
-           ROW_NUMBER() OVER (ORDER BY employee_no ASC) AS rn
-    FROM hrm_employee_v
-    WHERE (UPPER(employee_no) LIKE :q OR UPPER(employee_name) LIKE :q)
-)
-WHERE rn > :offset AND rn <= :endRow");
-
-            var bookingDeptLovSql = Uri.EscapeDataString(@"
-SELECT department_id, department_no, department_name
-FROM (
-    SELECT booking_department_id AS department_id,
-           booking_department_no AS department_no,
-           booking_department_name AS department_name,
-           ROW_NUMBER() OVER (ORDER BY booking_department_no ASC) AS rn
-    FROM hrm_booking_department_v
-    WHERE language_id = 1
-      AND (UPPER(booking_department_no) LIKE :q OR UPPER(booking_department_name) LIKE :q)
-      AND (:employeeId IS NULL OR employee_id = :employeeId)
-)
-WHERE rn > :offset AND rn <= :endRow");
-
-            ViewBag.LeaveTypeLovSql = leaveTypeLovSql;
-            ViewBag.EmployeeLovSql = employeeLovSql;
-            ViewBag.BookingDeptLovSql = bookingDeptLovSql;
+            ViewBag.LeaveTypeLovApi = "/api/lov/hrm/leave-types";
+            ViewBag.EmployeeLovApi = "/api/lov/hrm/employees";
+            ViewBag.BookingDeptLovApi = "/api/lov/hrm/booking-departments";
 
             return View("~/Views/MisPrograms/HRMGD47.cshtml");
         }
@@ -87,33 +52,18 @@ WHERE rn > :offset AND rn <= :endRow");
 
             try
             {
-                const string sql = @"
-                    SELECT LEAVE_ID, LEAVE_NAME
-                    FROM HRM_LEAVE_L
-                    WHERE LANGUAGE_ID = 1
-                      AND (UPPER(TO_CHAR(LEAVE_ID)) LIKE :q OR UPPER(LEAVE_NAME) LIKE :q)
-                    ORDER BY LEAVE_ID";
-
-                var dt = await DbHelper.GetDataTableAsync(
+                var result = await Models.Lov.HrmLovRepository.QueryLeaveTypesAsync(
                     BuildDbConnectionString(tns),
-                    CommandType.Text,
-                    sql,
-                    new DbParameter[]
-                    {
-                        DbHelper.CreateParameter("q", $"%{query.ToUpper()}%")
-                    });
+                    query,
+                    page: 1,
+                    pageSize: 200,
+                    languageId: 1);
 
-                var data = new List<Dictionary<string, string>>();
-                foreach (DataRow row in dt.Rows)
+                return Json(new
                 {
-                    data.Add(new Dictionary<string, string>
-                    {
-                        ["leave_id"] = row["LEAVE_ID"]?.ToString() ?? string.Empty,
-                        ["leave_name"] = row["LEAVE_NAME"]?.ToString() ?? string.Empty
-                    });
-                }
-
-                return Json(new { status = "success", data });
+                    status = "success",
+                    data = result.Data
+                });
             }
             catch (Exception ex)
             {

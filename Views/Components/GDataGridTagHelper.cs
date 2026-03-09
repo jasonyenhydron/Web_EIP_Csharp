@@ -139,14 +139,11 @@ namespace Web_EIP_Csharp.Views.Components
             var compId   = string.IsNullOrEmpty(Id) ? $"grid_{Guid.NewGuid():N}" : Id;
             var fnName   = $"gDataGrid_{compId}";
             var zebraClassExpr = Striped ? "(rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50')" : "''";
-            var rowClick = !string.IsNullOrEmpty(OnRowClick)
-                ? $"@click.stop=\"({OnRowClick.Replace("\"","&quot;")})(row)\""
-                : "";
-            var rowDbl   = !string.IsNullOrEmpty(OnRowDblClick)
-                ? $"@dblclick.stop=\"({OnRowDblClick.Replace("\"","&quot;")})(row)\""
-                : "";
             var rowCursor = (!string.IsNullOrEmpty(OnRowClick) || !string.IsNullOrEmpty(OnRowDblClick))
                 ? "cursor-pointer" : "";
+            var onRowClickExprJs = JsonSerializer.Serialize(OnRowClick ?? string.Empty);
+            var onRowDblExprJs = JsonSerializer.Serialize(OnRowDblClick ?? string.Empty);
+            var onSelectExprJs = JsonSerializer.Serialize(OnSelect ?? string.Empty);
 
             // Parse columns
             var cols = ParseColumns(Columns);
@@ -558,8 +555,8 @@ namespace Web_EIP_Csharp.Views.Components
                             <template x-for=""(row, rowIdx) in pagedRows"" :key=""rowIdx"">
                                 <tr class=""group transition-colors {rowCursor}""
                                     :class=""[{zebraClassExpr}, 'hover:bg-slate-100', selectedRow===row?'bg-slate-100 outline outline-1 outline-blue-400':'']""
-                                    {rowDbl}
-                                    @click=""selectedRow=row; {(!string.IsNullOrEmpty(OnRowClick) ? $"({OnRowClick.Replace("\"", "&quot;")})(row);" : "")} {(!string.IsNullOrEmpty(OnSelect) ? $"window['{OnSelect}'] && window['{OnSelect}'](row);" : "")}"">
+                                    @dblclick=""handleRowDblClick(row)""
+                                    @click=""handleRowClick(row)"">
                                     {tdHtml}
                                 </tr>
                             </template>
@@ -609,6 +606,9 @@ namespace Web_EIP_Csharp.Views.Components
                             x: 0,
                             y: 0
                         }},
+                        onRowClickExpr: {onRowClickExprJs},
+                        onRowDblExpr: {onRowDblExprJs},
+                        onSelectExpr: {onSelectExprJs},
 
                         get sortedRows() {{
                             const compare = (av, bv, dir) => {{
@@ -1028,6 +1028,33 @@ namespace Web_EIP_Csharp.Views.Components
                         }},
                         getSelectedRow() {{ return this.selectedRow; }},
                         refresh() {{ this.fetchData(); }}
+                        ,
+                        invokeExpression(expr, row) {{
+                            const e = (expr || '').trim();
+                            if (!e) return;
+                            try {{
+                                if (typeof window[e] === 'function') {{
+                                    window[e](row);
+                                    return;
+                                }}
+                                (new Function('row', `return (${{e}})(row);`))(row);
+                            }} catch (err) {{
+                                console.error('[GDataGrid] invokeExpression error:', err, e);
+                            }}
+                        }},
+                        invokeOnSelect(row) {{
+                            this.invokeExpression(this.onSelectExpr, row);
+                        }},
+                        handleRowClick(row) {{
+                            this.selectedRow = row;
+                            this.invokeExpression(this.onRowClickExpr, row);
+                            this.invokeOnSelect(row);
+                        }},
+                        handleRowDblClick(row) {{
+                            this.selectedRow = row;
+                            this.invokeExpression(this.onRowDblExpr, row);
+                            this.invokeOnSelect(row);
+                        }}
                     }};
                 }}
                 </script>
@@ -1272,7 +1299,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
 
 
 

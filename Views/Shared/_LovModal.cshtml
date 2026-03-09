@@ -46,6 +46,9 @@
         currentRow: null,
         formatDisplay: null,
         onConfirmCallback: null,
+        onSelectCallback: null,
+        columnMatches: [],
+        filterItems: [],
         page: 1,
         pageSize: 50,
         bufferView: true,
@@ -82,18 +85,39 @@
     });
 
     function openGenericLov(title, apiUrl, columns, dataFields, targetInputs, formatDisplay = null, onConfirmCallback = null, options = null) {
+        if (title && typeof title === 'object' && !Array.isArray(title)) {
+            const cfg = title;
+            return openGenericLov(
+                cfg.title || cfg.lovTitle || '查詢',
+                cfg.api || cfg.apiUrl || cfg.lovApi || '',
+                Array.isArray(cfg.columns) ? cfg.columns : (Array.isArray(cfg.lovColumns) ? cfg.lovColumns : []),
+                Array.isArray(cfg.fields) ? cfg.fields : (Array.isArray(cfg.dataFields) ? cfg.dataFields : []),
+                cfg.map || cfg.targetInputs || {},
+                cfg.formatDisplay || cfg.formatter || null,
+                cfg.onConfirm || cfg.onConfirmCallback || null,
+                Object.assign({}, cfg.options || {}, {
+                    onSelect: cfg.onSelect || null,
+                    columnMatches: cfg.columnMatches || [],
+                    filterItems: cfg.filterItems || []
+                })
+            );
+        }
+
         const opts = options || {};
         const pageSize = Number(opts.pageSize) > 0 ? Number(opts.pageSize) : 50;
         const bufferView = opts.bufferView !== false;
         const sortEnabled = opts.sortEnabled === true;
 
         genericLovState.title = title;
-        genericLovState.apiUrl = apiUrl;
-        genericLovState.columns = columns;
-        genericLovState.dataFields = dataFields;
-        genericLovState.targetInputs = targetInputs;
+        genericLovState.apiUrl = typeof apiUrl === 'string' ? apiUrl : '';
+        genericLovState.columns = Array.isArray(columns) ? columns : [];
+        genericLovState.dataFields = Array.isArray(dataFields) ? dataFields : [];
+        genericLovState.targetInputs = targetInputs || {};
         genericLovState.formatDisplay = formatDisplay;
         genericLovState.onConfirmCallback = onConfirmCallback;
+        genericLovState.onSelectCallback = (opts && typeof opts.onSelect === 'function') ? opts.onSelect : (typeof options?.onSelect === 'function' ? options.onSelect : null);
+        genericLovState.columnMatches = Array.isArray(opts.columnMatches) ? opts.columnMatches : [];
+        genericLovState.filterItems = Array.isArray(opts.filterItems) ? opts.filterItems : [];
         genericLovState.page = 1;
         genericLovState.pageSize = pageSize;
         genericLovState.bufferView = bufferView;
@@ -167,6 +191,10 @@
         const tbody = document.getElementById('genericLovTableBody');
         const query = document.getElementById('genericLovSearchInput').value.trim();
         if (genericLovState.loading) return;
+        if (!genericLovState.apiUrl) {
+            tbody.innerHTML = `<tr><td colspan="${Math.max(genericLovState.columns.length, 1)}" class="text-center py-4 text-red-500">LOV API 未設定</td></tr>`;
+            return;
+        }
 
         if (!loadMore || genericLovState.query !== query) {
             genericLovState.page = 1;
@@ -186,8 +214,10 @@
         genericLovState.loading = true;
 
         try {
-            const sep = genericLovState.apiUrl.includes('?') ? '&' : '?';
-            const url = `${genericLovState.apiUrl}${sep}query=${encodeURIComponent(query)}&page=${genericLovState.page}&pageSize=${genericLovState.pageSize}`;
+            const api = String(genericLovState.apiUrl || '');
+            const sep = api.includes('?') ? '&' : '?';
+            const extraFilter = await buildFilterQueryString();
+            const url = `${api}${sep}query=${encodeURIComponent(query)}&page=${genericLovState.page}&pageSize=${genericLovState.pageSize}${extraFilter}`;
             const response = await fetch(url);
             const result = await response.json();
 
@@ -241,7 +271,7 @@
 
         sorted.forEach((item, index) => {
             const tr = document.createElement('tr');
-            const rowBaseClass = `cursor-pointer transition-colors border-b border-slate-200 bg-blue-600 ${(index % 2 === 0) ? 'bg-white' : 'bg-slate-100'}`;
+            const rowBaseClass = `cursor-pointer transition-colors border-b border-slate-200 ${(index % 2 === 0) ? 'bg-white' : 'bg-slate-50'}`;
             tr.className = rowBaseClass;
             tr.dataset.rowBaseClass = rowBaseClass;
             tr.onclick = function () { selectGenericLovRow(tr, item); };
@@ -264,7 +294,7 @@
 
     function selectGenericLovRow(rowElement, rowData) {
         document.querySelectorAll('#genericLovTableBody tr').forEach((tr) => {
-            const baseClass = tr.dataset.rowBaseClass || 'cursor-pointer transition-colors border-b border-slate-200 bg-blue-600 bg-white';
+            const baseClass = tr.dataset.rowBaseClass || 'cursor-pointer transition-colors border-b border-slate-200 bg-white';
             tr.className = baseClass;
             tr.querySelectorAll('td').forEach(td => td.classList.remove('text-white'));
             tr.querySelector('td:nth-child(1)')?.classList.add('text-blue-700');
@@ -272,18 +302,22 @@
         });
 
         genericLovState.currentRow = rowElement;
-        genericLovState.currentRow.classList.remove('bg-blue-600', 'bg-white', 'bg-slate-100');
-        genericLovState.currentRow.classList.add('bg-blue-600', 'text-white');
+        genericLovState.currentRow.classList.remove('bg-white', 'bg-slate-50');
+        genericLovState.currentRow.classList.add('bg-blue-100', 'ring-1', 'ring-inset', 'ring-blue-400');
         genericLovState.currentRow.querySelectorAll('td').forEach(td => {
-            td.classList.remove('text-blue-700', 'text-slate-700', 'text-slate-500');
-            td.classList.add('text-white');
+            td.classList.remove('text-slate-500');
+            td.classList.add('text-slate-800');
         });
 
         genericLovState.selectedValue = rowData;
+        if (typeof genericLovState.onSelectCallback === 'function') {
+            try { genericLovState.onSelectCallback(rowData); } catch { }
+        }
     }
 
-    function confirmGenericLovSelection() {
+    async function confirmGenericLovSelection() {
         if (genericLovState.selectedValue && Object.keys(genericLovState.selectedValue).length > 0) {
+            await applyColumnMatches(genericLovState.selectedValue);
             for (const [dataKey, inputId] of Object.entries(genericLovState.targetInputs)) {
                 if (dataKey === 'FORMATTED_DISPLAY' && genericLovState.formatDisplay) {
                     const el = document.getElementById(inputId);
@@ -311,6 +345,106 @@
             alert('請先選擇一筆資料');
         }
     }
+
+    async function resolveDynamicValue(methodName, fallbackValue, payload) {
+        if (typeof methodName === 'string' && methodName.trim()) {
+            const fn = window[methodName.trim()];
+            if (typeof fn === 'function') {
+                const v = fn(payload);
+                return (v && typeof v.then === 'function') ? await v : v;
+            }
+        }
+        return fallbackValue;
+    }
+
+    async function buildFilterQueryString() {
+        const items = Array.isArray(genericLovState.filterItems) ? genericLovState.filterItems : [];
+        if (!items.length) return '';
+
+        const parts = [];
+        for (const item of items) {
+            const fieldName = (item?.FieldName ?? item?.FiledName ?? '').toString().trim();
+            if (!fieldName) continue;
+            const whereField = (item?.WhereField ?? '').toString().trim();
+            const whereMethod = (item?.WhereMethod ?? '').toString().trim();
+            let value = (item?.WhereValue ?? '');
+
+            if (whereField) {
+                const el = document.getElementById(whereField);
+                if (el && typeof el.value !== 'undefined') value = el.value;
+            }
+            value = await resolveDynamicValue(whereMethod, value, { item, state: genericLovState });
+            if (value === undefined || value === null || `${value}` === '') continue;
+            parts.push(`${encodeURIComponent(fieldName)}=${encodeURIComponent(value)}`);
+        }
+
+        return parts.length ? `&${parts.join('&')}` : '';
+    }
+
+    async function applyColumnMatches(selected) {
+        const matches = Array.isArray(genericLovState.columnMatches) ? genericLovState.columnMatches : [];
+        if (!matches.length || !selected) return;
+
+        for (const m of matches) {
+            const sourceField = (m?.SourceFieldName ?? '').toString().trim();
+            const sourceMethod = (m?.SourceMethod ?? '').toString().trim();
+            const targetField = (m?.TargetFieldName ?? '').toString().trim();
+            if (!targetField) continue;
+
+            let value = sourceField ? selected?.[sourceField] : undefined;
+            value = await resolveDynamicValue(sourceMethod, value, { row: selected, match: m, state: genericLovState });
+
+            const el = document.getElementById(targetField);
+            if (!el) continue;
+            el.value = value ?? '';
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    (function initGLovApi() {
+        const registry = {};
+
+        function merge(base, extra) {
+            return Object.assign({}, base || {}, extra || {});
+        }
+
+        function openByName(name, overrides = {}) {
+            const key = String(name || '').trim();
+            const base = registry[key];
+            if (!base) {
+                alert(`LOV 設定不存在: ${key}`);
+                return;
+            }
+            const cfg = merge(base, overrides);
+            if (base.options || overrides.options) {
+                cfg.options = merge(base.options, overrides.options);
+            }
+            if (base.map || overrides.map) {
+                cfg.map = merge(base.map, overrides.map);
+            }
+            if (base.columnMatches || overrides.columnMatches) {
+                cfg.columnMatches = Array.isArray(overrides.columnMatches) ? overrides.columnMatches : (Array.isArray(base.columnMatches) ? base.columnMatches : []);
+            }
+            if (base.filterItems || overrides.filterItems) {
+                cfg.filterItems = Array.isArray(overrides.filterItems) ? overrides.filterItems : (Array.isArray(base.filterItems) ? base.filterItems : []);
+            }
+            return openGenericLov(cfg);
+        }
+
+        window.gLov = window.gLov || {};
+        window.gLov.define = (name, config) => {
+            const key = String(name || '').trim();
+            if (!key) return;
+            registry[key] = merge(config, {});
+        };
+        window.gLov.openByName = openByName;
+        window.gLov.open = (config) => openGenericLov(config);
+        window.gLov.openLegacy = (...args) => openGenericLov(...args);
+        window.gLov._registry = registry;
+    })();
+
+    window.openGenericLov = function (...args) {
+        return openGenericLov(...args);
+    };
 </script>
-
-
