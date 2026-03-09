@@ -36,7 +36,7 @@ namespace Web_EIP_Csharp.Views.Components
       </div>
       <div class='flex justify-end gap-2'>
         <button type='button' onclick='gCopyErrorMessage()' class='px-3 py-1.5 text-xs rounded border border-slate-300 bg-white bg-slate-100 text-slate-700'>Copy</button>
-        <button type='button' onclick='gHideErrorMessage()' class='px-3 py-1.5 text-xs rounded bg-blue-600 text-white bg-blue-600'>Close</button>
+        <button type='button' onclick='gHideErrorMessage()' class='px-3 py-1.5 text-xs rounded bg-blue-600 text-white'>Close</button>
       </div>
     </div>
   </div>
@@ -197,4 +197,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-

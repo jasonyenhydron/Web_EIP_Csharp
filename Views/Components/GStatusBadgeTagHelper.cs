@@ -35,11 +35,11 @@ namespace Web_EIP_Csharp.Views.Components
             // Color palette mapping
             (string pingColor, string dotColor, string textColor, string bgColor, string borderColor) = Color?.ToLower() switch
             {
-                "green" => ("bg-blue-600",  "bg-blue-600",  "text-green-700",  "bg-blue-600",  "border-green-200"),
-                "blue"  => ("bg-blue-600",   "bg-blue-600",   "text-blue-700",   "bg-blue-600",   "border-blue-200"),
-                "red"   => ("bg-slate-100",    "bg-slate-100",    "text-red-700",    "bg-slate-100",    "border-red-200"),
-                "slate" => ("bg-slate-100",  "bg-slate-100",  "text-slate-700",  "bg-slate-100", "border-slate-200"),
-                _       => ("bg-slate-100",  "bg-slate-100",  "text-amber-600",  "bg-slate-100",  "border-amber-200"),
+                "green" => ("bg-green-400",  "bg-green-500",  "text-green-700",  "bg-green-50",   "border-green-200"),  // 成功綠
+                "blue"  => ("bg-blue-400",   "bg-blue-600",   "text-blue-700",   "bg-blue-50",    "border-blue-200"),   // 品牌藍（跟隨 --dx-brand）
+                "red"   => ("bg-red-400",    "bg-red-500",    "text-red-700",    "bg-red-50",     "border-red-200"),    // 危險紅
+                "slate" => ("bg-slate-300",  "bg-slate-400",  "text-slate-700",  "bg-slate-100",  "border-slate-200"), // 中性灰
+                _       => ("bg-amber-400",  "bg-amber-500",  "text-amber-700",  "bg-amber-50",   "border-amber-200"),  // 預設琥珀色
             };
 
             string pingHtml = NoPing
@@ -76,7 +76,3 @@ namespace Web_EIP_Csharp.Views.Components
         private static string HtmlAttr(string? s)   => s?.Replace("\"", "&quot;") ?? string.Empty;
     }
 }
-
-
-
-

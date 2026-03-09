@@ -20,10 +20,10 @@ namespace Web_EIP_Csharp.Views.Components
             var compId   = string.IsNullOrEmpty(Id) ? $"gpb_{Guid.NewGuid():N}" : Id;
             var barColor = Type switch
             {
-                "success" => "bg-blue-600",
-                "warning" => "bg-slate-100",
-                "danger"  => "bg-slate-100",
-                _         => "bg-blue-600"
+                "success" => "bg-green-500",    // 成功：綠色
+                "warning" => "bg-amber-500",    // 警告：橙色
+                "danger"  => "bg-red-500",      // 危險：紅色
+                _         => "bg-blue-600"      // 預設(primary)：跟隨 --dx-brand
             };
             var stripedCls  = Striped ? @"bg-slate-100:1rem_1rem] bg-slate-100(45deg,rgba(255,255,255,.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.15)_50%,rgba(255,255,255,.15)_75%,transparent_75%,transparent)]" : "";
             var animatedCls = Animated ? "animate-[progress_1s_linear_infinite]" : "";
@@ -73,5 +73,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
-

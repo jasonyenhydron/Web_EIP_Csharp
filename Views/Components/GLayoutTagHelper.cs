@@ -105,7 +105,7 @@ namespace Web_EIP_Csharp.Views.Components
                 : "";
             var westToggle = lc.WestCollapsible
                 ? $@"<button type=""button"" onclick=""gLayoutToggle('{westId}')""
-                         class=""absolute top-1/2 -translate-y-1/2 -right-3 z-10 w-6 h-10 bg-slate-100 bg-blue-600 hover:text-white text-slate-400 rounded-r-lg flex items-center justify-center transition-colors shadow-sm"">
+                         class=""absolute top-1/2 -translate-y-1/2 -right-3 z-10 w-6 h-10 bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-400 rounded-r-lg flex items-center justify-center transition-colors shadow-sm"">
                          <svg id=""{westId}-icon"" class=""w-3 h-3 transition-transform"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                              <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15 19l-7-7 7-7""/>
                          </svg>
@@ -119,7 +119,7 @@ namespace Web_EIP_Csharp.Views.Components
                 : "";
             var eastToggle = lc.EastCollapsible
                 ? $@"<button type=""button"" onclick=""gLayoutToggle('{eastId}')""
-                         class=""absolute top-1/2 -translate-y-1/2 -left-3 z-10 w-6 h-10 bg-slate-100 bg-blue-600 hover:text-white text-slate-400 rounded-l-lg flex items-center justify-center transition-colors shadow-sm"">
+                         class=""absolute top-1/2 -translate-y-1/2 -left-3 z-10 w-6 h-10 bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-400 rounded-l-lg flex items-center justify-center transition-colors shadow-sm"">
                          <svg id=""{eastId}-icon"" class=""w-3 h-3 rotate-180 transition-transform"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                              <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15 19l-7-7 7-7""/>
                          </svg>
@@ -140,5 +140,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
-

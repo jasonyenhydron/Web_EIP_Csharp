@@ -1,11 +1,18 @@
-# OracleDbHelper Frontend API（Oracle 11g）
+﻿# Oracle API 規格（同步至目前版本）
 
-以下 API 由 `Controllers/OracleOpsController.cs` 提供，底層呼叫 `Helpers/OracleDbHelper.cs`。
+本文件描述目前專案中 Oracle 相關 API 的使用方式與注意事項。
 
-## 1) 執行 Procedure / Package Procedure
+## 1. 基本說明
+- Controller：`Controllers/OracleOpsController.cs`
+- 核心資料存取：`Helpers/OracleDbHelper.cs`
+- 主要用途：
+  - 呼叫 Procedure / Function
+  - 操作 Scheduler Job（建立、執行、啟停、刪除、查詢）
 
-`POST /api/oracle/proc/execute`
+## 2. Procedure / Package Procedure
+- Endpoint：`POST /api/oracle/proc/execute`
 
+Request 範例：
 ```json
 {
   "packageName": "PKG_HRM",
@@ -17,8 +24,7 @@
 }
 ```
 
-回傳：
-
+Response 範例：
 ```json
 {
   "status": "success",
@@ -28,10 +34,10 @@
 }
 ```
 
-## 2) 執行 Function
+## 3. Function
+- Endpoint：`POST /api/oracle/func/execute`
 
-`POST /api/oracle/func/execute`
-
+Request 範例：
 ```json
 {
   "functionName": "PKG_HRM.GET_EMP_NAME",
@@ -42,10 +48,10 @@
 }
 ```
 
-## 3) Scheduler Job
+## 4. Scheduler Job
 
-### 建立 Job
-`POST /api/oracle/job/create`
+### 4.1 建立 Job
+- Endpoint：`POST /api/oracle/job/create`
 
 ```json
 {
@@ -59,8 +65,8 @@
 }
 ```
 
-### 執行 Job
-`POST /api/oracle/job/run`
+### 4.2 執行 Job
+- Endpoint：`POST /api/oracle/job/run`
 
 ```json
 {
@@ -69,13 +75,12 @@
 }
 ```
 
-### 啟用/停用/刪除 Job
+### 4.3 啟用 / 停用 / 刪除 Job
 - `POST /api/oracle/job/enable`
 - `POST /api/oracle/job/disable`
 - `POST /api/oracle/job/drop`
 
-Request body：
-
+Request body 範例：
 ```json
 {
   "jobName": "JOB_SYNC_EMP",
@@ -83,21 +88,20 @@ Request body：
 }
 ```
 
-### 查詢 Job
-`GET /api/oracle/job/list`
+### 4.4 查詢 Job
+- Endpoint：`GET /api/oracle/job/list`
+- 支援 query string：`owner`
 
-可選參數：`owner`
+## 5. 參數格式規格
+- `dbType`：對應 .NET `System.Data.DbType`，例如 `String`, `Int32`, `DateTime`, `Decimal`
+- `direction`：`Input`, `Output`, `InputOutput`, `ReturnValue`
 
----
+## 6. 錯誤與安全
+- 所有參數皆應使用 bind parameter（禁止字串拼接 SQL）
+- API 回傳以 JSON 為主，錯誤時包含 `status` / `message`
+- 請在登入與 Session 有效下呼叫 API
 
-## 參數欄位說明
-
-- `dbType`: 對應 .NET `System.Data.DbType`，例如 `String`, `Int32`, `DateTime`, `Decimal`。
-- `direction`: `Input`, `Output`, `InputOutput`, `ReturnValue`。
-
-## 安全限制
-
-- 物件名稱（procedure/function/package/job）會驗證格式，只允許 Oracle 識別字元。
-- 所有輸入值都走 bind parameter，不拼接值到 SQL。
-- 需通過登入 Session（沿用現有系統驗證）。
-
+## 7. 與目前前端規格的關聯
+- LOV、DataGrid、DataForm 主要走業務 API（如 `/api/lov/*`、`/Idm/*`、`/api/*`），
+  本文件的 Oracle API 主要用於 DBA/批次/維運導向操作。
+- 近期 UI 規格更新（LOV runtime、DataForm 新版、Sidebar 修正）不影響本 Oracle API 路由。

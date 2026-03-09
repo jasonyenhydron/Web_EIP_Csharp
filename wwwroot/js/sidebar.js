@@ -14,6 +14,9 @@ function toggleMisMenu() {
 
 // Sidebar toggle logic
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.__sidebarRuntimeInited) return;
+    window.__sidebarRuntimeInited = true;
+
     const sidebar = document.getElementById('sidebar');
     const toggleBtns = document.querySelectorAll('.sidebar-toggle-btn, #sidebar-toggle');
     if (!sidebar || toggleBtns.length === 0) return;

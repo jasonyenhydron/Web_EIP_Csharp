@@ -44,7 +44,7 @@ namespace Web_EIP_Csharp.Views.Components
                 <div id=""{drawerId}"" style=""{sizeStyle}""
                      class=""fixed {posClass} bg-white shadow-2xl z-[60] transform {translateOut} transition-transform duration-300 flex flex-col {Class}"">
                     <!-- Header -->
-                    <div class=""flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-blue-600 from-slate-50 to-white shrink-0"">
+                    <div class=""flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50 shrink-0"">
                         <h3 class=""text-sm font-bold text-slate-700"">{Title}</h3>
                         <button type=""button"" onclick=""gDrawerClose('{drawerId}')""
                                 class=""text-slate-400 hover:text-slate-600 bg-slate-100 p-1.5 rounded-lg transition-colors"">
@@ -142,11 +142,11 @@ namespace Web_EIP_Csharp.Views.Components
             {
                 var dotColor = type switch
                 {
-                    "success" => "bg-blue-600 border-green-200",
-                    "warning" => "bg-slate-100 border-amber-200",
-                    "danger"  => "bg-slate-100 border-red-200",
-                    "slate"   => "bg-slate-100 border-slate-200",
-                    _         => "bg-blue-600 border-blue-200"
+                    "success" => "bg-green-500 border-green-200",  // 成功：綠色
+                    "warning" => "bg-amber-500 border-amber-200",  // 警告：橙色
+                    "danger"  => "bg-red-500 border-red-200",      // 危險：紅色
+                    "slate"   => "bg-slate-300 border-slate-200",  // 中性：灰色
+                    _         => "bg-blue-600 border-blue-200"     // 預設：跟隨 --dx-brand
                 };
                 sb.Append($@"
                 <div class=""relative mb-6 last:mb-0"">
@@ -172,5 +172,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
-

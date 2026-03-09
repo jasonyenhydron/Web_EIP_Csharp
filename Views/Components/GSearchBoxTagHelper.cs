@@ -63,7 +63,7 @@ namespace Web_EIP_Csharp.Views.Components
                                 lst.innerHTML = d.length ? '' : '<li class=""px-4 py-3 text-sm text-slate-400"">無符合資料</li>';
                                 d.forEach(item=>{{
                                     const li = document.createElement('li');
-                                    li.className='px-4 py-2.5 text-sm cursor-pointer bg-blue-600 hover:text-blue-700 transition-colors';
+                                    li.className='px-4 py-2.5 text-sm cursor-pointer text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors';
                                     li.innerHTML=`{labelJs.Replace("`","\\`")}`;
                                     li.addEventListener('click',()=>{{
                                         inp.value={displayJs};
@@ -84,6 +84,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
-
-

@@ -30,10 +30,10 @@ namespace Web_EIP_Csharp.Views.Components
                 <script>
                 const gMsg = (function() {{
                     const icons = {{
-                        success: {{ bg:'bg-blue-600', color:'text-green-600', svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/>' }},
+                        success: {{ bg:'bg-green-100', color:'text-green-600', svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/>' }},
                         error  : {{ bg:'bg-slate-100',   color:'text-red-600',   svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>' }},
                         warning: {{ bg:'bg-slate-100', color:'text-amber-600', svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z""/>' }},
-                        info   : {{ bg:'bg-blue-600',  color:'text-blue-600',  svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z""/>' }}
+                        info   : {{ bg:'bg-blue-50',  color:'text-blue-600',  svg:'<path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z""/>' }}
                     }};
                     function mkBtn(text, cls, cb) {{
                         const b = document.createElement('button');
@@ -83,7 +83,7 @@ namespace Web_EIP_Csharp.Views.Components
                         }},
                         toast(msg, type='success', duration=3000) {{
                             const tc = icons[type] || icons.info;
-                            const bgMap = {{ success:'bg-blue-600', error:'bg-slate-100', warning:'bg-slate-100', info:'bg-blue-600' }};
+                            const bgMap = {{ success:'bg-green-600', error:'bg-red-600', warning:'bg-amber-500', info:'bg-blue-600' }};  // Toast 背景色語義化
                             const t = document.createElement('div');
                             t.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 ${{bgMap[type]||'bg-slate-900/60'}} text-white rounded-xl shadow-lg text-sm font-medium translate-y-4 opacity-0 transition-all duration-300`;
                             t.innerHTML = `<svg class=""w-4 h-4 shrink-0"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/></svg>${{msg}}`;
@@ -214,7 +214,7 @@ namespace Web_EIP_Csharp.Views.Components
             {
                 var valueHtml = type switch
                 {
-                    "badge" => $@"<span class=""inline-flex px-2 py-0.5 text-xs font-bold bg-blue-600 text-blue-700 rounded-full"">{value}</span>",
+                    "badge" => $@"<span class=""inline-flex px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-700 rounded-full"">{value}</span>",
                     "link"  => $@"<a href=""{value}"" class=""text-blue-600 hover:underline text-sm"">{value}</a>",
                     _       => $@"<span class=""text-sm text-slate-800"">{value}</span>"
                 };
@@ -317,7 +317,7 @@ namespace Web_EIP_Csharp.Views.Components
                         <thead><tr>{thSb}</tr></thead>
                         <tbody>
                             <template x-for=""(row, idx) in visibleRows"" :key=""row['{IdField}']"">
-                                <tr class=""{striped} bg-blue-600 transition-colors {rowCursor}"" {rowClick}>
+                                <tr class=""{striped} transition-colors {rowCursor}"" {rowClick}>
                                     {tdSb}
                                 </tr>
                             </template>
@@ -376,7 +376,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
-
-
-

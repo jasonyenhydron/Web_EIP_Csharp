@@ -264,7 +264,7 @@ namespace Web_EIP_Csharp.Views.Components
             output.Content.SetHtmlContent($@"
                 {labelHtml}
                 <label for=""{inputId}""
-                       class=""flex items-center gap-3 px-3 py-2.5 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-400 bg-blue-600 transition-colors group {disLblCls}"">
+                       class=""flex items-center gap-3 px-3 py-2.5 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors group {disLblCls}"">
                     <svg class=""w-5 h-5 text-slate-400 group-hover:text-blue-500 shrink-0"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
                         <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12""/>
                     </svg>
@@ -307,7 +307,7 @@ namespace Web_EIP_Csharp.Views.Components
                 <div id=""{compId}"" x-data=""{{ tags: {initTags}, inp: '' }}""
                      class=""flex flex-wrap gap-1.5 p-2 border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-400 bg-white min-h-[40px]"">
                     <template x-for=""(tag, i) in tags"" :key=""i"">
-                        <span class=""inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600 text-blue-700 text-xs font-medium rounded-full"">
+                        <span class=""inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"">
                             <span x-text=""tag""></span>
                             {(Disabled ? "" : @"<button type=""button"" @click=""tags.splice(i,1)"" class=""hover:text-red-600 transition-colors leading-none"">?</button>")}
                         </span>
@@ -322,7 +322,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
-
-
-

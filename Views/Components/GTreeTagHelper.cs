@@ -23,7 +23,7 @@ namespace Web_EIP_Csharp.Views.Components
 
             output.TagName = "div";
             output.Attributes.SetAttribute("class",
-                $"flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-slate-700 bg-blue-600 hover:text-blue-700 transition-colors {cursor} {Class}");
+                $"flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors {cursor} {Class}");
             if (!string.IsNullOrEmpty(Onclick)) output.Attributes.SetAttribute("onclick", Onclick);
             if (!string.IsNullOrEmpty(Title))   output.Attributes.SetAttribute("title", Title);
             output.Content.SetHtmlContent($"{iconHtml}<span class='truncate'>{Label}</span>");
@@ -105,5 +105,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
-
