@@ -25,7 +25,8 @@
     hasMore: true,
     loading: false,
     query: '',
-    sourceInputId: ''
+    sourceInputId: '',
+    suppressAutoSearchUntil: 0
   };
 
   const dom = {
@@ -240,6 +241,11 @@
     state.currentRow = null;
   }
 
+  function suppressAutoSearch(ms) {
+    const hold = Number(ms) > 0 ? Number(ms) : 600;
+    state.suppressAutoSearchUntil = Date.now() + hold;
+  }
+
   async function fetchGenericLovData(loadMore) {
     if (!dom.tbody) return;
     if (state.loading) return;
@@ -362,11 +368,14 @@
       return;
     }
 
+    // prevent programmatic value write-back from re-triggering LOV auto-open
+    suppressAutoSearch(900);
     await applyColumnMatches(state.selectedValue);
 
     Object.entries(state.targetInputs || {}).forEach(([dataKey, inputId]) => {
       const el = document.getElementById(inputId);
       if (!el) return;
+      clearTimeout(el.__lovTypeTimer);
 
       if (dataKey === 'FORMATTED_DISPLAY' && typeof state.formatDisplay === 'function') {
         el.value = state.formatDisplay(state.selectedValue);
@@ -486,6 +495,7 @@
   window.gLov.typeSearchInput = (inputEl, immediate) => {
     if (!inputEl) return;
     const exec = () => {
+      if (Date.now() < (state.suppressAutoSearchUntil || 0)) return;
       const value = String(inputEl.value || '').trim();
       if (!immediate) {
         // avoid stealing focus on first keystroke; wait until meaningful keyword exists

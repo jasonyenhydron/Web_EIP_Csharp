@@ -263,7 +263,7 @@ namespace Web_EIP_Csharp.Views.Components
                             {filterIconBtn}
                         </span>
                     </th>");
-                if (ShowFilter)
+                if (actualShowFilter)
                 {
                     filterHtml.Append($@"<th class=""px-2 py-1.5 bg-slate-100 border-b border-slate-200"">");
                     if (col.FilterType == "text")
@@ -304,16 +304,16 @@ namespace Web_EIP_Csharp.Views.Components
                 if (EditMode == "row" && (col.EditorType == "text" || col.EditorType == "select"))
                 {
                     // View Mode
-                    tdHtml.Append($@"<span x-show=""editingId !== row['{IdField}']"" x-text=""row['{col.Field}'] ?? ''""></span>");
+                    tdHtml.Append($@"<span x-show=""editingId !== row['{actualIdField}']"" x-text=""row['{col.Field}'] ?? ''""></span>");
 
                     // Edit Mode
                     if (col.EditorType == "text")
                     {
-                        tdHtml.Append($@"<input x-cloak x-show=""editingId === row['{IdField}']"" type=""text"" x-model=""editRowData['{col.Field}']"" class=""w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
+                        tdHtml.Append($@"<input x-cloak x-show=""editingId === row['{actualIdField}']"" type=""text"" x-model=""editRowData['{col.Field}']"" class=""w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
                     }
                     else if (col.EditorType == "select" && !string.IsNullOrEmpty(col.EditorOptions))
                     {
-                        tdHtml.Append($@"<select x-cloak x-show=""editingId === row['{IdField}']"" x-model=""editRowData['{col.Field}']"" class=""w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
+                        tdHtml.Append($@"<select x-cloak x-show=""editingId === row['{actualIdField}']"" x-model=""editRowData['{col.Field}']"" class=""w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
                          var opts = col.EditorOptions.Split(';');
                         foreach (var opt in opts)
                         {
@@ -379,7 +379,7 @@ namespace Web_EIP_Csharp.Views.Components
                                     <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/></svg>
                                 </button>
                                 <button type=""button"" @click.stop=""cancelEdit()"" class=""p-1 text-slate-400 hover:text-slate-600 transition-colors"" title=""取消"">
-                                    <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 12l12 12""/></svg>
+                                    <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/></svg>
                                 </button>
                             </div>
                         </template>
@@ -394,7 +394,7 @@ namespace Web_EIP_Csharp.Views.Components
 
             var theadHtml = new System.Text.StringBuilder();
             theadHtml.Append($@"<tr>{thHtml}</tr>");
-            if (ShowFilter)
+            if (actualShowFilter)
             {
                theadHtml.Append($@"<tr class=""bg-slate-100"">{filterHtml}</tr>");
             }
@@ -1299,7 +1299,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
 
 
 
