@@ -2,1212 +2,1821 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Web_EIP_Csharp.Models.DataForm;
 
-/*
- * GDataGridTagHelper
- * Alpine.js based data grid with:
- * - sorting (single / multi)
- * - header filtering
- * - pagination
- * - optional CRUD action buttons
- *
- * Example:
- *   <g-datagrid id="programGrid"
- *               api="/api/mis/programs/IDMGD01/list"
- *               columns="PROGRAM_NO:程式編號:120:left,DISPLAY_CODE:顯示:60:center,PURPOSE:用途"
- *               page-size="20"
- *               striped="true"
- *               on-row-click="onRowSelected(row)"/>
- *
- * columns format:
- *   field:title:width:align(editor/filter options...)
- */
 namespace Web_EIP_Csharp.Views.Components
 {
+    /// <summary>
+    /// Alpine.js 驅動的資料表格元件，支援排序、篩選、分頁與完整 CRUD 操作。
+    /// </summary>
+    /// <example>
+    /// <g-datagrid id="programGrid"
+    ///             api="/api/mis/programs/IDMGD01/list"
+    ///             columns="PROGRAM_NO:程式編號:120:left,DISPLAY_CODE:顯示:60:center"
+    ///             page-size="20"
+    ///             edit-mode="form" />
+    /// </example>
     [HtmlTargetElement("g-datagrid")]
     public class GDataGridTagHelper : TagHelper
     {
+        // ─────────────────────────────────────────────
+        // 內部型別定義
+        // ─────────────────────────────────────────────
+
         private sealed class QueryColumnDefinition
         {
-            public string FieldName { get; set; } = "";
-            public string Caption { get; set; } = "";
-            public string Condition { get; set; } = "=";
-            public string AndOr { get; set; } = "AND";
-            public string DataType { get; set; } = "string";
-            public string DefaultMethod { get; set; } = "";
-            public string DefaultValue { get; set; } = "";
-            public string Editor { get; set; } = "text";
-            public string EditorOptions { get; set; } = "";
-            public string Format { get; set; } = "";
-            public bool IsNvarChar { get; set; } = false;
-            public bool NewLine { get; set; } = false;
-            public bool RemoteMethod { get; set; } = false;
-            public int RowSpan { get; set; } = 1;
-            public int Span { get; set; } = 3;
-            public string TableName { get; set; } = "";
-            public int Width { get; set; } = 0;
-            public bool Api { get; set; } = false;
+            public string FieldName      { get; set; } = "";
+            public string Caption        { get; set; } = "";
+            public string Condition      { get; set; } = "=";
+            public string AndOr          { get; set; } = "AND";
+            public string DataType       { get; set; } = "string";
+            public string DefaultMethod  { get; set; } = "";
+            public string DefaultValue   { get; set; } = "";
+            public string Editor         { get; set; } = "text";
+            public string EditorOptions  { get; set; } = "";
+            public string Format         { get; set; } = "";
+            public bool   IsNvarChar     { get; set; } = false;
+            public bool   NewLine        { get; set; } = false;
+            public bool   RemoteMethod   { get; set; } = false;
+            public int    RowSpan        { get; set; } = 1;
+            public int    Span           { get; set; } = 3;
+            public string TableName      { get; set; } = "";
+            public int    Width          { get; set; } = 0;
+            public bool   Api            { get; set; } = false;
+            public string LovTitle       { get; set; } = "";
+            public string LovApi         { get; set; } = "";
+            public string LovColumns     { get; set; } = "";
+            public string LovFields      { get; set; } = "";
+            public string LovKeyValue    { get; set; } = "";
+            public string LovKeyDisplay  { get; set; } = "";
+            public string LovDisplayFormat { get; set; } = "";
         }
 
-        public string Id           { get; set; } = "";
+        private sealed class FormColumnDefinition
+        {
+            public string   FieldName        { get; set; } = "";
+            public string   Caption          { get; set; } = "";
+            public string   ColumnType       { get; set; } = "text";
+            public int      ColSpan          { get; set; } = 1;
+            public bool     AlwaysReadOnly   { get; set; } = false;
+            public bool     Required         { get; set; } = false;
+            public bool     IsPrimaryKey     { get; set; } = false;
+            public bool     Hidden           { get; set; } = false;
+            public string   DefaultValue     { get; set; } = "";
+            public string   Placeholder      { get; set; } = "";
+            public int?     MaxLength        { get; set; }
+            public decimal? Min              { get; set; }
+            public decimal? Max              { get; set; }
+            public string   Options          { get; set; } = "";
+            public string   OptionsApi       { get; set; } = "";
+            public string   LovTitle         { get; set; } = "";
+            public string   LovApi           { get; set; } = "";
+            public string   LovColumns       { get; set; } = "";
+            public string   LovFields        { get; set; } = "";
+            public string   LovKeyValue      { get; set; } = "";
+            public string   LovKeyDisplay    { get; set; } = "";
+            public string   LovDisplayFormat { get; set; } = "";
+        }
+
+        // 欄位解析結果
+        private record ColumnDef(
+            string Field,
+            string Title,
+            string Width,
+            string Align,
+            string EditorType,
+            string EditorOptions,
+            string FilterType);
+
+        // ─────────────────────────────────────────────
+        // CSS Class 常數（方便統一維護樣式）
+        // ─────────────────────────────────────────────
+
+        private const string CssInput      = "w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none";
+        private const string CssInputSm    = "w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none";
+        private const string CssThBase     = "px-3 py-2.5 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200";
+        private const string CssTdBase     = "px-3 py-2 text-sm text-slate-700 border-b border-slate-100 whitespace-nowrap";
+        private const string CssBtnPrimary = "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors";
+        private const string CssBtnSecondary = "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors";
+        private const string CssBtnIcon    = "p-1.5 rounded-md transition-colors";
+
+        // ─────────────────────────────────────────────
+        // TagHelper 屬性
+        // ─────────────────────────────────────────────
+
+        public string Id             { get; set; } = "";
+
         [HtmlAttributeName("api")]
-        public string Api          { get; set; } = "";
-        public string ApiUrl       { get; set; } = "";
-        public string RemoteName   { get; set; } = ""; // legacy mapping controller name
+        public string Api            { get; set; } = "";
+        public string ApiUrl         { get; set; } = "";
+        public string RemoteName     { get; set; } = "";
+
         [HtmlAttributeName("member-id")]
-        public string DataMember   { get; set; } = ""; // legacy mapping action name
+        public string DataMember     { get; set; } = "";
 
-        public string Columns      { get; set; } = "";
-        public int    PageSize     { get; set; } = 20;
-        public bool   Striped      { get; set; } = true;
+        public string Columns        { get; set; } = "";
+        public int    PageSize       { get; set; } = 20;
+        public bool   Striped        { get; set; } = true;
+        public bool   ShowRowNum     { get; set; } = false;
+        public bool   RowNumbers     { get; set; } = false;
+        public string OnRowClick     { get; set; } = "";
+        public string OnRowDblClick  { get; set; } = "";
+        public string ToolbarHtml    { get; set; } = "";
+        public string Class          { get; set; } = "";
+        public string ExtraClass     { get; set; } = "";
 
-        public bool   ShowRowNum   { get; set; } = false;
-        public bool   RowNumbers   { get; set; } = false;
-
-        public string OnRowClick   { get; set; } = "";
-        public string OnRowDblClick{ get; set; } = "";
-        public string ToolbarHtml  { get; set; } = "";
-        public string Class        { get; set; } = "";
-        public string ExtraClass   { get; set; } = "";
         [HtmlAttributeName("clean-style")]
-        public bool CleanStyle     { get; set; } = false;
-        public string EditMode     { get; set; } = "";
-
-        public string IdField      { get; set; } = "ROWID";
-        public string IDField      { get; set; } = "";
-
-        public bool   ShowFilter   { get; set; } = false;
-        public bool   QueryAutoColumn { get; set; } = false;
+        public bool CleanStyle       { get; set; } = false;
+        public string EditMode       { get; set; } = "";
+        public string IdField        { get; set; } = "ROWID";
+        public string IDField        { get; set; } = "";
+        public bool   ShowFilter     { get; set; } = false;
+        public bool   QueryAutoColumn    { get; set; } = false;
         public bool   TitleFilterEnabled { get; set; } = true;
-        public bool   AllowAdd     { get; set; } = true;
-        public bool   AllowDelete  { get; set; } = true;
-        public bool   AllowUpdate  { get; set; } = true;
-        public bool   AlwaysClose  { get; set; } = true;
-        public bool   NotInitGrid  { get; set; } = true;
-        public bool   AutoApply    { get; set; } = true;
-        public string Title        { get; set; } = "";
-        public string HelpLink     { get; set; } = "";
-        // Keep legacy typo property for backward compatibility.
-        public bool   ColumnsHibeable { get; set; } = false;
-        public bool   ColumnsHideable { get; set; } = false;
-        public bool   Pagination   { get; set; } = true;
-        public string PageList     { get; set; } = "10,20,50,100";
-        public string QueryMode    { get; set; } = "Panel";
-        public string QueryTitle   { get; set; } = "查詢條件";
-        public int    QueryLeft    { get; set; } = 0;
-        public int    QueryTop     { get; set; } = 0;
-        public string QueryColumns { get; set; } = "";
-        public bool   MultiSelect  { get; set; } = false;
-        public string EditDialogID { get; set; } = "";
-        public bool   TitleSortEnabled { get; set; } = false;
-        public string TitleSortField { get; set; } = "";
-        public string SortableColumns { get; set; } = "";
-        public bool   MultiSortEnabled { get; set; } = false;
-        public bool   BufferView   { get; set; } = false;
-        public bool   CheckOnSelect{ get; set; } = true;
-        public string CloudReportName{ get; set; } = "";
-        public string ReportFileName { get; set; } = "";
-        public bool   DuplicateCheck { get; set; } = false;
-        public bool   EditOnEnter  { get; set; } = false;
-        public string MultiSelectGridID{ get; set; } = "";
-        public string ParentObjectID { get; set; } = "";
-        public string RelationColumns{ get; set; } = "";
-        public bool   RecordLock   { get; set; } = false;
-        public string RecordLockMode { get; set; } = "";
-        // Keep legacy typo property for backward compatibility.
-        public string TotalCpation { get; set; } = "";
-        public string TotalCaption { get; set; } = "";
+        public bool   AllowAdd       { get; set; } = true;
+        public bool   AllowDelete    { get; set; } = true;
+        public bool   AllowUpdate    { get; set; } = true;
+        public bool   AlwaysClose    { get; set; } = true;
+        public bool   NotInitGrid    { get; set; } = true;
+        public bool   AutoApply      { get; set; } = true;
+        public string Title          { get; set; } = "";
+        public string HelpLink       { get; set; } = "";
+
+        // 保留向下相容的舊拼法屬性
+        public bool   ColumnsHibeable  { get; set; } = false;
+        public bool   ColumnsHideable  { get; set; } = false;
+
+        public bool   Pagination     { get; set; } = true;
+        public string PageList       { get; set; } = "10,20,50,100";
+        public string QueryMode      { get; set; } = "Panel";
+        public string QueryTitle     { get; set; } = "查詢條件";
+        public int    QueryLeft      { get; set; } = 0;
+        public int    QueryTop       { get; set; } = 0;
+        public string QueryColumns   { get; set; } = "";
+
+        [HtmlAttributeName("form-columns")]
+        public string FormColumns    { get; set; } = "";
+
+        public bool   MultiSelect    { get; set; } = false;
+        public string EditDialogID   { get; set; } = "";
+        public bool   TitleSortEnabled   { get; set; } = false;
+        public string TitleSortField     { get; set; } = "";
+        public string SortableColumns    { get; set; } = "";
+        public bool   MultiSortEnabled   { get; set; } = false;
+        public bool   BufferView         { get; set; } = false;
+        public bool   CheckOnSelect      { get; set; } = true;
+        public string CloudReportName    { get; set; } = "";
+        public string ReportFileName     { get; set; } = "";
+        public bool   DuplicateCheck     { get; set; } = false;
+        public bool   EditOnEnter        { get; set; } = false;
+        public string MultiSelectGridID  { get; set; } = "";
+        public string ParentObjectID     { get; set; } = "";
+        public string RelationColumns    { get; set; } = "";
+        public bool   RecordLock         { get; set; } = false;
+        public string RecordLockMode     { get; set; } = "";
+
+        // 保留向下相容的舊拼法屬性
+        public string TotalCpation   { get; set; } = "";
+        public string TotalCaption   { get; set; } = "";
+
         public bool   UpdateCommandVisible { get; set; } = true;
         public bool   DeleteCommandVisible { get; set; } = true;
         public bool   ViewCommandVisible   { get; set; } = true;
 
-        // --- JS callbacks (Alpine.js integration) ---
-        public string OnLoadSuccess{ get; set; } = ""; // callback after load success
-        public string OnSelect     { get; set; } = ""; // callback on row select
-        public string OnInsert     { get; set; } = ""; // callback before insert
-        public string OnInserted   { get; set; } = ""; // callback after insert
-        public string OnUpdate     { get; set; } = ""; // callback before update
-        public string OnUpdated    { get; set; } = ""; // callback after update
-        public string OnDelete     { get; set; } = ""; // callback before delete
-        public string OnDeleted    { get; set; } = ""; // callback after delete
-        public string OnDeleting   { get; set; } = ""; // callback while deleting
-        public string OnFilter     { get; set; } = ""; // callback on filter apply
-        public string OnView       { get; set; } = ""; // callback on view action
+        // JS 回呼
+        public string OnLoadSuccess { get; set; } = "";
+        public string OnSelect      { get; set; } = "";
+        public string OnInsert      { get; set; } = "";
+        public string OnInserted    { get; set; } = "";
+        public string OnUpdate      { get; set; } = "";
+        public string OnUpdated     { get; set; } = "";
+        public string OnDelete      { get; set; } = "";
+        public string OnDeleted     { get; set; } = "";
+        public string OnDeleting    { get; set; } = "";
+        public string OnFilter      { get; set; } = "";
+        public string OnView        { get; set; } = "";
+
+        // ─────────────────────────────────────────────
+        // 主要進入點
+        // ─────────────────────────────────────────────
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
-            var compId   = string.IsNullOrEmpty(Id) ? $"grid_{Guid.NewGuid():N}" : Id;
-            var fnName   = $"gDataGrid_{compId}";
-            var zebraClassExpr = Striped ? "(rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50')" : "''";
-            var rowCursor = (!string.IsNullOrEmpty(OnRowClick) || !string.IsNullOrEmpty(OnRowDblClick))
-                ? "cursor-pointer" : "";
-            var onRowClickExprJs = JsonSerializer.Serialize(OnRowClick ?? string.Empty);
-            var onRowDblExprJs = JsonSerializer.Serialize(OnRowDblClick ?? string.Empty);
-            var onSelectExprJs = JsonSerializer.Serialize(OnSelect ?? string.Empty);
+            // 解析並正規化所有輸入屬性
+            var cfg = new GridConfig(this);
 
-            // Parse columns
-            var cols = ParseColumns(Columns);
-            var sortableFieldSet = ParseSortableFields(SortableColumns, cols);
-            var sortableFields = cols
-                .Where(c => sortableFieldSet.Contains(c.Field))
-                .Select(c => c.Field)
-                .Distinct()
-                .ToList();
-            var defaultTitleSortField = !string.IsNullOrEmpty(TitleSortField)
-                ? TitleSortField
-                : (sortableFields.FirstOrDefault() ?? cols.FirstOrDefault().Field ?? "");
-            var thHtml = new System.Text.StringBuilder();
-            var filterHtml = new System.Text.StringBuilder();
-            var tdHtml = new System.Text.StringBuilder();
-
-            // Handle JQGrid Mappings
-            var actualApiUrl = !string.IsNullOrEmpty(ApiUrl) ? ApiUrl : Api;
-            if (string.IsNullOrEmpty(actualApiUrl) && !string.IsNullOrEmpty(RemoteName))
-            {
-                var tableParam = !string.IsNullOrEmpty(DataMember) ? $"?DataMember={DataMember}" : "";
-                actualApiUrl = $"/{RemoteName}/select{tableParam}".Replace("//", "/");
-            }
-            var actualShowRowNum = RowNumbers || ShowRowNum;
-            var actualShowFilter = QueryAutoColumn || ShowFilter;
-            var actualTitleFilterEnabled = actualShowFilter && TitleFilterEnabled;
-            var actualIdField = !string.IsNullOrEmpty(IDField) ? IDField : IdField;
-            var actualNotInitGrid = AlwaysClose || NotInitGrid;
-            _ = ColumnsHibeable || ColumnsHideable; // reserved option, not rendered yet
-            var actualTotalCaption = !string.IsNullOrEmpty(TotalCaption) ? TotalCaption : TotalCpation;
+            // 解析欄位定義
+            var cols        = ParseColumns(Columns);
             var queryColumns = ParseQueryColumns(QueryColumns);
-            var queryColumnsJson = JsonSerializer.Serialize(queryColumns, new JsonSerializerOptions
-            {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-            var queryPanelHtml = BuildQueryPanelHtml(queryColumns);
+            var formColumns  = ParseFormColumns(FormColumns);
+            var sortableFieldSet = ParseSortableFields(SortableColumns, cols);
 
-            // --- Option: Title ---
-            var titleHeaderHtml = "";
-            if (!string.IsNullOrEmpty(Title))
-            {
-                var helpIcon = !string.IsNullOrEmpty(HelpLink) ? $"<a href='{HelpLink}' target='_blank' class='text-slate-400 hover:text-blue-500 transition-colors' title='Help'><svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/></svg></a>" : "";
-                var titleSortButtons = TitleSortEnabled
-                    ? @"<div class='inline-flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden'>
-                            <button type='button' @click='setTitleSort(""asc"")' :class='(sortKey===titleSortField && sortDir===""asc"") ? ""text-blue-600 bg-slate-100"" : ""text-slate-500 bg-slate-100""' class='w-8 h-8 inline-flex items-center justify-center transition-colors' title='升冪'>
-                                <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 15l7-7 7 7'/></svg>
-                            </button>
-                            <button type='button' @click='setTitleSort(""desc"")' :class='(sortKey===titleSortField && sortDir===""desc"") ? ""text-blue-600 bg-slate-100"" : ""text-slate-500 bg-slate-100""' class='w-8 h-8 inline-flex items-center justify-center border-l border-slate-200 transition-colors' title='降冪'>
-                                <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/></svg>
-                            </button>
-                        </div>"
-                    : "";
-                titleHeaderHtml = $"<div class='px-4 py-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center'><h3 class='font-bold text-slate-700 text-sm flex items-center gap-2'><svg class='w-4 h-4 text-blue-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 10h16M4 14h16M4 18h16'/></svg>{Title}</h3><div class='flex items-center gap-2'>{titleSortButtons}{helpIcon}</div></div>";
-            }
+            // 建立各區塊 HTML
+            var theadHtml   = BuildTheadHtml(cfg, cols, sortableFieldSet);
+            var tbodyTdHtml = BuildTbodyTdHtml(cfg, cols);
+            var actionTdHtml = BuildActionColumnHtml(cfg);
 
-            if (actualShowRowNum)
-            {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 w-10 shrink-0"">#</th>");
-                if (actualShowFilter)
-                {
-                    filterHtml.Append(@"<th class=""px-3 py-2 bg-slate-100 border-b-2 border-slate-200""></th>");
-                }
-                tdHtml.Append(@"<td class=""px-3 py-2 text-center text-xs text-slate-400 border-b border-slate-100"" x-text=""(currentPage-1)*pageSize+rowIdx+1""></td>");
-            }
+            var queryPanelHtml       = BuildQueryPanelHtml(queryColumns);
+            var paginationHtml       = BuildPaginationHtml(cfg);
+            var titleHeaderHtml      = BuildTitleHeaderHtml(cfg, cols, sortableFieldSet);
+            var generatedFormDialog  = BuildGeneratedFormDialog(cfg.CompId, formColumns);
+            var alpineScript         = BuildAlpineScript(cfg, cols, queryColumns, formColumns, sortableFieldSet);
 
-            if (MultiSelect)
-            {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center bg-slate-100 border-b-2 border-slate-200 w-10 shrink-0""><input type=""checkbox"" @change=""toggleAll($event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer""></th>");
-                if (actualShowFilter)
-                {
-                    filterHtml.Append(@"<th class=""px-3 py-2 bg-slate-100 border-b-2 border-slate-200""></th>");
-                }
-                tdHtml.Append($@"<td class=""px-3 py-2 text-center border-b border-slate-100"" @click.stop><input type=""checkbox"" :value=""row['{actualIdField}']"" x-model=""selectedIds"" @change=""onSelectRow(row, $event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer""></td>");
-            }
-
-            foreach (var col in cols)
-            {
-                var wStyle  = string.IsNullOrEmpty(col.Width) ? "" : $"width:{col.Width}px;min-width:{col.Width}px;";
-                var thAlign = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
-                var tdAlign = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
-                var isSortable = sortableFieldSet.Contains(col.Field);
-                var sortableHeaderClass = isSortable ? "cursor-pointer bg-slate-100" : "cursor-default";
-                var filterIconBtn = actualTitleFilterEnabled
-                    ? $@"<button type=""button"" @click.stop=""openHeaderFilter('{col.Field}', $event)"" title=""欄位篩選""
-                               class=""ml-1 inline-flex items-center justify-center w-5 h-5 rounded bg-slate-100 text-blue-600 transition-colors"">
-                            <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><use href=""#icon-filter""></use></svg>
-                       </button>"
-                    : "";
-
-                var sortIconBtns = $@"
-                            <span x-show=""isSortableField('{col.Field}')"" class=""inline-flex items-center rounded border border-slate-200 bg-white overflow-hidden"">
-                                <button type=""button"" @click.stop=""setSort('{col.Field}', 'asc')"" title=""升冪""
-                                        :class=""isSorted('{col.Field}', 'asc') ? 'text-blue-600 bg-slate-100' : 'text-slate-400 bg-slate-100'""
-                                        class=""w-4 h-4 inline-flex items-center justify-center transition-colors"">
-                                    <svg class=""w-3 h-3"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
-                                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 15l7-7 7 7""/>
-                                    </svg>
-                                </button>
-                                <button type=""button"" @click.stop=""setSort('{col.Field}', 'desc')"" title=""降冪""
-                                        :class=""isSorted('{col.Field}', 'desc') ? 'text-blue-600 bg-slate-100' : 'text-slate-400 bg-slate-100'""
-                                        class=""w-4 h-4 inline-flex items-center justify-center border-l border-slate-200 transition-colors"">
-                                    <svg class=""w-3 h-3"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
-                                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M19 9l-7 7-7-7""/>
-                                    </svg>
-                                </button>
-                            </span>";
-
-                thHtml.Append($@"<th @dblclick=""toggleSort('{col.Field}')"" style=""{wStyle}""
-                        class=""px-3 py-2.5 {thAlign} text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 {sortableHeaderClass} transition-colors select-none whitespace-nowrap group"">
-                        <span class=""inline-flex items-center gap-1"">
-                            {col.Title}
-                            <span x-show=""multiSortEnabled && getSortOrder('{col.Field}') > 0""
-                                  x-text=""`#${{getSortOrder('{col.Field}')}}`""
-                                  class=""text-[10px] text-slate-600 font-semibold""></span>
-                            {sortIconBtns}
-                            {filterIconBtn}
-                        </span>
-                    </th>");
-                if (actualShowFilter)
-                {
-                    filterHtml.Append($@"<th class=""px-2 py-1.5 bg-slate-100 border-b border-slate-200"">");
-                    if (col.FilterType == "text")
-                    {
-                        filterHtml.Append($@"<input type=""text"" x-model=""filters['{col.Field}']"" @keydown.enter=""applyFilter()"" class=""w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                    }
-                    else if (col.FilterType == "select" && !string.IsNullOrEmpty(col.EditorOptions))
-                    {
-                        filterHtml.Append($@"<select x-model=""filters['{col.Field}']"" @change=""applyFilter()"" class=""w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                        filterHtml.Append(@"<option value=""""></option>");
-                        var opts = col.EditorOptions.Split(';');
-                        foreach (var opt in opts)
-                        {
-                            var kv = opt.Split('=');
-                            if (kv.Length == 2)
-                            {
-                                filterHtml.Append($@"<option value=""{kv[0]}"">{kv[1]}</option>");
-                            }
-                        }
-                        filterHtml.Append(@"</select>");
-                    }
-                    else if (col.FilterType == "lov")
-                    {
-                         filterHtml.Append($@"
-                         <div class=""relative flex items-center"">
-                             <input type=""text"" x-model=""filters['{col.Field}']"" @keydown.enter=""applyFilter()"" class=""w-full pl-2 pr-6 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">
-                             <button type=""button"" @click=""$dispatch('open-lov', '{col.Field}')"" class=""absolute right-1 text-slate-400 hover:text-blue-600"">
-                                 <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/></svg>
-                             </button>
-                         </div>");
-                    }
-                    filterHtml.Append("</th>");
-                }
-
-                // --- 3. Build table body cells (td) ---
-                tdHtml.Append($@"<td class=""px-3 py-2 {tdAlign} text-sm text-slate-700 border-b border-slate-100 whitespace-nowrap"">");
-
-                if (EditMode == "row" && (col.EditorType == "text" || col.EditorType == "select"))
-                {
-                    // View Mode
-                    tdHtml.Append($@"<span x-show=""editingId !== row['{actualIdField}']"" x-text=""row['{col.Field}'] ?? ''""></span>");
-
-                    // Edit Mode
-                    if (col.EditorType == "text")
-                    {
-                        tdHtml.Append($@"<input x-cloak x-show=""editingId === row['{actualIdField}']"" type=""text"" x-model=""editRowData['{col.Field}']"" class=""w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                    }
-                    else if (col.EditorType == "select" && !string.IsNullOrEmpty(col.EditorOptions))
-                    {
-                        tdHtml.Append($@"<select x-cloak x-show=""editingId === row['{actualIdField}']"" x-model=""editRowData['{col.Field}']"" class=""w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                         var opts = col.EditorOptions.Split(';');
-                        foreach (var opt in opts)
-                        {
-                            var kv = opt.Split('=');
-                            if (kv.Length == 2)
-                            {
-                                tdHtml.Append($@"<option value=""{kv[0]}"">{kv[1]}</option>");
-                            }
-                        }
-                        tdHtml.Append(@"</select>");
-                    }
-                }
-                else
-                {
-                     // Readonly Default
-                     tdHtml.Append($@"<span x-text=""row['{col.Field}'] ?? ''""></span>");
-                }
-
-                tdHtml.Append("</td>");
-            }
-            if (!string.IsNullOrEmpty(EditMode) && (AllowUpdate || AllowDelete || UpdateCommandVisible || DeleteCommandVisible || ViewCommandVisible))
-            {
-                thHtml.Append(@"<th class=""px-3 py-2.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b-2 border-slate-200 w-24 shrink-0 sticky right-0"">操作</th>");
-                if (actualShowFilter)
-                {
-                    filterHtml.Append(@"<th class=""px-3 py-2 bg-slate-100 border-b-2 border-slate-200 sticky right-0 text-center"">
-                        <button type=""button"" @click=""applyFilter()"" title=""套用欄位篩選""
-                                class=""inline-flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 text-blue-600 bg-slate-100 transition-colors"">
-                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><use href=""#icon-filter""></use></svg>
-                        </button>
-                    </th>");
-                }
-
-                tdHtml.Append($@"<td class=""px-3 py-2 text-center text-sm border-b border-slate-100 whitespace-nowrap sticky right-0 transition-colors"">
-                    <div class=""flex items-center justify-center gap-2"">");
-
-                var btnViewHtml = ViewCommandVisible ? $@"
-                                <button type=""button"" @click.stop=""onView(row)"" class=""p-1 text-slate-400 hover:text-blue-500 transition-colors"" title=""檢視"">
-                                    <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15 12a3 3 0 11-6 0 3 3 0 016 0""/><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z""/></svg>
-                                </button>" : "";
-
-                var btnUpdateHtml = (AllowUpdate && UpdateCommandVisible) ? $@"
-                                <button type=""button"" @click.stop=""console.log('[GDataGrid] edit button clicked', row); ('{EditMode}'==='row') ? startEdit(row) : editRow(row)"" class=""p-1 text-slate-400 hover:text-amber-500 transition-colors"" title=""編輯"">
-                                    <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z""/></svg>
-                                </button>" : "";
-
-                var btnDeleteHtml = (AllowDelete && DeleteCommandVisible) ? $@"
-                                <button type=""button"" @click.stop=""deleteRow(row)"" class=""p-1 text-slate-400 hover:text-red-500 transition-colors"" title=""刪除"">
-                                    <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16""/></svg>
-                                </button>" : "";
-
-                if (EditMode == "row")
-                {
-                    tdHtml.Append($@"
-                        <!-- View State Actions -->
-                        <template x-if=""editingId !== row['{actualIdField}']"">
-                            <div class=""flex gap-1"">{btnViewHtml}{btnUpdateHtml}{btnDeleteHtml}</div>
-                        </template>
-                        <!-- Edit State Actions -->
-                        <template x-if=""editingId === row['{actualIdField}']"">
-                            <div class=""flex gap-1"">
-                                <button type=""button"" @click.stop=""confirmSave()"" class=""p-1 text-slate-400 hover:text-emerald-500 transition-colors"" title=""儲存"">
-                                    <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/></svg>
-                                </button>
-                                <button type=""button"" @click.stop=""cancelEdit()"" class=""p-1 text-slate-400 hover:text-slate-600 transition-colors"" title=""取消"">
-                                    <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/></svg>
-                                </button>
-                            </div>
-                        </template>
-                    ");
-                }
-                else if (EditMode == "form")
-                {
-                    tdHtml.Append($@"<div class=""flex gap-1"">{btnViewHtml}{btnUpdateHtml}{btnDeleteHtml}</div>");
-                }
-                tdHtml.Append("</div></td>");
-            }
-
-            var theadHtml = new System.Text.StringBuilder();
-            theadHtml.Append($@"<tr>{thHtml}</tr>");
-            if (actualShowFilter)
-            {
-               theadHtml.Append($@"<tr class=""bg-slate-100"">{filterHtml}</tr>");
-            }
-
-            var paginationHtml = "";
-            if (Pagination)
-            {
-                var pageListOpts = new System.Text.StringBuilder();
-                if (!string.IsNullOrEmpty(PageList))
-                {
-                    foreach(var p in PageList.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        var pt = p.Trim();
-                        pageListOpts.Append($@"<option value=""{pt}"">{pt} 筆/頁</option>");
-                    }
-                }
-
-                paginationHtml = $@"
-                <!-- Pagination -->
-                <div class=""flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-100 border-t border-slate-200 text-sm shrink-0 select-none"">
-                    <div class=""flex items-center gap-2"">
-                        <select x-model=""pageSize"" @change=""currentPage=1""
-                                class=""pl-2 pr-6 py-1 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"">
-                            {pageListOpts}
-                        </select>
-                    </div>
-                    <div class=""flex items-center gap-1"">
-                        <span class=""text-xs text-slate-500 whitespace-nowrap pr-1"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-700"" x-text=""rows.length""></span> 筆</span>
-                        <button type=""button"" @click=""prevPage()"" :disabled=""currentPage<=1""
-                                :class=""currentPage<=1?'opacity-40 cursor-not-allowed':'bg-slate-100'""
-                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
-                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15 19l-7-7 7-7""/></svg>
-                        </button>
-                        <div class=""flex items-center gap-1.5 px-2"">
-                            <input type=""number"" min=""1"" :max=""totalPages"" :value=""currentPage""
-                                   @change=""jumpPage($event.target.value)""
-                                   class=""w-14 text-center text-xs border border-slate-300 rounded-lg py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"">
-                            <span class=""text-slate-400 text-xs"">/</span>
-                            <span x-text=""totalPages"" class=""text-xs font-bold text-slate-700""></span>
-                            <span class=""text-slate-400 text-xs"">頁</span>
-                        </div>
-                        <button type=""button"" @click=""nextPage()"" :disabled=""currentPage>=totalPages""
-                                :class=""currentPage>=totalPages?'opacity-40 cursor-not-allowed':'bg-slate-100'""
-                                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
-                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M9 5l7 7-7 7""/></svg>
-                        </button>
-                    </div>
-                </div>";
-            }
-
+            // 組合根元素
             output.TagName = "div";
-            output.Attributes.SetAttribute("id", compId);
-            var cleanStyleClass = CleanStyle ? "flex-1 border-0 rounded-none w-full shadow-none" : "";
-            var defaultClass = $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative min-h-0 w-full {cleanStyleClass}".Trim();
-            var finalClass = TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass);
-            output.Attributes.SetAttribute("class", finalClass);
-            output.Attributes.SetAttribute("x-data", $"{fnName}()");
+            output.Attributes.SetAttribute("id", cfg.CompId);
+
+            var cleanClass  = CleanStyle ? "flex-1 border-0 rounded-none w-full shadow-none" : "";
+            var defaultClass = $"bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative min-h-0 w-full {cleanClass}".Trim();
+            output.Attributes.SetAttribute("class", TagHelperClassResolver.Resolve(defaultClass, Class, ExtraClass));
+            output.Attributes.SetAttribute("x-data", $"gDataGrid_{cfg.CompId}()");
             output.Attributes.SetAttribute("x-init", "init()");
 
-	            output.Content.SetHtmlContent($@"
-                    {queryPanelHtml}
-	                <!-- Toolbar -->
-                <div class=""g-grid-toolbar flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-100 shrink-0 flex-wrap"">
-                    <div class=""flex items-center gap-2"">
-                        {ToolbarHtml}
-                        {((AllowAdd && !string.IsNullOrEmpty(EditMode)) ? $@"
-                        <button type=""button"" @click=""addRow()"" class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-white bg-slate-100 rounded-lg shadow-sm transition-colors font-medium"">
-                            <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 4v16m8-8H4""/></svg>
-                            新增
-                        </button>
-                        " : "")}
-                        <button type=""button"" @click=""fetchData()"" title=""重新載入""
-                                class=""flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 hover:text-blue-700 bg-slate-100 rounded-lg border border-slate-200 bg-white transition-colors font-medium"">
-                            <svg class=""w-3.5 h-3.5"" :class=""loading?'animate-spin':''"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
-                                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15""/>
-                            </svg>
-                            重整
-                        </button>
-                        
-                    </div>
-	                    {(!Pagination ? $@"<span class=""text-xs text-slate-400"">{(string.IsNullOrEmpty(actualTotalCaption) ? "共 " : actualTotalCaption)}<span class=""font-bold text-slate-600"" x-text=""rows.length""></span> 筆</span>" : "")}
-	                </div>
-                    {titleHeaderHtml}
-	                <div x-show=""headerFilter.open""
-	                     x-transition
-	                     @click.away=""cancelHeaderFilter()""
-                     class=""absolute z-40 bg-white border border-slate-200 rounded-xl shadow-xl w-64""
-                     :style=""`left:${{headerFilter.x}}px; top:${{headerFilter.y}}px;`""
-                     style=""display:none;"">
-                    <div class=""px-3 py-2 border-b border-slate-100 text-sm font-semibold text-slate-700 flex items-center justify-between"">
-                        <span x-text=""headerFilter.title || '篩選'""></span>
-                        <button type=""button"" @click=""cancelHeaderFilter()"" class=""p-1 text-slate-400 hover:text-slate-600"">
-                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/></svg>
-                        </button>
-                    </div>
-                    <template x-if=""headerFilter.mode !== 'datetime'"">
-                    <div class=""px-3 pt-2 pb-1.5 border-b border-slate-100"">
-                        <div class=""relative mb-2"">
-                            <input type=""text""
-                                   x-model=""headerFilter.search""
-                                   placeholder=""Search""
-                                   class=""w-full pl-8 pr-2 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">
-                            <svg class=""w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
-                                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/>
-                            </svg>
-                        </div>
-                        <label class=""inline-flex items-center gap-2 text-sm text-slate-700 cursor-pointer"">
-                            <input type=""checkbox"" :checked=""isHeaderFilterAllSelected()"" @change=""toggleHeaderFilterAll($event.target.checked)"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"">
-                            <span>Select All</span>
-                        </label>
-                    </div>
-                    </template>
-                    <template x-if=""headerFilter.mode === 'datetime'"">
-                    <div class=""px-3 py-2 border-b border-slate-100 space-y-2"">
-                        <div>
-                            <label class=""block text-xs text-slate-500 mb-1"">From</label>
-                            <input type=""datetime-local"" x-model=""headerFilter.dateFrom""
-                                   class=""w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">
-                        </div>
-                        <div>
-                            <label class=""block text-xs text-slate-500 mb-1"">To</label>
-                            <input type=""datetime-local"" x-model=""headerFilter.dateTo""
-                                   class=""w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">
-                        </div>
-                    </div>
-                    </template>
-                    <div x-show=""headerFilter.mode !== 'datetime'"" class=""max-h-64 overflow-auto px-3 py-2 space-y-1"">
-                        <template x-for=""opt in getHeaderFilterVisibleOptions()"" :key=""opt"">
-                            <label class=""flex items-center gap-2 text-sm text-slate-700 cursor-pointer"">
-                                <input type=""checkbox"" :value=""opt"" x-model=""headerFilter.selected"" class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"">
-                                <span x-text=""opt""></span>
-                            </label>
-                        </template>
-                    </div>
-                    <div class=""px-3 py-2 border-t border-slate-100 flex justify-end gap-2"">
-                        <button type=""button"" @click=""confirmHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md bg-slate-100 text-white bg-slate-100"">OK</button>
-                        <button type=""button"" @click=""cancelHeaderFilter()"" class=""px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 bg-slate-100"">Cancel</button>
-                    </div>
-                </div>
-                <!-- Table -->
-                <div class=""g-grid-body overflow-x-auto overflow-y-auto flex-1 min-h-0"" style=""min-height:120px; max-height: var(--g-grid-body-max-height, 52vh); scrollbar-gutter: stable both-edges;"">
-                    <div x-show=""loading"" class=""absolute inset-0 z-20 bg-white backdrop-blur-[1px] flex items-center justify-center text-blue-600 gap-2"">
-                        <svg class=""w-8 h-8 animate-spin"" fill=""none"" viewBox=""0 0 24 24"">
-                            <circle class=""opacity-25"" cx=""12"" cy=""12"" r=""10"" stroke=""currentColor"" stroke-width=""4""/>
-                            <path class=""opacity-75"" fill=""currentColor"" d=""M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z""/>
-                        </svg>
-                        <span class=""text-sm font-semibold shadow-sm"">載入中...</span>
-                    </div>
-                    <div x-show=""!loading && rows.length===0"" class=""flex flex-col items-center justify-center py-12 text-slate-400"">
-                        <svg class=""w-10 h-10 mb-2 text-slate-300"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
-                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""1.5"" d=""M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z""/>
-                        </svg>
-                        <p class=""text-sm"">目前無資料</p>
-                    </div>
-                    <table x-show=""rows.length>0"" class=""min-w-full border-collapse"">
-                        <thead class=""sticky top-0 z-10"">{theadHtml}</thead>
-                        <tbody>
-                            <template x-for=""(row, rowIdx) in pagedRows"" :key=""rowIdx"">
-                                <tr class=""group transition-colors {rowCursor}""
-                                    :class=""[{zebraClassExpr}, 'hover:bg-slate-100', selectedRow===row?'bg-slate-100 outline outline-1 outline-blue-400':'']""
-                                    @dblclick=""handleRowDblClick(row)""
-                                    @click=""handleRowClick(row)"">
-                                    {tdHtml}
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-                {paginationHtml}
-                <!-- Alpine Component Script -->
-                <script>
-                function {fnName}() {{
-                    return {{
-                        allRows    : [],
-                        rows       : [],
-                        loading    : false,
-                        sortKey    : '',
-                        sortDir    : 'asc',
-                        titleSortEnabled: {(TitleSortEnabled ? "true" : "false")},
-                        titleSortField: '{defaultTitleSortField}',
-                        multiSortEnabled: {(MultiSortEnabled ? "true" : "false")},
-                        sortableFields: [{string.Join(",", sortableFields.Select(f => $"'{f}'"))}],
-                        sortRules: [],
-	                        currentPage: 1,
-	                        pageSize   : {PageSize},
-	                        selectedRow: null,
-	                        currentParams: '',
-                        selectedIds: [], // selected ids for multi-select
-                        queryColumns: {queryColumnsJson},
-                        queryValues: {{}},
-                        queryPanelOpen: true,
-
-                        // Editor / Filter states
-                        editingId  : null,
-                        editRowData: {{}},
-                        filters    : {{}},
-                        columnFilters: {{}},
-                        dateTimeFilters: {{}},
-                        headerFilter: {{
-                            open: false,
-                            field: '',
-                            title: '',
-                            mode: 'list',
-                            options: [],
-                            selected: [],
-                            search: '',
-                            dateFrom: '',
-                            dateTo: '',
-                            x: 0,
-                            y: 0
-                        }},
-                        onRowClickExpr: {onRowClickExprJs},
-                        onRowDblExpr: {onRowDblExprJs},
-                        onSelectExpr: {onSelectExprJs},
-
-                        get sortedRows() {{
-                            const compare = (av, bv, dir) => {{
-                                if (av === null || av === undefined) av = '';
-                                if (bv === null || bv === undefined) bv = '';
-                                if (av === bv) return 0;
-                                return av < bv ? -dir : dir;
-                            }};
-                            if (this.multiSortEnabled && this.sortRules.length > 0) {{
-                                return [...this.rows].sort((a, b) => {{
-                                    for (const rule of this.sortRules) {{
-                                        const dir = rule.dir === 'asc' ? 1 : -1;
-                                        const r = compare(a?.[rule.key], b?.[rule.key], dir);
-                                        if (r !== 0) return r;
-                                    }}
-                                    return 0;
-                                }});
-                            }}
-                            if (!this.sortKey) return this.rows;
-                            const dir = this.sortDir === 'asc' ? 1 : -1;
-                            return [...this.rows].sort((a, b) => compare(a?.[this.sortKey], b?.[this.sortKey], dir));
-                        }},
-                        get totalPages()  {{ return Math.max(1, Math.ceil(this.sortedRows.length / this.pageSize)); }},
-                        get pagedRows()   {{
-                            const s = (this.currentPage - 1) * this.pageSize;
-                            return this.sortedRows.slice(s, s + Number(this.pageSize));
-                        }},
-
-	                        async init()     {{
-	                            this.$el.gDataGrid = this; // Expose API to DOM element
-                                this.initQueryColumns();
-	                            if (this.titleSortEnabled && this.titleSortField && !this.sortKey) {{
-	                                this.setSort(this.titleSortField, 'asc');
-	                            }}
-                            if ({(!actualNotInitGrid).ToString().ToLower()}) {{
-                                await this.fetchData();
-	                            }}
-	                        }},
-                            initQueryColumns() {{
-                                if (!Array.isArray(this.queryColumns) || this.queryColumns.length === 0) return;
-                                for (const col of this.queryColumns) {{
-                                    const key = col?.fieldName;
-                                    if (!key) continue;
-                                    const dv = col?.defaultValue ?? '';
-                                    this.queryValues[key] = dv;
-                                }}
-                            }},
-                            invokeQueryDefaultMethod(fieldName) {{
-                                const col = (this.queryColumns || []).find(x => x.fieldName === fieldName);
-                                if (!col || !col.defaultMethod) return;
-                                if (col.remoteMethod || col.api) return;
-                                const fnText = String(col.defaultMethod).trim();
-                                if (!fnText) return;
-                                try {{
-                                    if (fnText.includes('(')) {{
-                                        // Supports inline call expression.
-                                        (new Function(fnText))();
-                                    }} else if (typeof window[fnText] === 'function') {{
-                                        const ret = window[fnText](fieldName, this.queryValues[fieldName], this.queryValues);
-                                        if (ret !== undefined && ret !== null) this.queryValues[fieldName] = ret;
-                                    }}
-                                }} catch (e) {{
-                                    console.error('[GDataGrid] invokeQueryDefaultMethod error:', e);
-                                }}
-                            }},
-                            buildQueryParams() {{
-                                const params = {{}};
-                                for (const col of (this.queryColumns || [])) {{
-                                    const key = col?.fieldName;
-                                    if (!key) continue;
-                                    const raw = this.queryValues[key];
-                                    if (raw === null || raw === undefined || `${{raw}}`.trim() === '') continue;
-                                    params[key] = raw;
-                                    params[`${{key}}_condition`] = col.condition || '=';
-                                    params[`${{key}}_andOr`] = col.andOr || 'AND';
-                                    params[`${{key}}_dataType`] = col.dataType || 'string';
-                                }}
-                                return params;
-                            }},
-                            executeQuery() {{
-                                const queryParams = this.buildQueryParams();
-                                this.$dispatch('query', {{ filters: queryParams }});
-                                {(!string.IsNullOrEmpty(OnFilter) ? $"window['{OnFilter}'] && window['{OnFilter}'](queryParams);" : "")}
-                                this.fetchData(queryParams);
-                            }},
-                            toggleQueryPanel() {{
-                                this.queryPanelOpen = !this.queryPanelOpen;
-                            }},
-	                        onSelectRow(row, isChecked) {{
-	                            {(!string.IsNullOrEmpty(OnSelect) ? $"if (isChecked) window['{OnSelect}'] && window['{OnSelect}'](row);" : "")}
-	                        }},
-                        toggleAll(isChecked) {{
-                            if (isChecked) {{
-                                this.selectedIds = this.rows.map(r => r['{actualIdField}']);
-                            }} else {{
-                                this.selectedIds = [];
-                            }}
-                        }},
-                        async fetchData(queryParams = null) {{
-                            if (queryParams !== null) {{
-                                this.currentParams = typeof queryParams === 'object'
-                                    ? new URLSearchParams(queryParams).toString()
-                                    : queryParams;
-                            }}
-                            this.loading = true;
-                            // Reset selection/edit state on fetch
-                            this.cancelEdit();
-                            try {{
-                                const urlObj = new URL('{actualApiUrl}', window.location.origin);
-                                if (this.currentParams) {{
-                                    const params = new URLSearchParams(this.currentParams);
-                                    params.forEach((v, k) => urlObj.searchParams.append(k, v));
-                                }}
-                                const res  = await fetch(urlObj.toString());
-                                let json = null;
-                                try {{
-                                    json = await res.json();
-                                }} catch {{
-                                    json = {{ status: 'error', data: [] }};
-                                }}
-                                if (res.status === 401) {{ window.location.href = '/Account/Login'; return; }}
-                                if (!res.ok) {{
-                                    console.error('GDataGrid fetch http error:', res.status, json);
-                                    this.allRows = [];
-                                    this.rows = [];
-                                    this.applyColumnFilters(false);
-                                    this.currentPage = 1;
-                                    this.selectedRow = null;
-                                    return;
-                                }}
-                                const dataRows = Array.isArray(json?.data)
-                                    ? json.data
-                                    : (Array.isArray(json) ? json : []);
-                                this.allRows = dataRows;
-                                this.rows = [...dataRows];
-                                this.applyColumnFilters(false);
-                                this.currentPage = 1;
-                                this.selectedRow = null;
-                                {(!string.IsNullOrEmpty(OnLoadSuccess) ? $"window['{OnLoadSuccess}'] && window['{OnLoadSuccess}'](this.rows);" : "")}
-                            }} catch(e) {{ console.error('GDataGrid fetch error:', e); }}
-                            finally    {{ this.loading = false; }}
-                        }},
-
-                        // Filter actions
-	                        applyFilter() {{
-	                            // clean up empty string properties from filters object
-	                            const cleanFilters = Object.fromEntries(
-	                                Object.entries(this.filters).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
-	                            );
-                                const mergedParams = {{ ...this.buildQueryParams(), ...cleanFilters }};
-	                            this.$dispatch('query', {{ filters: mergedParams }});
-	                            {(!string.IsNullOrEmpty(OnFilter) ? $"window['{OnFilter}'] && window['{OnFilter}'](mergedParams);" : "")}
-	                            // If user doesn't catch the @query event to do a custom fetch,
-	                            // we do a default fetch with URLSearchParams.
-	                            const params = new URLSearchParams(mergedParams).toString();
-	                            this.fetchData(params);
-	                        }},
-                        openHeaderFilter(field, event) {{
-                            if (!{(actualTitleFilterEnabled ? "true" : "false")}) return;
-                            const titleNode = event?.currentTarget?.closest('th')?.querySelector('span');
-                            const values = [...new Set((this.allRows || [])
-                                .map(r => r?.[field])
-                                .filter(v => v !== null && v !== undefined && `${{v}}`.trim() !== '')
-                                .map(v => `${{v}}`))];
-                            values.sort((a, b) => a.localeCompare(b, 'zh-Hant'));
-
-                            const existing = this.columnFilters[field];
-                            this.headerFilter.field = field;
-                            this.headerFilter.title = titleNode?.textContent?.trim() || field;
-                            this.headerFilter.options = values;
-                            this.headerFilter.selected = existing ? [...existing] : [...values];
-                            this.headerFilter.search = '';
-                            this.headerFilter.mode = this.isDateTimeField(values) ? 'datetime' : 'list';
-                            const existingDate = this.dateTimeFilters[field] || {{}};
-                            this.headerFilter.dateFrom = this.toDateTimeLocal(existingDate.from);
-                            this.headerFilter.dateTo = this.toDateTimeLocal(existingDate.to);
-
-                            const rect = event?.currentTarget?.getBoundingClientRect();
-                            const hostRect = this.$el.getBoundingClientRect();
-                            const toolbarRect = this.$el.querySelector('.g-grid-toolbar')?.getBoundingClientRect();
-                            this.headerFilter.x = Math.max(8, (rect?.left || hostRect.left) - hostRect.left);
-                            this.headerFilter.y = Math.max(8, ((toolbarRect?.bottom || rect?.bottom || hostRect.top) - hostRect.top) + 6);
-                            this.headerFilter.open = true;
-                        }},
-                        isDateTimeField(values) {{
-                            if (!values || !values.length) return false;
-                            const sample = values.slice(0, Math.min(values.length, 6));
-                            const okCount = sample.filter(v => !Number.isNaN(Date.parse(v))).length;
-                            const hasTime = sample.some(v => /[T\s]\d{{2}}:\d{{2}}/.test(v));
-                            return okCount >= Math.ceil(sample.length * 0.8) && hasTime;
-                        }},
-                        toDateTimeLocal(v) {{
-                            if (!v) return '';
-                            const d = new Date(v);
-                            if (Number.isNaN(d.getTime())) return '';
-                            const pad = (n) => String(n).padStart(2, '0');
-                            return `${{d.getFullYear()}}-${{pad(d.getMonth()+1)}}-${{pad(d.getDate())}}T${{pad(d.getHours())}}:${{pad(d.getMinutes())}}`;
-                        }},
-                        isHeaderFilterAllSelected() {{
-                            const opts = this.getHeaderFilterVisibleOptions();
-                            if (!opts.length) return false;
-                            return opts.every(o => this.headerFilter.selected.includes(o));
-                        }},
-                        toggleHeaderFilterAll(checked) {{
-                            const opts = this.getHeaderFilterVisibleOptions();
-                            if (checked) {{
-                                const merged = new Set([...(this.headerFilter.selected || []), ...opts]);
-                                this.headerFilter.selected = [...merged];
-                            }} else {{
-                                this.headerFilter.selected = (this.headerFilter.selected || []).filter(v => !opts.includes(v));
-                            }}
-                        }},
-                        getHeaderFilterVisibleOptions() {{
-                            const q = (this.headerFilter.search || '').trim().toLowerCase();
-                            if (!q) return this.headerFilter.options;
-                            return this.headerFilter.options.filter(v => `${{v}}`.toLowerCase().includes(q));
-                        }},
-                        confirmHeaderFilter() {{
-                            const field = this.headerFilter.field;
-                            if (!field) return;
-
-                            if (this.headerFilter.mode === 'datetime') {{
-                                const from = this.headerFilter.dateFrom || '';
-                                const to = this.headerFilter.dateTo || '';
-                                if (!from && !to) {{
-                                    delete this.dateTimeFilters[field];
-                                }} else {{
-                                    this.dateTimeFilters[field] = {{
-                                        from: from ? new Date(from).toISOString() : '',
-                                        to: to ? new Date(to).toISOString() : ''
-                                    }};
-                                }}
-                            }} else {{
-                                const selected = [...this.headerFilter.selected];
-                                if (!selected.length || selected.length === this.headerFilter.options.length) {{
-                                    delete this.columnFilters[field];
-                                }} else {{
-                                    this.columnFilters[field] = selected;
-                                }}
-                                delete this.dateTimeFilters[field];
-                            }}
-
-                            this.applyColumnFilters(true);
-                            this.headerFilter.open = false;
-                        }},
-                        cancelHeaderFilter() {{
-                            this.headerFilter.open = false;
-                        }},
-                        applyColumnFilters(emitEvent) {{
-                            const fields = Object.keys(this.columnFilters);
-                            const dateFields = Object.keys(this.dateTimeFilters);
-                            if (!fields.length && !dateFields.length) {{
-                                this.rows = [...this.allRows];
-                            }} else {{
-                                this.rows = (this.allRows || []).filter(row => {{
-                                    const passList = fields.every(f => this.columnFilters[f].includes(`${{row?.[f] ?? ''}}`));
-                                    if (!passList) return false;
-
-                                    const passDate = dateFields.every(f => {{
-                                        const rule = this.dateTimeFilters[f] || {{}};
-                                        const raw = row?.[f];
-                                        if (!raw) return false;
-                                        const val = new Date(raw).getTime();
-                                        if (Number.isNaN(val)) return false;
-                                        const from = rule.from ? new Date(rule.from).getTime() : null;
-                                        const to = rule.to ? new Date(rule.to).getTime() : null;
-                                        if (from !== null && val < from) return false;
-                                        if (to !== null && val > to) return false;
-                                        return true;
-                                    }});
-                                    return passDate;
-                                }});
-                            }}
-                            this.currentPage = 1;
-                            this.selectedRow = null;
-                            if (emitEvent) {{
-                                const summaryList = Object.fromEntries(
-                                    Object.entries(this.columnFilters).map(([k, v]) => [k, v.join(',')])
-                                );
-                                const summaryDate = Object.fromEntries(
-                                    Object.entries(this.dateTimeFilters).flatMap(([k, v]) => [
-                                        [`${{k}}_from`, v.from || ''],
-                                        [`${{k}}_to`, v.to || '']
-                                    ])
-                                );
-                                const summary = {{ ...summaryList, ...summaryDate }};
-                                this.$dispatch('query', {{ filters: summary }});
-                                {(!string.IsNullOrEmpty(OnFilter) ? $"window['{OnFilter}'] && window['{OnFilter}'](summary);" : "")}
-                            }}
-                        }},
-
-                        // Edit Actions
-                        addRow() {{
-                            {(!string.IsNullOrEmpty(OnInsert) ? $"window['{OnInsert}'] && window['{OnInsert}']();" : "")}
-                            this.$dispatch('add');
-                        }},
-                        editRow(row) {{
-                            console.log('[GDataGrid] editRow()', row);
-                            {(!string.IsNullOrEmpty(OnUpdate) ? $"window['{OnUpdate}'] && window['{OnUpdate}'](row);" : "")}
-                            this.$dispatch('edit', {{row: row}});
-                        }},
-                        onView(row) {{
-                            console.log('[GDataGrid] onView()', row);
-                            {(!string.IsNullOrEmpty(OnView) ? $"window['{OnView}'] && window['{OnView}'](row);" : "")}
-                            this.$dispatch('view', {{row: row}});
-                        }},
-                        async deleteRow(row) {{
-                            {(!string.IsNullOrEmpty(OnDeleting) ? $"if (window['{OnDeleting}']) {{ if(window['{OnDeleting}'](row) === false) return; }}" : "")}
-
-                            // MVC CRUD Auto Apply Delete
-                            if ('{AutoApply}'.toLowerCase() === 'true' && '{RemoteName}') {{
-                                const tableParam = '{DataMember}' ? '?DataMember={DataMember}' : '';
-                                const url = `/{RemoteName}/delete${{tableParam}}`.replace('//', '/');
-                                try {{
-                                    const res = await fetch(url, {{
-                                        method: 'POST',
-                                        headers: {{ 'Content-Type': 'application/json' }},
-                                        body: JSON.stringify(row)
-                                    }});
-                                    if(res.ok) this.fetchData();
-                                }} catch(e) {{ console.error('Delete auto-apply failed:', e); }}
-                            }}
-
-                            {(!string.IsNullOrEmpty(OnDelete) ? $"if (window['{OnDelete}']) window['{OnDelete}'](row);" : "")}
-                            this.$dispatch('delete', {{row: row}});
-                        }},
-
-                        startEdit(row) {{
-                            console.log('[GDataGrid] startEdit()', row);
-                            this.editingId = row['{actualIdField}'];
-                            this.editRowData = JSON.parse(JSON.stringify(row));
-                        }},
-                        cancelEdit() {{
-                            this.editingId = null;
-                            this.editRowData = {{}};
-                        }},
-                        async confirmSave() {{
-                            if(!this.editingId) return;
-                            if ('{AutoApply}'.toLowerCase() === 'true' && '{RemoteName}') {{
-                                const action = 'update'; // use update path for inline row save
-                                const tableParam = '{DataMember}' ? '?DataMember={DataMember}' : '';
-                                const url = `/{RemoteName}/${{action}}${{tableParam}}`.replace('//', '/');
-                                try {{
-                                    const res = await fetch(url, {{
-                                        method: 'POST',
-                                        headers: {{ 'Content-Type': 'application/json' }},
-                                        body: JSON.stringify(this.editRowData)
-                                    }});
-                                    if(res.ok) this.fetchData();
-                                }} catch(e) {{ console.error('Update auto-apply failed:', e); }}
-                            }}
-
-                            this.$dispatch('save', {{
-                                row: this.editRowData,
-                                callback: (success) => {{
-                                    if(success) this.cancelEdit();
-                                }}
-                            }});
-                        }},
-
-                        toggleSort(key) {{
-                            if (!this.isSortableField(key)) return;
-                            if (this.multiSortEnabled) {{
-                                const existing = this.getSortRule(key);
-                                const nextDir = existing?.dir === 'asc' ? 'desc' : 'asc';
-                                this.setSort(key, nextDir);
-                                return;
-                            }}
-                            if (this.sortKey === key) this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-                            else {{ this.sortKey = key; this.sortDir = 'asc'; }}
-                            if (this.titleSortEnabled) this.titleSortField = key;
-                        }},
-                        isSortableField(key) {{
-                            return !this.sortableFields?.length || this.sortableFields.includes(key);
-                        }},
-                        getSortRule(key) {{
-                            return (this.sortRules || []).find(r => r.key === key);
-                        }},
-                        getSortOrder(key) {{
-                            const idx = (this.sortRules || []).findIndex(r => r.key === key);
-                            return idx < 0 ? 0 : idx + 1;
-                        }},
-                        isSorted(key, dir) {{
-                            if (this.multiSortEnabled) {{
-                                const r = this.getSortRule(key);
-                                return !!r && r.dir === dir;
-                            }}
-                            return this.sortKey === key && this.sortDir === dir;
-                        }},
-                        setSort(key, dir) {{
-                            if (!this.isSortableField(key)) return;
-                            if (this.multiSortEnabled) {{
-                                const rules = [...(this.sortRules || [])];
-                                const idx = rules.findIndex(r => r.key === key);
-                                if (idx >= 0) {{
-                                    rules[idx] = {{ key, dir: (dir === 'desc') ? 'desc' : 'asc' }};
-                                }} else {{
-                                    rules.push({{ key, dir: (dir === 'desc') ? 'desc' : 'asc' }});
-                                }}
-                                this.sortRules = rules;
-                            }}
-                            this.sortKey = key;
-                            this.sortDir = (dir === 'desc') ? 'desc' : 'asc';
-                            if (this.titleSortEnabled) this.titleSortField = key;
-                        }},
-                        setTitleSort(dir) {{
-                            if (!this.titleSortEnabled) return;
-                            const key = this.titleSortField || this.sortKey;
-                            if (!key) return;
-                            this.setSort(key, dir);
-                        }},
-                        prevPage() {{ if (this.currentPage > 1) this.currentPage--; }},
-                        nextPage() {{ if (this.currentPage < this.totalPages) this.currentPage++; }},
-                        jumpPage(v) {{
-                            const p = parseInt(v);
-                            if (!isNaN(p)) this.currentPage = Math.min(Math.max(1, p), this.totalPages);
-                        }},
-                        getSelectedRow() {{ return this.selectedRow; }},
-                        refresh() {{ this.fetchData(); }}
-                        ,
-                        invokeExpression(expr, row) {{
-                            const e = (expr || '').trim();
-                            if (!e) return;
-                            try {{
-                                if (typeof window[e] === 'function') {{
-                                    window[e](row);
-                                    return;
-                                }}
-                                (new Function('row', `return (${{e}})(row);`))(row);
-                            }} catch (err) {{
-                                console.error('[GDataGrid] invokeExpression error:', err, e);
-                            }}
-                        }},
-                        invokeOnSelect(row) {{
-                            this.invokeExpression(this.onSelectExpr, row);
-                        }},
-                        handleRowClick(row) {{
-                            this.selectedRow = row;
-                            this.invokeExpression(this.onRowClickExpr, row);
-                            this.invokeOnSelect(row);
-                        }},
-                        handleRowDblClick(row) {{
-                            this.selectedRow = row;
-                            this.invokeExpression(this.onRowDblExpr, row);
-                            this.invokeOnSelect(row);
-                        }}
-                    }};
-                }}
-                </script>
-            ");
+            output.Content.SetHtmlContent(
+                BuildRootHtml(cfg, theadHtml, tbodyTdHtml, actionTdHtml,
+                              queryPanelHtml, paginationHtml, titleHeaderHtml,
+                              generatedFormDialog, alpineScript));
         }
 
-        private static HashSet<string> ParseSortableFields(
-            string sortableColumns,
-            List<(string Field, string Title, string Width, string Align, string EditorType, string EditorOptions, string FilterType)> cols)
+        // ─────────────────────────────────────────────
+        // 設定物件（整合 Process 內的派生值）
+        // ─────────────────────────────────────────────
+
+        /// <summary>
+        /// 將 TagHelper 屬性正規化並整合為單一設定物件，避免 Process 內到處散落的 actual* 變數。
+        /// </summary>
+        private sealed class GridConfig
         {
-            if (string.IsNullOrWhiteSpace(sortableColumns))
+            public string CompId             { get; }
+            public string FnName             { get; }
+            public string ActualApiUrl       { get; }
+            public string ActualIdField      { get; }
+            public string ActualTotalCaption { get; }
+            public bool   ActualShowRowNum   { get; }
+            public bool   ActualShowFilter   { get; }
+            public bool   ActualTitleFilter  { get; }
+            public bool   ActualNotInitGrid  { get; }
+            public string ZebraClassExpr     { get; }
+            public string RowCursorClass     { get; }
+            public string DefaultTitleSortField { get; }
+
+            // 直接引用原始屬性（唯讀）
+            public GDataGridTagHelper H { get; }
+
+            public GridConfig(GDataGridTagHelper h)
             {
-                return cols
-                    .Select(c => c.Field)
-                    .Where(f => !string.IsNullOrWhiteSpace(f))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                H = h;
+                CompId  = string.IsNullOrEmpty(h.Id) ? $"grid_{Guid.NewGuid():N}" : h.Id;
+                FnName  = $"gDataGrid_{CompId}";
+
+                // API URL 優先順序：ApiUrl → Api → RemoteName 自動組合
+                ActualApiUrl = !string.IsNullOrEmpty(h.ApiUrl)   ? h.ApiUrl
+                             : !string.IsNullOrEmpty(h.Api)      ? h.Api
+                             : !string.IsNullOrEmpty(h.RemoteName)
+                               ? $"/{h.RemoteName}/select{(string.IsNullOrEmpty(h.DataMember) ? "" : $"?DataMember={h.DataMember}")}".Replace("//", "/")
+                             : "";
+
+                ActualIdField      = !string.IsNullOrEmpty(h.IDField) ? h.IDField : h.IdField;
+                ActualTotalCaption = !string.IsNullOrEmpty(h.TotalCaption) ? h.TotalCaption : h.TotalCpation;
+                ActualShowRowNum   = h.RowNumbers || h.ShowRowNum;
+                ActualShowFilter   = h.QueryAutoColumn || h.ShowFilter;
+                ActualTitleFilter  = ActualShowFilter && h.TitleFilterEnabled;
+                ActualNotInitGrid  = h.AlwaysClose || h.NotInitGrid;
+                ZebraClassExpr     = h.Striped ? "(rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50')" : "''";
+                RowCursorClass     = (!string.IsNullOrEmpty(h.OnRowClick) || !string.IsNullOrEmpty(h.OnRowDblClick))
+                                     ? "cursor-pointer" : "";
+
+                var cols = GDataGridTagHelper.ParseColumns(h.Columns);
+                var sortable = GDataGridTagHelper.ParseSortableFields(h.SortableColumns, cols);
+                var sortableList = cols.Where(c => sortable.Contains(c.Field)).Select(c => c.Field).Distinct().ToList();
+                DefaultTitleSortField = !string.IsNullOrEmpty(h.TitleSortField)
+                    ? h.TitleSortField
+                    : (sortableList.FirstOrDefault() ?? cols.FirstOrDefault()?.Field ?? "");
             }
 
-            return sortableColumns
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(f => !string.IsNullOrWhiteSpace(f))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            public bool HasEditActions =>
+                !string.IsNullOrEmpty(H.EditMode) &&
+                (H.AllowUpdate || H.AllowDelete || H.UpdateCommandVisible || H.DeleteCommandVisible || H.ViewCommandVisible);
         }
 
-        private static List<QueryColumnDefinition> ParseQueryColumns(string raw)
-        {
-            var result = new List<QueryColumnDefinition>();
-            if (string.IsNullOrWhiteSpace(raw)) return result;
+        // ─────────────────────────────────────────────
+        // HTML 建構方法
+        // ─────────────────────────────────────────────
 
-            try
+        private static string BuildRootHtml(
+            GridConfig cfg,
+            string theadHtml, string tbodyTdHtml, string actionTdHtml,
+            string queryPanelHtml, string paginationHtml, string titleHeaderHtml,
+            string generatedFormDialog, string alpineScript)
+        {
+            var h = cfg.H;
+            var addButton = (h.AllowAdd && !string.IsNullOrEmpty(h.EditMode))
+                ? $@"<button type=""button"" @click=""addRow()""
+                          class=""{CssBtnSecondary}"">
+                        <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 4v16m8-8H4""/>
+                        </svg>
+                        新增
+                    </button>"
+                : "";
+
+            var totalBadge = !h.Pagination
+                ? $@"<span class=""text-xs text-slate-400"">
+                        {(string.IsNullOrEmpty(cfg.ActualTotalCaption) ? "共 " : cfg.ActualTotalCaption)}
+                        <span class=""font-bold text-slate-600"" x-text=""rows.length""></span> 筆
+                     </span>"
+                : "";
+
+            return $@"
+{queryPanelHtml}
+
+<!-- 工具列 -->
+<div class=""g-grid-toolbar flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-100 shrink-0 flex-wrap"">
+    <div class=""flex items-center gap-2"">
+        {h.ToolbarHtml}
+        {addButton}
+        <button type=""button"" @click=""fetchData()"" title=""重新載入""
+                class=""{CssBtnSecondary}"">
+            <svg class=""w-3.5 h-3.5"" :class=""loading ? 'animate-spin' : ''"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                      d=""M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15""/>
+            </svg>
+            重整
+        </button>
+    </div>
+    {totalBadge}
+</div>
+
+{titleHeaderHtml}
+
+<!-- Header Filter 彈窗 -->
+{BuildHeaderFilterPopupHtml(cfg)}
+
+<!-- 資料表格 -->
+<div class=""g-grid-body overflow-x-auto overflow-y-auto flex-1 min-h-0""
+     style=""min-height:120px; max-height: var(--g-grid-body-max-height, 52vh); scrollbar-gutter: stable both-edges;"">
+
+    <!-- Loading 狀態 -->
+    <div x-show=""loading""
+         class=""absolute inset-0 z-20 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2 text-blue-600"">
+        <svg class=""w-8 h-8 animate-spin"" fill=""none"" viewBox=""0 0 24 24"">
+            <circle class=""opacity-25"" cx=""12"" cy=""12"" r=""10"" stroke=""currentColor"" stroke-width=""4""/>
+            <path class=""opacity-75"" fill=""currentColor"" d=""M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z""/>
+        </svg>
+        <span class=""text-sm font-semibold tracking-wide"">載入中…</span>
+    </div>
+
+    <!-- 空資料狀態 -->
+    <div x-show=""!loading && rows.length === 0""
+         class=""flex flex-col items-center justify-center py-16 text-slate-400 gap-2"">
+        <svg class=""w-12 h-12 text-slate-200"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""1.5""
+                  d=""M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z""/>
+        </svg>
+        <p class=""text-sm font-medium"">目前無資料</p>
+        <p class=""text-xs text-slate-300"">請嘗試調整查詢條件</p>
+    </div>
+
+    <!-- 表格本體 -->
+    <table x-show=""rows.length > 0"" class=""min-w-full border-collapse"">
+        <thead class=""sticky top-0 z-10"">
+            {theadHtml}
+        </thead>
+        <tbody>
+            <template x-for=""(row, rowIdx) in pagedRows"" :key=""rowIdx"">
+                <tr class=""group transition-colors {cfg.RowCursorClass}""
+                    :class=""[{cfg.ZebraClassExpr}, 'hover:bg-blue-50', selectedRow === row ? 'bg-blue-50 outline outline-1 outline-blue-400' : '']""
+                    @dblclick=""handleRowDblClick(row)""
+                    @click=""handleRowClick(row)"">
+                    {tbodyTdHtml}
+                    {actionTdHtml}
+                </tr>
+            </template>
+        </tbody>
+    </table>
+</div>
+
+{paginationHtml}
+{generatedFormDialog}
+{alpineScript}";
+        }
+
+        /// <summary>建構表頭 HTML（含篩選列）</summary>
+        private static string BuildTheadHtml(GridConfig cfg, List<ColumnDef> cols, HashSet<string> sortableFieldSet)
+        {
+            var thHtml     = new StringBuilder();
+            var filterHtml = new StringBuilder();
+
+            // 行號欄
+            if (cfg.ActualShowRowNum)
             {
-                var list = JsonSerializer.Deserialize<List<QueryColumnDefinition>>(raw, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-                if (list != null) result.AddRange(list);
+                thHtml.Append($@"<th class=""{CssThBase} text-center w-10 shrink-0"">#</th>");
+                if (cfg.ActualShowFilter)
+                    filterHtml.Append($@"<th class=""{CssThBase}""></th>");
             }
-            catch
+
+            // 多選欄
+            if (cfg.H.MultiSelect)
             {
-                try
+                thHtml.Append($@"<th class=""{CssThBase} text-center w-10 shrink-0"">
+                    <input type=""checkbox"" @change=""toggleAll($event.target.checked)""
+                           class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"">
+                </th>");
+                if (cfg.ActualShowFilter)
+                    filterHtml.Append($@"<th class=""{CssThBase}""></th>");
+            }
+
+            // 資料欄
+            foreach (var col in cols)
+            {
+                thHtml.Append(BuildColumnHeader(cfg, col, sortableFieldSet));
+                if (cfg.ActualShowFilter)
+                    filterHtml.Append(BuildColumnFilter(cfg, col));
+            }
+
+            // 操作欄標頭
+            if (cfg.HasEditActions)
+            {
+                thHtml.Append($@"<th class=""{CssThBase} text-center w-24 shrink-0 sticky right-0"">操作</th>");
+                if (cfg.ActualShowFilter)
                 {
-                    var one = JsonSerializer.Deserialize<QueryColumnDefinition>(raw, new JsonSerializerOptions
+                    filterHtml.Append($@"<th class=""{CssThBase} sticky right-0 text-center"">
+                        <button type=""button"" @click=""applyFilter()"" title=""套用欄位篩選""
+                                class=""inline-flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 text-blue-600 bg-white transition-colors hover:bg-blue-50"">
+                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                                <use href=""#icon-filter""></use>
+                            </svg>
+                        </button>
+                    </th>");
+                }
+            }
+
+            var sb = new StringBuilder();
+            sb.Append($"<tr>{thHtml}</tr>");
+            if (cfg.ActualShowFilter)
+                sb.Append($@"<tr class=""bg-slate-100"">{filterHtml}</tr>");
+
+            return sb.ToString();
+        }
+
+        /// <summary>建構單一欄位的表頭 th</summary>
+        private static string BuildColumnHeader(GridConfig cfg, ColumnDef col, HashSet<string> sortableFieldSet)
+        {
+            var wStyle    = string.IsNullOrEmpty(col.Width) ? "" : $"width:{col.Width}px;min-width:{col.Width}px;";
+            var thAlign   = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
+            var isSortable = sortableFieldSet.Contains(col.Field);
+
+            var filterIconBtn = cfg.ActualTitleFilter
+                ? $@"<button type=""button"" @click.stop=""openHeaderFilter('{col.Field}', $event)"" title=""欄位篩選""
+                           class=""ml-1 inline-flex items-center justify-center w-5 h-5 rounded bg-slate-200 text-blue-600 hover:bg-blue-100 transition-colors"">
+                        <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                            <use href=""#icon-filter""></use>
+                        </svg>
+                    </button>"
+                : "";
+
+            var sortIconBtns = $@"
+                <span x-show=""isSortableField('{col.Field}')"" class=""inline-flex items-center rounded border border-slate-200 bg-white overflow-hidden"">
+                    <button type=""button"" @click.stop=""setSort('{col.Field}', 'asc')"" title=""升冪""
+                            :class=""isSorted('{col.Field}', 'asc') ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-600'""
+                            class=""w-4 h-4 inline-flex items-center justify-center transition-colors"">
+                        <svg class=""w-3 h-3"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 15l7-7 7 7""/>
+                        </svg>
+                    </button>
+                    <button type=""button"" @click.stop=""setSort('{col.Field}', 'desc')"" title=""降冪""
+                            :class=""isSorted('{col.Field}', 'desc') ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-600'""
+                            class=""w-4 h-4 inline-flex items-center justify-center border-l border-slate-200 transition-colors"">
+                        <svg class=""w-3 h-3"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M19 9l-7 7-7-7""/>
+                        </svg>
+                    </button>
+                </span>";
+
+            var sortableClass = isSortable ? "cursor-pointer" : "cursor-default";
+
+            return $@"<th @dblclick=""toggleSort('{col.Field}')"" style=""{wStyle}""
+                    class=""{CssThBase} {thAlign} {sortableClass} transition-colors select-none whitespace-nowrap group"">
+                <span class=""inline-flex items-center gap-1"">
+                    {col.Title}
+                    <span x-show=""multiSortEnabled && getSortOrder('{col.Field}') > 0""
+                          x-text=""`#${{getSortOrder('{col.Field}')}}`""
+                          class=""text-[10px] text-slate-600 font-semibold""></span>
+                    {sortIconBtns}
+                    {filterIconBtn}
+                </span>
+            </th>";
+        }
+
+        /// <summary>建構單一欄位的篩選欄 th</summary>
+        private static string BuildColumnFilter(GridConfig cfg, ColumnDef col)
+        {
+            var sb = new StringBuilder();
+            sb.Append($@"<th class=""px-2 py-1.5 bg-slate-100 border-b border-slate-200"">");
+
+            switch (col.FilterType)
+            {
+                case "text":
+                    sb.Append($@"<input type=""text"" x-model=""filters['{col.Field}']""
+                               @keydown.enter=""applyFilter()""
+                               class=""{CssInputSm}"">");
+                    break;
+
+                case "select" when !string.IsNullOrEmpty(col.EditorOptions):
+                    sb.Append($@"<select x-model=""filters['{col.Field}']"" @change=""applyFilter()""
+                               class=""{CssInputSm}"">
+                               <option value=""""></option>");
+                    foreach (var opt in col.EditorOptions.Split(';'))
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    if (one != null) result.Add(one);
-                }
-                catch
+                        var kv = opt.Split('=');
+                        if (kv.Length == 2)
+                            sb.Append($@"<option value=""{kv[0]}"">{kv[1]}</option>");
+                    }
+                    sb.Append("</select>");
+                    break;
+
+                case "lov":
+                    sb.Append($@"<div class=""relative flex items-center"">
+                        <input type=""text"" x-model=""filters['{col.Field}']""
+                               @keydown.enter=""applyFilter()""
+                               class=""w-full pl-2 pr-7 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">
+                        <button type=""button"" @click=""$dispatch('open-lov', '{col.Field}')""
+                                class=""absolute right-1.5 text-slate-400 hover:text-blue-600 transition-colors"">
+                            <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                                      d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/>
+                            </svg>
+                        </button>
+                    </div>");
+                    break;
+            }
+
+            sb.Append("</th>");
+            return sb.ToString();
+        }
+
+        /// <summary>建構 tbody 的資料欄 td（不含操作欄）</summary>
+        private static string BuildTbodyTdHtml(GridConfig cfg, List<ColumnDef> cols)
+        {
+            var sb = new StringBuilder();
+
+            // 行號
+            if (cfg.ActualShowRowNum)
+                sb.Append($@"<td class=""{CssTdBase} text-center text-xs text-slate-400""
+                              x-text=""(currentPage-1)*pageSize+rowIdx+1""></td>");
+
+            // 多選
+            if (cfg.H.MultiSelect)
+                sb.Append($@"<td class=""{CssTdBase} text-center"" @click.stop>
+                    <input type=""checkbox"" :value=""row['{cfg.ActualIdField}']"" x-model=""selectedIds""
+                           @change=""onSelectRow(row, $event.target.checked)""
+                           class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"">
+                </td>");
+
+            // 資料欄
+            foreach (var col in cols)
+            {
+                var tdAlign = col.Align is "center" or "right" ? $"text-{col.Align}" : "text-left";
+                sb.Append($@"<td class=""{CssTdBase} {tdAlign}"">");
+                sb.Append(BuildCellContent(cfg, col));
+                sb.Append("</td>");
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>建構單一格內容（唯讀 / 行內編輯）</summary>
+        private static string BuildCellContent(GridConfig cfg, ColumnDef col)
+        {
+            if (cfg.H.EditMode != "row" || col.EditorType is not ("text" or "select"))
+                return $@"<span x-text=""row['{col.Field}'] ?? ''""></span>";
+
+            var sb = new StringBuilder();
+            // 唯讀模式
+            sb.Append($@"<span x-show=""editingId !== row['{cfg.ActualIdField}']""
+                              x-text=""row['{col.Field}'] ?? ''""></span>");
+
+            // 編輯模式
+            if (col.EditorType == "text")
+            {
+                sb.Append($@"<input x-cloak x-show=""editingId === row['{cfg.ActualIdField}']""
+                                  type=""text"" x-model=""editRowData['{col.Field}']""
+                                  class=""{CssInputSm}"">");
+            }
+            else if (col.EditorType == "select" && !string.IsNullOrEmpty(col.EditorOptions))
+            {
+                sb.Append($@"<select x-cloak x-show=""editingId === row['{cfg.ActualIdField}']""
+                                   x-model=""editRowData['{col.Field}']""
+                                   class=""{CssInputSm}"">");
+                foreach (var opt in col.EditorOptions.Split(';'))
                 {
-                    return new List<QueryColumnDefinition>();
+                    var kv = opt.Split('=');
+                    if (kv.Length == 2)
+                        sb.Append($@"<option value=""{kv[0]}"">{kv[1]}</option>");
                 }
+                sb.Append("</select>");
             }
 
-            foreach (var q in result)
+            return sb.ToString();
+        }
+
+        /// <summary>建構操作欄 td</summary>
+        private static string BuildActionColumnHtml(GridConfig cfg)
+        {
+            if (!cfg.HasEditActions) return "";
+
+            var h = cfg.H;
+
+            var btnView = h.ViewCommandVisible
+                ? $@"<button type=""button"" @click.stop=""onView(row)""
+                          class=""{CssBtnIcon} text-slate-400 hover:text-blue-500"" title=""檢視"">
+                        <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                                  d=""M15 12a3 3 0 11-6 0 3 3 0 016 0""/>
+                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                                  d=""M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z""/>
+                        </svg>
+                    </button>"
+                : "";
+
+            var btnEdit = (h.AllowUpdate && h.UpdateCommandVisible)
+                ? $@"<button type=""button""
+                          @click.stop=""'{h.EditMode}' === 'row' ? startEdit(row) : editRow(row)""
+                          class=""{CssBtnIcon} text-slate-400 hover:text-amber-500"" title=""編輯"">
+                        <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                                  d=""M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z""/>
+                        </svg>
+                    </button>"
+                : "";
+
+            var btnDelete = (h.AllowDelete && h.DeleteCommandVisible)
+                ? $@"<button type=""button"" @click.stop=""deleteRow(row)""
+                          class=""{CssBtnIcon} text-slate-400 hover:text-red-500"" title=""刪除"">
+                        <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                                  d=""M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16""/>
+                        </svg>
+                    </button>"
+                : "";
+
+            string innerContent;
+            if (h.EditMode == "row")
             {
-                q.FieldName = (q.FieldName ?? string.Empty).Trim();
-                q.Caption = string.IsNullOrWhiteSpace(q.Caption) ? q.FieldName : q.Caption.Trim();
-                q.Condition = NormalizeQueryCondition(q.Condition);
-                q.AndOr = NormalizeAndOr(q.AndOr);
-                q.DataType = NormalizeDataType(q.DataType);
-                q.Editor = NormalizeEditor(q.Editor);
-                q.Span = Math.Clamp(q.Span <= 0 ? 3 : q.Span, 1, 12);
-                q.RowSpan = q.RowSpan <= 0 ? 1 : q.RowSpan;
+                innerContent = $@"
+                    <template x-if=""editingId !== row['{cfg.ActualIdField}']"">
+                        <div class=""flex gap-1"">{btnView}{btnEdit}{btnDelete}</div>
+                    </template>
+                    <template x-if=""editingId === row['{cfg.ActualIdField}']"">
+                        <div class=""flex gap-1"">
+                            <button type=""button"" @click.stop=""confirmSave()""
+                                    class=""{CssBtnIcon} text-slate-400 hover:text-emerald-500"" title=""儲存"">
+                                <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                                    <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/>
+                                </svg>
+                            </button>
+                            <button type=""button"" @click.stop=""cancelEdit()""
+                                    class=""{CssBtnIcon} text-slate-400 hover:text-slate-600"" title=""取消"">
+                                <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                                    <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>
+                                </svg>
+                            </button>
+                        </div>
+                    </template>";
+            }
+            else
+            {
+                innerContent = $@"<div class=""flex gap-1"">{btnView}{btnEdit}{btnDelete}</div>";
             }
 
-            return result.Where(q => !string.IsNullOrWhiteSpace(q.FieldName)).ToList();
+            return $@"<td class=""{CssTdBase} text-center sticky right-0 transition-colors"">
+                <div class=""flex items-center justify-center gap-1"">
+                    {innerContent}
+                </div>
+            </td>";
         }
 
-        private static string NormalizeEditor(string? editor)
+        /// <summary>建構 Header Filter 彈窗 HTML</summary>
+        private static string BuildHeaderFilterPopupHtml(GridConfig cfg)
         {
-            var e = (editor ?? string.Empty).Trim().ToLowerInvariant();
-            return e switch
-            {
-                "checkbox" => "checkbox",
-                "numberbox" => "numberbox",
-                "validatebox" => "validatebox",
-                "datebox" => "datebox",
-                "infocombobox" => "gcombobox",
-                "gcombobox" => "gcombobox",
-                "infocombogrid" => "gcombogrid",
-                "gcombogrid" => "gcombogrid",
-                "inforefval" => "lovinput",
-                "glovinput" => "lovinput",
-                "lovinput" => "lovinput",
-                "password" => "password",
-                _ => "text"
-            };
+            return $@"
+<div x-show=""headerFilter.open""
+     x-transition
+     @click.away=""cancelHeaderFilter()""
+     class=""absolute z-40 bg-white border border-slate-200 rounded-xl shadow-xl w-64""
+     :style=""`left:${{headerFilter.x}}px; top:${{headerFilter.y}}px;`""
+     style=""display:none;"">
+
+    <!-- 標題列 -->
+    <div class=""px-3 py-2 border-b border-slate-100 flex items-center justify-between"">
+        <span class=""text-sm font-semibold text-slate-700"" x-text=""headerFilter.title || '篩選'""></span>
+        <button type=""button"" @click=""cancelHeaderFilter()""
+                class=""{CssBtnIcon} text-slate-400 hover:text-slate-600"">
+            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- 日期範圍模式 -->
+    <template x-if=""headerFilter.mode === 'datetime'"">
+        <div class=""px-3 py-2 border-b border-slate-100 space-y-2"">
+            <div>
+                <label class=""block text-xs text-slate-500 mb-1"">從</label>
+                <input type=""datetime-local"" x-model=""headerFilter.dateFrom"" class=""{CssInputSm}"">
+            </div>
+            <div>
+                <label class=""block text-xs text-slate-500 mb-1"">到</label>
+                <input type=""datetime-local"" x-model=""headerFilter.dateTo"" class=""{CssInputSm}"">
+            </div>
+        </div>
+    </template>
+
+    <!-- 清單模式 -->
+    <template x-if=""headerFilter.mode !== 'datetime'"">
+        <div class=""px-3 pt-2 pb-1.5 border-b border-slate-100"">
+            <div class=""relative mb-2"">
+                <input type=""text"" x-model=""headerFilter.search"" placeholder=""搜尋…""
+                       class=""w-full pl-8 pr-2 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"">
+                <svg class=""w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                    <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/>
+                </svg>
+            </div>
+            <label class=""inline-flex items-center gap-2 text-sm text-slate-700 cursor-pointer"">
+                <input type=""checkbox""
+                       :checked=""isHeaderFilterAllSelected()""
+                       @change=""toggleHeaderFilterAll($event.target.checked)""
+                       class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"">
+                <span>全選</span>
+            </label>
+        </div>
+    </template>
+
+    <!-- 選項列表 -->
+    <div x-show=""headerFilter.mode !== 'datetime'"" class=""max-h-56 overflow-auto px-3 py-2 space-y-1"">
+        <template x-for=""opt in getHeaderFilterVisibleOptions()"" :key=""opt"">
+            <label class=""flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:text-blue-600"">
+                <input type=""checkbox"" :value=""opt"" x-model=""headerFilter.selected""
+                       class=""w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"">
+                <span x-text=""opt""></span>
+            </label>
+        </template>
+    </div>
+
+    <!-- 按鈕列 -->
+    <div class=""px-3 py-2 border-t border-slate-100 flex justify-between items-center gap-2"">
+        <button type=""button"" @click=""headerFilter.selected = [...headerFilter.options]; confirmHeaderFilter()""
+                class=""text-xs text-slate-400 hover:text-slate-600 transition-colors"" title=""清除此欄篩選"">
+            全部顯示
+        </button>
+        <div class=""flex gap-2"">
+            <button type=""button"" @click=""cancelHeaderFilter()""
+                    class=""{CssBtnSecondary}"">取消</button>
+            <button type=""button"" @click=""confirmHeaderFilter()""
+                    class=""{CssBtnPrimary}"">套用</button>
+        </div>
+    </div>
+</div>";
         }
 
-        private static string NormalizeQueryCondition(string? condition)
+        /// <summary>建構標題列 HTML（含排序按鈕與說明連結）</summary>
+        private static string BuildTitleHeaderHtml(GridConfig cfg, List<ColumnDef> cols, HashSet<string> sortableFieldSet)
         {
-            var c = (condition ?? string.Empty).Trim();
-            return c switch
-            {
-                "=" => "=",
-                "!=" => "!=",
-                "<>" => "!=",
-                ">" => ">",
-                ">=" => ">=",
-                "<" => "<",
-                "<=" => "<=",
-                "%" => "%",
-                "%%" => "%%",
-                _ => "="
-            };
+            if (string.IsNullOrEmpty(cfg.H.Title)) return "";
+
+            var helpIcon = !string.IsNullOrEmpty(cfg.H.HelpLink)
+                ? $@"<a href=""{cfg.H.HelpLink}"" target=""_blank""
+                      class=""text-slate-400 hover:text-blue-500 transition-colors"" title=""說明"">
+                        <svg class=""w-5 h-5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                            <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                                  d=""M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z""/>
+                        </svg>
+                   </a>"
+                : "";
+
+            var titleSortButtons = cfg.H.TitleSortEnabled
+                ? $@"<div class=""inline-flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden"">
+                        <button type=""button"" @click=""setTitleSort('asc')""
+                                :class=""(sortKey === titleSortField && sortDir === 'asc') ? 'text-blue-600 bg-blue-50' : 'text-slate-500'""
+                                class=""w-8 h-8 inline-flex items-center justify-center transition-colors"" title=""升冪"">
+                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 15l7-7 7 7""/>
+                            </svg>
+                        </button>
+                        <button type=""button"" @click=""setTitleSort('desc')""
+                                :class=""(sortKey === titleSortField && sortDir === 'desc') ? 'text-blue-600 bg-blue-50' : 'text-slate-500'""
+                                class=""w-8 h-8 inline-flex items-center justify-center border-l border-slate-200 transition-colors"" title=""降冪"">
+                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M19 9l-7 7-7-7""/>
+                            </svg>
+                        </button>
+                    </div>"
+                : "";
+
+            return $@"<div class=""px-4 py-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center"">
+                <h3 class=""font-bold text-slate-700 text-sm flex items-center gap-2"">
+                    <svg class=""w-4 h-4 text-blue-600"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M4 6h16M4 10h16M4 14h16M4 18h16""/>
+                    </svg>
+                    {cfg.H.Title}
+                </h3>
+                <div class=""flex items-center gap-2"">
+                    {titleSortButtons}
+                    {helpIcon}
+                </div>
+            </div>";
         }
 
-        private static string NormalizeAndOr(string? andOr) =>
-            string.Equals((andOr ?? "").Trim(), "OR", StringComparison.OrdinalIgnoreCase) ? "OR" : "AND";
-
-        private static string NormalizeDataType(string? dataType)
+        /// <summary>建構分頁列 HTML</summary>
+        private static string BuildPaginationHtml(GridConfig cfg)
         {
-            var t = (dataType ?? string.Empty).Trim().ToLowerInvariant();
-            return t switch
-            {
-                "number" => "number",
-                "datetime" => "datetime",
-                "guid" => "guid",
-                _ => "string"
-            };
-        }
+            if (!cfg.H.Pagination) return "";
 
-        private static List<(string Value, string Text)> ParseEditorOptions(string options)
-        {
-            var result = new List<(string, string)>();
-            if (string.IsNullOrWhiteSpace(options)) return result;
-            foreach (var part in options.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            var pageOpts = new StringBuilder();
+            foreach (var p in cfg.H.PageList.Split(',', StringSplitOptions.RemoveEmptyEntries))
             {
-                var idx = part.IndexOf('=');
-                if (idx <= 0)
-                {
-                    result.Add((part, part));
-                    continue;
-                }
-                var value = part[..idx].Trim();
-                var text = part[(idx + 1)..].Trim();
-                result.Add((value, string.IsNullOrWhiteSpace(text) ? value : text));
+                var pt = p.Trim();
+                pageOpts.Append($@"<option value=""{pt}"">{pt} 筆/頁</option>");
             }
-            return result;
+
+            var caption = string.IsNullOrEmpty(cfg.ActualTotalCaption) ? "共 " : cfg.ActualTotalCaption;
+
+            return $@"
+<div class=""flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-100 border-t border-slate-200 text-sm shrink-0 select-none"">
+    <div class=""flex items-center gap-2"">
+        <select x-model=""pageSize"" @change=""currentPage = 1""
+                class=""pl-2 pr-6 py-1 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"">
+            {pageOpts}
+        </select>
+    </div>
+    <div class=""flex items-center gap-1"">
+        <span class=""text-xs text-slate-500 whitespace-nowrap pr-1"">
+            {caption}<span class=""font-bold text-slate-700"" x-text=""rows.length""></span> 筆
+        </span>
+        <button type=""button"" @click=""prevPage()"" :disabled=""currentPage <= 1""
+                :class=""currentPage <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-200'""
+                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
+            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15 19l-7-7 7-7""/>
+            </svg>
+        </button>
+        <div class=""flex items-center gap-1.5 px-2"">
+            <input type=""number"" min=""1"" :max=""totalPages"" :value=""currentPage""
+                   @change=""jumpPage($event.target.value)""
+                   class=""w-14 text-center text-xs border border-slate-300 rounded-lg py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"">
+            <span class=""text-slate-400 text-xs"">/</span>
+            <span x-text=""totalPages"" class=""text-xs font-bold text-slate-700""></span>
+            <span class=""text-slate-400 text-xs"">頁</span>
+        </div>
+        <button type=""button"" @click=""nextPage()"" :disabled=""currentPage >= totalPages""
+                :class=""currentPage >= totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-200'""
+                class=""w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors"">
+            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M9 5l7 7-7 7""/>
+            </svg>
+        </button>
+    </div>
+</div>";
         }
+
+        // ─────────────────────────────────────────────
+        // Alpine.js Script 建構
+        // ─────────────────────────────────────────────
+
+        /// <summary>將所有 Alpine.js 邏輯集中輸出為單一 script 標籤</summary>
+        private static string BuildAlpineScript(
+            GridConfig cfg,
+            List<ColumnDef> cols,
+            List<QueryColumnDefinition> queryColumns,
+            List<FormColumnDefinition> formColumns,
+            HashSet<string> sortableFieldSet)
+        {
+            var h = cfg.H;
+            var sortableList = cols.Where(c => sortableFieldSet.Contains(c.Field)).Select(c => c.Field).Distinct().ToList();
+            var sortableJs   = string.Join(",", sortableList.Select(f => $"'{f}'"));
+
+            var queryColumnsJson = Serialize(queryColumns);
+            var formColumnsJson  = Serialize(formColumns);
+
+            // 產生各回呼的呼叫片段（避免空字串條件到處散落）
+            string CallbackJs(string fn, string args = "") =>
+                string.IsNullOrEmpty(fn) ? "" : $"window['{fn}'] && window['{fn}']({args});";
+
+            return $@"
+<script>
+if (!window.gDataGridRuntime) {{
+    window.gDataGridRuntime = {{
+        // 共用提示訊息：若專案有 gToast 就顯示，否則退回 console。
+        showToast(message, type = 'success') {{
+            if (typeof gToast === 'function') {{
+                gToast(message, type);
+                return;
+            }}
+            const logger = type === 'error' ? console.error : console.log;
+            logger('[GDataGridRuntime]', message);
+        }},
+        // 共用日期轉換：將各種日期字串裁成 input[type=date] 可用格式。
+        toDateInput(v) {{
+            if (!v) return '';
+            const s = String(v);
+            return s.length >= 10 ? s.slice(0, 10) : '';
+        }},
+        // 共用深拷貝：避免直接汙染原始 row 資料。
+        cloneData(data, fallback = null) {{
+            if (data === null || data === undefined) return fallback;
+            try {{
+                return JSON.parse(JSON.stringify(data));
+            }} catch {{
+                return data;
+            }}
+        }},
+        // 共用查詢：依 grid id 觸發 datagrid 查詢，避免頁面重複寫樣板碼。
+        async executeGridQuery(gridId, fallbackParams = {{}}) {{
+            const grid = document.getElementById(gridId)?.gDataGrid;
+            if (!grid) return;
+            if (typeof grid.executeQuery === 'function') {{
+                await grid.executeQuery();
+                return;
+            }}
+            if (typeof grid.fetchData === 'function') {{
+                await grid.fetchData(fallbackParams || {{}});
+            }}
+        }},
+        // 共用 callback 註冊：將頁面 Alpine instance 與 window callback 名稱綁定起來。
+        registerAppCallbacks(app, options = {{}}) {{
+            if (!app) return;
+
+            const appKey = String(options.appKey || '').trim();
+            if (appKey) {{
+                window[appKey] = app;
+            }}
+
+            const callbacks = options.callbacks || {{}};
+            Object.entries(callbacks).forEach(([name, handler]) => {{
+                const callbackName = String(name || '').trim();
+                const methodName = typeof handler === 'string'
+                    ? handler.trim()
+                    : '';
+
+                if (!callbackName || !methodName) return;
+                window[callbackName] = (...args) => {{
+                    const fn = app?.[methodName];
+                    if (typeof fn === 'function') {{
+                        return fn.apply(app, args);
+                    }}
+                }};
+            }});
+        }},
+        ensureHtmxBridge() {{
+            let form = document.getElementById('gDataGridHtmxForm');
+            let sink = document.getElementById('gDataGridHtmxSink');
+            if (!form) {{
+                form = document.createElement('form');
+                form.id = 'gDataGridHtmxForm';
+                form.className = 'hidden';
+                form.setAttribute('hx-ext', 'json-enc');
+                form.setAttribute('hx-swap', 'none');
+                document.body.appendChild(form);
+            }}
+            if (!sink) {{
+                sink = document.createElement('div');
+                sink.id = 'gDataGridHtmxSink';
+                sink.className = 'hidden';
+                sink.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(sink);
+            }}
+            form.setAttribute('hx-target', '#gDataGridHtmxSink');
+            return {{ form, sink }};
+        }},
+        async requestJson(method, url, payload) {{
+            if (!window.htmx) {{
+                const res = await fetch(url, {{
+                    method: method || 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: payload ? JSON.stringify(payload) : undefined
+                }});
+                let json = null;
+                try {{ json = await res.json(); }} catch {{ json = null; }}
+                return {{ ok: res.ok, status: res.status, json }};
+            }}
+
+            const bridge = this.ensureHtmxBridge();
+            const form = bridge.form;
+
+            ['hx-get', 'hx-post', 'hx-put', 'hx-delete', 'hx-patch'].forEach((a) => form.removeAttribute(a));
+            form.setAttribute(`hx-${{String(method || 'POST').toLowerCase()}}`, url);
+            form.innerHTML = '';
+
+            const data = payload || {{}};
+            Object.entries(data).forEach(([k, v]) => {{
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = k;
+                input.value = v == null ? '' : String(v);
+                form.appendChild(input);
+            }});
+
+            htmx.process(form);
+
+            return await new Promise((resolve, reject) => {{
+                const onAfter = (evt) => {{
+                    if (evt.detail.elt !== form) return;
+                    cleanup();
+                    const xhr = evt.detail.xhr;
+                    let json = null;
+                    try {{ json = JSON.parse(xhr.responseText || '{{}}'); }} catch {{ json = null; }}
+                    resolve({{ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json }});
+                }};
+
+                const onError = (evt) => {{
+                    if (evt.detail.elt !== form) return;
+                    cleanup();
+                    reject(new Error(evt.detail?.error || 'HTMX request failed'));
+                }};
+
+                const cleanup = () => {{
+                    document.body.removeEventListener('htmx:afterRequest', onAfter);
+                    document.body.removeEventListener('htmx:sendError', onError);
+                    document.body.removeEventListener('htmx:responseError', onError);
+                }};
+
+                document.body.addEventListener('htmx:afterRequest', onAfter);
+                document.body.addEventListener('htmx:sendError', onError);
+                document.body.addEventListener('htmx:responseError', onError);
+                htmx.trigger(form, 'submit');
+            }});
+        }},
+        // 共用 dialog 編輯：用設定寫回 Alpine state，再開啟指定 dialog。
+        openDialogEditor(vm, options = {{}}) {{
+            if (!vm || !options.recordKey) return null;
+
+            const row = options.row || {{}};
+            const nextMode = options.mode || 'edit';
+            const nextPosition = options.positionNo ?? row?.POSITION_NO ?? 1;
+            const normalize = typeof options.normalize === 'function'
+                ? options.normalize
+                : (value) => this.cloneData(value, {{}});
+
+            if (options.modeKey) vm[options.modeKey] = nextMode;
+            if (options.positionKey) vm[options.positionKey] = nextPosition;
+            vm[options.recordKey] = normalize(row);
+
+            if (options.dialogId && typeof gDialogOpen === 'function') {{
+                gDialogOpen(options.dialogId);
+            }}
+
+            return vm[options.recordKey];
+        }},
+        // 共用送出：封裝驗證、requestJson、關閉 dialog、成功後 callback。
+        async submitAction(vm, options = {{}}) {{
+            const validate = typeof options.validate === 'function' ? options.validate : null;
+            if (validate) {{
+                const validation = await validate();
+                if (validation === false) return false;
+                if (typeof validation === 'string' && validation) {{
+                    this.showToast(validation, options.validationType || 'warning');
+                    return false;
+                }}
+            }}
+
+            const payload = typeof options.buildPayload === 'function'
+                ? await options.buildPayload()
+                : (options.payload || {{}});
+
+            try {{
+                const res = await this.requestJson(options.method || 'POST', options.url || '', payload);
+                const result = res?.json || {{}};
+                if (!res?.ok || result.status !== 'success') {{
+                    const msg = result.message || `HTTP ${{res?.status ?? 0}}`;
+                    this.showToast(`${{options.errorPrefix || '處理失敗: '}}${{msg}}`, 'error');
+                    return false;
+                }}
+
+                if (options.closeDialogId && typeof gDialogClose === 'function') {{
+                    gDialogClose(options.closeDialogId);
+                }}
+
+                if (options.successMessage) {{
+                    const msg = typeof options.successMessage === 'function'
+                        ? options.successMessage(payload, result, vm)
+                        : options.successMessage;
+                    if (msg) this.showToast(msg, 'success');
+                }}
+
+                if (typeof options.onSuccess === 'function') {{
+                    await options.onSuccess(result, payload, vm);
+                }}
+
+                return true;
+            }} catch (e) {{
+                const msg = e?.message || String(e);
+                this.showToast(`${{options.errorPrefix || '處理失敗: '}}${{msg}}`, 'error');
+                return false;
+            }}
+        }},
+        // 共用刪除確認：先確認，再走 submitAction。
+        async confirmAndSubmit(vm, options = {{}}) {{
+            const confirmMessage = typeof options.confirmMessage === 'function'
+                ? options.confirmMessage()
+                : options.confirmMessage;
+            const confirmTitle = options.confirmTitle || '刪除確認';
+            if (typeof gConfirm === 'function') {{
+                const ok = await gConfirm(confirmMessage || '確定執行？', confirmTitle);
+                if (!ok) return false;
+            }}
+            return await this.submitAction(vm, options);
+        }}
+    }};
+}}
+
+function gDataGrid_{cfg.CompId}() {{
+    return {{
+        // ── 狀態 ──────────────────────────────
+        allRows       : [],
+        rows          : [],
+        loading       : false,
+        currentPage   : 1,
+        pageSize      : {h.PageSize},
+        selectedRow   : null,
+        selectedIds   : [],
+        currentParams : '',
+
+        // ── 排序 ──────────────────────────────
+        sortKey       : '',
+        sortDir       : 'asc',
+        sortRules     : [],
+        sortableFields: [{sortableJs}],
+        titleSortEnabled : {BoolJs(h.TitleSortEnabled)},
+        titleSortField   : '{cfg.DefaultTitleSortField}',
+        multiSortEnabled : {BoolJs(h.MultiSortEnabled)},
+
+        // ── 查詢 / 表單 ───────────────────────
+        queryColumns  : {queryColumnsJson},
+        formColumns   : {formColumnsJson},
+        queryValues        : {{}},
+        queryDisplayValues : {{}},
+        queryPanelOpen: true,
+        formMode      : 'view',
+        formRecord    : {{}},
+
+        // ── 篩選 / 編輯 ───────────────────────
+        editingId     : null,
+        editRowData   : {{}},
+        filters       : {{}},
+        columnFilters : {{}},
+        dateTimeFilters: {{}},
+        headerFilter  : {{
+            open: false, field: '', title: '', mode: 'list',
+            options: [], selected: [], search: '',
+            dateFrom: '', dateTo: '', x: 0, y: 0
+        }},
+
+        // ── 回呼表達式 ────────────────────────
+        onRowClickExpr : {JsonSerializer.Serialize(h.OnRowClick ?? "")},
+        onRowDblExpr   : {JsonSerializer.Serialize(h.OnRowDblClick ?? "")},
+        onSelectExpr   : {JsonSerializer.Serialize(h.OnSelect ?? "")},
+
+        // ── 計算屬性 ──────────────────────────
+        get sortedRows() {{
+            const compare = (av, bv, dir) => {{
+                av = av ?? ''; bv = bv ?? '';
+                if (av === bv) return 0;
+                return av < bv ? -dir : dir;
+            }};
+            if (this.multiSortEnabled && this.sortRules.length > 0) {{
+                return [...this.rows].sort((a, b) => {{
+                    for (const rule of this.sortRules) {{
+                        const dir = rule.dir === 'asc' ? 1 : -1;
+                        const r = compare(a?.[rule.key], b?.[rule.key], dir);
+                        if (r !== 0) return r;
+                    }}
+                    return 0;
+                }});
+            }}
+            if (!this.sortKey) return this.rows;
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            return [...this.rows].sort((a, b) => compare(a?.[this.sortKey], b?.[this.sortKey], dir));
+        }},
+        get totalPages() {{ return Math.max(1, Math.ceil(this.sortedRows.length / this.pageSize)); }},
+        get pagedRows() {{
+            const start = (this.currentPage - 1) * this.pageSize;
+            return this.sortedRows.slice(start, start + Number(this.pageSize));
+        }},
+
+        // ── 初始化 ────────────────────────────
+        init() {{
+            this.$el.gDataGrid = this;
+            this.initQueryColumns();
+            if (this.titleSortEnabled && this.titleSortField && !this.sortKey)
+                this.setSort(this.titleSortField, 'asc');
+            if ({BoolJs(!cfg.ActualNotInitGrid)})
+                this.fetchData();
+        }},
+        initQueryColumns() {{
+            for (const col of (this.queryColumns || [])) {{
+                const key = col?.fieldName;
+                if (key) {{
+                    this.queryValues[key] = col.defaultValue ?? '';
+                    this.queryDisplayValues[key] = col.defaultValue ?? '';
+                }}
+            }}
+        }},
+        toDateInput(v) {{
+            return window.gDataGridRuntime.toDateInput(v);
+        }},
+        async requestJson(method, url, payload) {{
+            return await window.gDataGridRuntime.requestJson(method, url, payload);
+        }},
+
+        // ── 查詢 ──────────────────────────────
+        buildQueryParams() {{
+            const params = {{}};
+            for (const col of (this.queryColumns || [])) {{
+                const key = col?.fieldName;
+                if (!key) continue;
+                const raw = this.queryValues[key];
+                if (raw === null || raw === undefined || `${{raw}}`.trim() === '') continue;
+                params[key]                  = raw;
+                params[`${{key}}_condition`] = col.condition || '=';
+                params[`${{key}}_andOr`]     = col.andOr || 'AND';
+                params[`${{key}}_dataType`]  = col.dataType || 'string';
+            }}
+            return params;
+        }},
+        executeQuery() {{
+            const queryParams = this.buildQueryParams();
+            this.$dispatch('query', {{ filters: queryParams }});
+            {CallbackJs(h.OnFilter, "queryParams")}
+            this.fetchData(queryParams);
+        }},
+        formatQueryLovDisplay(col, selected, valueField) {{
+            if (!selected || !col) return '';
+            const rawFormat = String(col.lovDisplayFormat || '').trim();
+            if (rawFormat) {{
+                return rawFormat.replace(/\{{([^}}]+)\}}/g, (_, token) => {{
+                    const key = String(token || '').trim();
+                    const value = selected?.[key];
+                    return value == null ? '' : String(value);
+                }});
+            }}
+
+            const displayField = String(col.lovKeyDisplay || '').trim();
+            const value = selected?.[valueField];
+            const display = displayField ? selected?.[displayField] : '';
+            if (display != null && String(display).trim() !== '') return String(display);
+            return value == null ? '' : String(value);
+        }},
+        openQueryLov(fieldName, currentValue = '', ctx = null) {{
+            const col = (this.queryColumns || []).find(x => x.fieldName === fieldName);
+            if (!col) return false;
+
+            const columns = String(col.lovColumns || '').split(',').map(s => s.trim()).filter(Boolean);
+            const fields = String(col.lovFields || '').split(',').map(s => s.trim()).filter(Boolean);
+            const api = String(col.lovApi || '').trim();
+            const valueField = String(col.lovKeyValue || fields[0] || '').trim();
+
+            if (!api || !columns.length || !fields.length || !valueField || typeof openGenericLov !== 'function') {{
+                return false;
+            }}
+
+            openGenericLov(
+                col.lovTitle || col.caption || '資料查詢',
+                api,
+                columns,
+                fields,
+                null,
+                null,
+                (selected) => {{
+                    if (!selected) return;
+                    const nextValue = selected?.[valueField] ?? '';
+                    this.queryValues[fieldName] = nextValue == null ? '' : String(nextValue);
+                    this.queryDisplayValues[fieldName] = this.formatQueryLovDisplay(col, selected, valueField);
+                }},
+                {{
+                    initialQuery: String(currentValue || '').trim(),
+                    sourceInputId: ctx?.sourceInputId || ''
+                }}
+            );
+
+            return true;
+        }},
+        toggleQueryPanel() {{
+            this.queryPanelOpen = !this.queryPanelOpen;
+        }},
+        invokeQueryDefaultMethod(fieldName, sourceInputId = '', currentValueOverride = null) {{
+            const col = (this.queryColumns || []).find(x => x.fieldName === fieldName);
+            try {{
+                const sourceInput = sourceInputId ? document.getElementById(sourceInputId) : null;
+                const currentValue = currentValueOverride !== null && currentValueOverride !== undefined
+                    ? currentValueOverride
+                    : (sourceInput && typeof sourceInput.value !== 'undefined'
+                        ? sourceInput.value
+                        : this.queryValues[fieldName]);
+
+                if (currentValue !== undefined) {{
+                    this.queryValues[fieldName] = currentValue;
+                }}
+
+                const ctx = {{
+                    fieldName,
+                    currentValue,
+                    queryValues: this.queryValues,
+                    sourceInputId
+                }};
+
+                if (col && this.openQueryLov(fieldName, currentValue, ctx)) return;
+
+                if (!col?.defaultMethod) return;
+                if (col.remoteMethod || col.api) return;
+                const fnText = String(col.defaultMethod).trim();
+                if (!fnText) return;
+
+                if (fnText.includes('(')) {{
+                    (new Function(fnText))();
+                }} else if (typeof window[fnText] === 'function') {{
+                    const ret = window[fnText](fieldName, currentValue, this.queryValues, ctx);
+                    // ret 可以是普通字串（value）或 {{ value, display }} 物件
+                    if (ret !== undefined && ret !== null) {{
+                        if (typeof ret === 'object' && 'value' in ret) {{
+                            this.queryValues[fieldName] = ret.value ?? '';
+                            this.queryDisplayValues[fieldName] = ret.display ?? String(ret.value ?? '');
+                        }} else {{
+                            this.queryValues[fieldName] = ret;
+                            this.queryDisplayValues[fieldName] = String(ret);
+                        }}
+                    }}
+                }}
+            }} catch (e) {{
+                console.error('[GDataGrid] invokeQueryDefaultMethod error:', e);
+            }}
+        }},
+        // Enter 鍵：有 LOV method → 開 LOV；否則直接執行查詢
+        onQueryInputEnter(fieldName, sourceInputId, displayValue) {{
+            const col = (this.queryColumns || []).find(x => x.fieldName === fieldName);
+            // 有設定 LOV 欄位或 default method → 開 LOV dialog（傳入顯示文字作為搜尋預填）
+            if ((col?.lovApi && col?.lovFields) || (col?.defaultMethod && !col?.remoteMethod && !col?.api)) {{
+                this.invokeQueryDefaultMethod(fieldName, sourceInputId, displayValue);
+                return;
+            }}
+            // 無 LOV method：queryValues 已透過 @input 同步，直接執行查詢
+            this.executeQuery();
+        }},
+
+        // ── 資料載入 ──────────────────────────
+        async fetchData(queryParams = null) {{
+            if (queryParams !== null) {{
+                this.currentParams = typeof queryParams === 'object'
+                    ? new URLSearchParams(queryParams).toString()
+                    : queryParams;
+            }}
+            this.loading = true;
+            this.cancelEdit();
+            try {{
+                const urlObj = new URL('{cfg.ActualApiUrl}', window.location.origin);
+                if (this.currentParams) {{
+                    new URLSearchParams(this.currentParams).forEach((v, k) => urlObj.searchParams.append(k, v));
+                }}
+                const res = await fetch(urlObj.toString());
+                if (res.status === 401) {{ window.location.href = '/Account/Login'; return; }}
+                let json = null;
+                try {{ json = await res.json(); }} catch {{ json = {{ data: [] }}; }}
+                if (!res.ok) {{
+                    console.error('[GDataGrid] fetch HTTP error:', res.status, json);
+                    this.allRows = []; this.rows = [];
+                    this.applyColumnFilters(false);
+                    this.currentPage = 1; this.selectedRow = null;
+                    return;
+                }}
+                const dataRows = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
+                this.allRows = dataRows;
+                this.rows = [...dataRows];
+                this.applyColumnFilters(false);
+                this.currentPage = 1;
+                this.selectedRow = null;
+                {CallbackJs(h.OnLoadSuccess, "this.rows")}
+            }} catch (e) {{
+                console.error('[GDataGrid] fetch error:', e);
+            }} finally {{
+                this.loading = false;
+            }}
+        }},
+
+        // ── 篩選 ──────────────────────────────
+        applyFilter() {{
+            const clean = Object.fromEntries(
+                Object.entries(this.filters).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+            );
+            const merged = {{ ...this.buildQueryParams(), ...clean }};
+            this.$dispatch('query', {{ filters: merged }});
+            {CallbackJs(h.OnFilter, "merged")}
+            this.fetchData(new URLSearchParams(merged).toString());
+        }},
+        openHeaderFilter(field, event) {{
+            if (!{BoolJs(cfg.ActualTitleFilter)}) return;
+            const values = [...new Set((this.allRows || [])
+                .map(r => r?.[field])
+                .filter(v => v !== null && v !== undefined && `${{v}}`.trim() !== '')
+                .map(v => `${{v}}`)
+            )].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+
+            const existing = this.columnFilters[field];
+            const titleNode = event?.currentTarget?.closest('th')?.querySelector('span');
+            this.headerFilter = {{
+                ...this.headerFilter,
+                open: true,
+                field,
+                title: titleNode?.textContent?.trim() || field,
+                options: values,
+                selected: existing ? [...existing] : [...values],
+                search: '',
+                mode: this.isDateTimeField(values) ? 'datetime' : 'list',
+            }};
+            const existingDate = this.dateTimeFilters[field] || {{}};
+            this.headerFilter.dateFrom = this.toDateTimeLocal(existingDate.from);
+            this.headerFilter.dateTo   = this.toDateTimeLocal(existingDate.to);
+
+            const rect     = event?.currentTarget?.getBoundingClientRect();
+            const hostRect = this.$el.getBoundingClientRect();
+            const toolbarB = this.$el.querySelector('.g-grid-toolbar')?.getBoundingClientRect()?.bottom ?? rect?.bottom ?? hostRect.top;
+            this.headerFilter.x = Math.max(8, (rect?.left ?? hostRect.left) - hostRect.left);
+            this.headerFilter.y = Math.max(8, toolbarB - hostRect.top + 6);
+        }},
+        isDateTimeField(values) {{
+            if (!values?.length) return false;
+            const sample = values.slice(0, Math.min(values.length, 6));
+            return sample.filter(v => !Number.isNaN(Date.parse(v))).length >= Math.ceil(sample.length * 0.8)
+                && sample.some(v => /[T\s]\d{{2}}:\d{{2}}/.test(v));
+        }},
+        toDateTimeLocal(v) {{
+            if (!v) return '';
+            const d = new Date(v);
+            if (Number.isNaN(d.getTime())) return '';
+            const p = n => String(n).padStart(2, '0');
+            return `${{d.getFullYear()}}-${{p(d.getMonth()+1)}}-${{p(d.getDate())}}T${{p(d.getHours())}}:${{p(d.getMinutes())}}`;
+        }},
+        isHeaderFilterAllSelected() {{
+            const opts = this.getHeaderFilterVisibleOptions();
+            const selected = this.headerFilter.selected || [];
+            return opts.length > 0 && opts.every(o => selected.includes(o));
+        }},
+        toggleHeaderFilterAll(checked) {{
+            const opts = this.getHeaderFilterVisibleOptions();
+            this.headerFilter.selected = checked
+                ? [...new Set([...(this.headerFilter.selected || []), ...opts])]
+                : (this.headerFilter.selected || []).filter(v => !opts.includes(v));
+        }},
+        getHeaderFilterVisibleOptions() {{
+            const q = (this.headerFilter.search || '').trim().toLowerCase();
+            return q ? this.headerFilter.options.filter(v => `${{v}}`.toLowerCase().includes(q)) : this.headerFilter.options;
+        }},
+        confirmHeaderFilter() {{
+            const field = this.headerFilter.field;
+            if (!field) return;
+            if (this.headerFilter.mode === 'datetime') {{
+                const from = this.headerFilter.dateFrom, to = this.headerFilter.dateTo;
+                if (!from && !to) delete this.dateTimeFilters[field];
+                else this.dateTimeFilters[field] = {{
+                    from: from ? new Date(from).toISOString() : '',
+                    to:   to   ? new Date(to).toISOString()   : ''
+                }};
+            }} else {{
+                const selected = [...this.headerFilter.selected];
+                if (!selected.length || selected.length === this.headerFilter.options.length)
+                    delete this.columnFilters[field];
+                else
+                    this.columnFilters[field] = selected;
+                delete this.dateTimeFilters[field];
+            }}
+            this.applyColumnFilters(true);
+            this.headerFilter.open = false;
+        }},
+        cancelHeaderFilter() {{ this.headerFilter.open = false; }},
+        applyColumnFilters(emitEvent) {{
+            const fields     = Object.keys(this.columnFilters);
+            const dateFields = Object.keys(this.dateTimeFilters);
+            if (!fields.length && !dateFields.length) {{
+                this.rows = [...this.allRows];
+            }} else {{
+                this.rows = (this.allRows || []).filter(row => {{
+                    const passList = fields.every(f => this.columnFilters[f].includes(`${{row?.[f] ?? ''}}`));
+                    if (!passList) return false;
+                    return dateFields.every(f => {{
+                        const rule = this.dateTimeFilters[f] || {{}};
+                        const val  = new Date(row?.[f]).getTime();
+                        if (Number.isNaN(val)) return false;
+                        const from = rule.from ? new Date(rule.from).getTime() : null;
+                        const to   = rule.to   ? new Date(rule.to).getTime()   : null;
+                        if (from !== null && val < from) return false;
+                        if (to   !== null && val > to)   return false;
+                        return true;
+                    }});
+                }});
+            }}
+            this.currentPage = 1;
+            this.selectedRow = null;
+            if (emitEvent) {{
+                const summaryList = Object.fromEntries(Object.entries(this.columnFilters).map(([k, v]) => [k, v.join(',')]));
+                const summaryDate = Object.fromEntries(
+                    Object.entries(this.dateTimeFilters).flatMap(([k, v]) => [
+                        [`${{k}}_from`, v.from || ''], [`${{k}}_to`, v.to || '']
+                    ])
+                );
+                const summary = {{ ...summaryList, ...summaryDate }};
+                this.$dispatch('query', {{ filters: summary }});
+                {CallbackJs(h.OnFilter, "summary")}
+            }}
+        }},
+
+        // ── 多選 ──────────────────────────────
+        onSelectRow(row, isChecked) {{
+            {(string.IsNullOrEmpty(h.OnSelect) ? "" : $"if (isChecked) {CallbackJs(h.OnSelect, "row")}")}
+        }},
+        toggleAll(isChecked) {{
+            this.selectedIds = isChecked ? this.rows.map(r => r['{cfg.ActualIdField}']) : [];
+        }},
+
+        // ── CRUD ──────────────────────────────
+        addRow() {{
+            if (Array.isArray(this.formColumns) && this.formColumns.length > 0)
+                this.openGeneratedForm('add');
+            {CallbackJs(h.OnInsert)}
+            this.$dispatch('add');
+        }},
+        editRow(row) {{
+            if (Array.isArray(this.formColumns) && this.formColumns.length > 0)
+                this.openGeneratedForm('edit', row);
+            {CallbackJs(h.OnUpdate, "row")}
+            this.$dispatch('edit', {{ row }});
+        }},
+        onView(row) {{
+            if (Array.isArray(this.formColumns) && this.formColumns.length > 0)
+                this.openGeneratedForm('view', row);
+            {CallbackJs(h.OnView, "row")}
+            this.$dispatch('view', {{ row }});
+        }},
+        openGeneratedForm(mode, row = null) {{
+            this.formMode = mode || 'view';
+            const next = row ? JSON.parse(JSON.stringify(row)) : {{}};
+            for (const col of (this.formColumns || [])) {{
+                const key = col?.fieldName;
+                if (key && (next[key] === undefined || next[key] === null))
+                    next[key] = col.defaultValue ?? '';
+                if (key && String(col?.columnType || '').toLowerCase() === 'lovinput') {{
+                    const displayKey = `${{key}}__DISPLAY`;
+                    if (next[displayKey] === undefined || next[displayKey] === null || next[displayKey] === '') {{
+                        const rawFormat = String(col?.lovDisplayFormat || '').trim();
+                        if (rawFormat) {{
+                            // 用 row 內的欄位套用 lovDisplayFormat 範本。
+                            next[displayKey] = rawFormat.replace(/\{{([^}}]+)\}}/g, (_, token) => {{
+                                const k = String(token || '').trim();
+                                const v = next[k];
+                                return v == null ? '' : String(v);
+                            }});
+                        }} else {{
+                            const displayField = col?.lovKeyDisplay || '';
+                            next[displayKey] = displayField && next[displayField]
+                                ? String(next[displayField])
+                                : String(next[key] ?? '');
+                        }}
+                    }}
+                }}
+            }}
+            this.formRecord = next;
+            gDialogOpen('{cfg.CompId}_formdlg');
+        }},
+        formatLovDisplay(col, selected, valueField) {{
+            if (!selected || !col) return '';
+            const rawFormat = String(col.lovDisplayFormat || '').trim();
+            if (rawFormat) {{
+                return rawFormat.replace(/\{{([^}}]+)\}}/g, (_, token) => {{
+                    const key = String(token || '').trim();
+                    const value = selected?.[key];
+                    return value == null ? '' : String(value);
+                }});
+            }}
+
+            const displayField = String(col.lovKeyDisplay || '').trim();
+            const value = selected?.[valueField];
+            const display = displayField ? selected?.[displayField] : '';
+            if (display != null && String(display).trim() !== '') return String(display);
+            return value == null ? '' : String(value);
+        }},
+        openFormLov(fieldName) {{
+            const col = (this.formColumns || []).find(x => x.fieldName === fieldName);
+            if (!col) return;
+
+            const columns = String(col.lovColumns || '')
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+            const fields = String(col.lovFields || '')
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+            const api = String(col.lovApi || '').trim();
+            const valueField = String(col.lovKeyValue || fields[0] || '').trim();
+
+            if (!api || !columns.length || !fields.length || !valueField || typeof openGenericLov !== 'function') {{
+                console.warn('[GDataGrid] openFormLov config invalid:', fieldName, col);
+                return;
+            }}
+
+            openGenericLov(
+                col.lovTitle || col.caption || '資料查詢',
+                api,
+                columns,
+                fields,
+                null,
+                null,
+                (selected) => {{
+                    if (!selected) return;
+                    const nextValue = selected?.[valueField] ?? '';
+                    this.formRecord[fieldName] = nextValue == null ? '' : String(nextValue);
+                    this.formRecord[`${{fieldName}}__DISPLAY`] = this.formatLovDisplay(col, selected, valueField);
+                }}
+            );
+        }},
+        closeGeneratedForm() {{ gDialogClose('{cfg.CompId}_formdlg'); }},
+        async saveGeneratedForm() {{
+            const payload = JSON.parse(JSON.stringify(this.formRecord || {{}}));
+            for (const key of Object.keys(payload)) {{
+                if (key.endsWith('__DISPLAY')) delete payload[key];
+            }}
+            const url = this.formMode === 'add'
+                ? '{cfg.ActualApiUrl}'.replace('/select', '/insert')
+                : '{cfg.ActualApiUrl}'.replace('/select', '/update');
+            try {{
+                const res = await this.requestJson('POST', url, payload);
+                const result = res?.json || null;
+                if (!res?.ok || result?.status === 'error') {{
+                    const msg = result?.message || `HTTP ${{res?.status ?? 0}}`;
+                    console.error('[GDataGrid] saveGeneratedForm failed:', msg);
+                    if (typeof gToast === 'function') gToast('儲存失敗：' + msg, 'error');
+                    return;
+                }}
+                this.closeGeneratedForm();
+                if (typeof gToast === 'function') gToast(this.formMode === 'add' ? '新增成功' : '更新成功', 'success');
+                await this.fetchData();
+            }} catch (e) {{
+                console.error('[GDataGrid] saveGeneratedForm error:', e);
+                if (typeof gToast === 'function') gToast('儲存失敗：' + e.message, 'error');
+            }}
+        }},
+        // 共用刪除確認：頁面可直接呼叫 grid.confirmDelete(row, options)。
+        async confirmDelete(row, options = {{}}) {{
+            const submitUrl = String(options.url || '').trim();
+            const payload = options.payload ?? row;
+            const reloadAction = typeof options.onSuccess === 'function'
+                ? options.onSuccess
+                : async () => {{
+                    if (typeof this.executeQuery === 'function') {{
+                        await this.executeQuery();
+                    }} else {{
+                        await this.fetchData();
+                    }}
+                }};
+
+            if (!submitUrl) {{
+                console.warn('[GDataGrid] confirmDelete url is required.');
+                return false;
+            }}
+
+            return await window.gDataGridRuntime.confirmAndSubmit(this, {{
+                confirmMessage: options.confirmMessage || (() => `確定刪除資料？`),
+                confirmTitle: options.confirmTitle || '刪除確認',
+                url: submitUrl,
+                payload,
+                successMessage: options.successMessage || '刪除成功',
+                errorPrefix: options.errorPrefix || '刪除失敗: ',
+                onSuccess: reloadAction
+            }});
+        }},
+        async deleteRow(row) {{
+            {(string.IsNullOrEmpty(h.OnDeleting) ? "" : $"if (window['{h.OnDeleting}'] && window['{h.OnDeleting}'](row) === false) return;")}
+            {(h.AutoApply && !string.IsNullOrEmpty(h.RemoteName)
+                ? $@"const tableParam_{cfg.CompId} = '{h.DataMember}' ? '?DataMember={h.DataMember}' : '';
+                     try {{
+                         const res = await this.requestJson('POST', `/{h.RemoteName}/delete${{tableParam_{cfg.CompId}}}`.replace('//', '/'), row);
+                         if (res?.ok) this.fetchData();
+                     }} catch (e) {{ console.error('[GDataGrid] delete auto-apply failed:', e); }}"
+                : "")}
+            {CallbackJs(h.OnDelete, "row")}
+            this.$dispatch('delete', {{ row }});
+        }},
+        startEdit(row) {{
+            this.editingId  = row['{cfg.ActualIdField}'];
+            this.editRowData = JSON.parse(JSON.stringify(row));
+        }},
+        cancelEdit() {{ this.editingId = null; this.editRowData = {{}}; }},
+        async confirmSave() {{
+            if (!this.editingId) return;
+            {(h.AutoApply && !string.IsNullOrEmpty(h.RemoteName)
+                ? $@"const tp_{cfg.CompId} = '{h.DataMember}' ? '?DataMember={h.DataMember}' : '';
+                     try {{
+                         const res = await this.requestJson('POST', `/{h.RemoteName}/update${{tp_{cfg.CompId}}}`.replace('//', '/'), this.editRowData);
+                         if (res?.ok) this.fetchData();
+                     }} catch (e) {{ console.error('[GDataGrid] update auto-apply failed:', e); }}"
+                : "")}
+            this.$dispatch('save', {{
+                row: this.editRowData,
+                callback: (success) => {{ if (success) this.cancelEdit(); }}
+            }});
+        }},
+
+        // ── 排序 ──────────────────────────────
+        isSortableField(key) {{ return !this.sortableFields?.length || this.sortableFields.includes(key); }},
+        getSortRule(key)     {{ return (this.sortRules || []).find(r => r.key === key); }},
+        getSortOrder(key)    {{
+            const idx = (this.sortRules || []).findIndex(r => r.key === key);
+            return idx < 0 ? 0 : idx + 1;
+        }},
+        isSorted(key, dir) {{
+            if (this.multiSortEnabled) {{
+                const rule = this.getSortRule(key);
+                return !!rule && rule.dir === dir;
+            }}
+            return this.sortKey === key && this.sortDir === dir;
+        }},
+        setSort(key, dir) {{
+            if (!this.isSortableField(key)) return;
+            if (this.multiSortEnabled) {{
+                const rules = [...(this.sortRules || [])];
+                const idx   = rules.findIndex(r => r.key === key);
+                const next  = {{ key, dir: dir === 'desc' ? 'desc' : 'asc' }};
+                idx >= 0 ? rules.splice(idx, 1, next) : rules.push(next);
+                this.sortRules = rules;
+            }}
+            this.sortKey = key;
+            this.sortDir = dir === 'desc' ? 'desc' : 'asc';
+            if (this.titleSortEnabled) this.titleSortField = key;
+        }},
+        toggleSort(key) {{
+            if (!this.isSortableField(key)) return;
+            const nextDir = (this.multiSortEnabled ? this.getSortRule(key)?.dir : this.sortDir) === 'asc' ? 'desc' : 'asc';
+            this.setSort(key, nextDir);
+        }},
+        setTitleSort(dir) {{
+            if (!this.titleSortEnabled) return;
+            const key = this.titleSortField || this.sortKey;
+            if (key) this.setSort(key, dir);
+        }},
+
+        // ── 分頁 ──────────────────────────────
+        prevPage() {{ if (this.currentPage > 1) this.currentPage--; }},
+        nextPage() {{ if (this.currentPage < this.totalPages) this.currentPage++; }},
+        jumpPage(v) {{
+            const p = parseInt(v);
+            if (!isNaN(p)) this.currentPage = Math.min(Math.max(1, p), this.totalPages);
+        }},
+
+        // ── 公開 API ──────────────────────────
+        getSelectedRow() {{ return this.selectedRow; }},
+        refresh()        {{ this.fetchData(); }},
+
+        // ── 事件輔助 ──────────────────────────
+        invokeExpression(expr, row) {{
+            const e = (expr || '').trim();
+            if (!e) return;
+            try {{
+                typeof window[e] === 'function'
+                    ? window[e](row)
+                    : (new Function('row', `return (${{e}})(row);`))(row);
+            }} catch (err) {{
+                console.error('[GDataGrid] invokeExpression error:', err, e);
+            }}
+        }},
+        handleRowClick(row) {{
+            this.selectedRow = row;
+            this.invokeExpression(this.onRowClickExpr, row);
+            this.invokeExpression(this.onSelectExpr, row);
+        }},
+        handleRowDblClick(row) {{
+            this.selectedRow = row;
+            this.invokeExpression(this.onRowDblExpr, row);
+            this.invokeExpression(this.onSelectExpr, row);
+        }}
+    }};
+}}
+</script>";
+        }
+
+        // ─────────────────────────────────────────────
+        // 查詢面板 HTML
+        // ─────────────────────────────────────────────
 
         private static string BuildQueryPanelHtml(List<QueryColumnDefinition> queryColumns)
         {
-            if (queryColumns.Count == 0) return string.Empty;
+            if (queryColumns.Count == 0) return "";
 
             var sb = new StringBuilder();
             sb.AppendLine(@"<div class=""g-grid-query border-b border-slate-200 shrink-0"">");
             sb.AppendLine(@"  <div class=""g-grid-query-head flex items-center justify-between px-4 py-3 border-b border-slate-200"">");
             sb.AppendLine(@"    <div class=""inline-flex items-center gap-2 text-blue-600 font-semibold"">");
-            sb.AppendLine(@"      <svg class=""w-4 h-4 text-blue-600"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M7 7h10l-4 5v5l-2-1v-4L7 7z""/></svg>");
+            sb.AppendLine(@"      <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M7 7h10l-4 5v5l-2-1v-4L7 7z""/></svg>");
             sb.AppendLine(@"      <span>查詢條件</span>");
             sb.AppendLine(@"    </div>");
-            sb.AppendLine(@"    <button type=""button"" @click=""toggleQueryPanel()"" class=""inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors"">");
+            sb.AppendLine(@"    <button type=""button"" @click=""toggleQueryPanel()""");
+            sb.AppendLine($@"            class=""{CssBtnSecondary}"">");
             sb.AppendLine(@"      <svg class=""w-3.5 h-3.5 transition-transform"" :class=""queryPanelOpen ? '' : 'rotate-180'"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M19 9l-7 7-7-7""/></svg>");
             sb.AppendLine(@"      <span x-text=""queryPanelOpen ? '收合' : '展開'""></span>");
             sb.AppendLine(@"    </button>");
@@ -1217,91 +1826,394 @@ namespace Web_EIP_Csharp.Views.Components
 
             foreach (var col in queryColumns)
             {
-                var field = System.Net.WebUtility.HtmlEncode(col.FieldName);
-                var caption = System.Net.WebUtility.HtmlEncode(col.Caption);
-                var span = Math.Clamp(col.Span <= 0 ? 3 : col.Span, 1, 12);
+                var field   = Enc(col.FieldName);
+                var caption = Enc(col.Caption);
+                var span    = Math.Clamp(col.Span <= 0 ? 3 : col.Span, 1, 12);
+                var model   = $"queryValues['{field}']";
 
                 sb.AppendLine($@"    <div class=""md:col-span-{span} flex flex-col gap-1"">");
                 sb.AppendLine($@"      <label class=""text-xs font-semibold text-slate-600"">{caption}</label>");
-
-                var model = $"queryValues['{field}']";
-                switch (col.Editor)
-                {
-                    case "numberbox":
-                        sb.AppendLine($@"      <input type=""number"" x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                        break;
-                    case "datebox":
-                        sb.AppendLine($@"      <input type=""date"" x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                        break;
-                    case "password":
-                        sb.AppendLine($@"      <input type=""password"" x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                        break;
-                    case "checkbox":
-                        sb.AppendLine($@"      <label class=""inline-flex items-center gap-2 py-2""><input type=""checkbox"" :checked=""{model}==='Y' || {model}===true || {model}===1"" @change=""{model} = $event.target.checked ? 'Y' : 'N'"" class=""w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500""><span class=""text-sm text-slate-600"">是/否</span></label>");
-                        break;
-                    case "gcombobox":
-                        sb.AppendLine($@"      <select x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                        sb.AppendLine(@"        <option value="""">請選擇</option>");
-                        foreach (var opt in ParseEditorOptions(col.EditorOptions))
-                        {
-                            sb.AppendLine($@"        <option value=""{System.Net.WebUtility.HtmlEncode(opt.Value)}"">{System.Net.WebUtility.HtmlEncode(opt.Text)}</option>");
-                        }
-                        sb.AppendLine(@"      </select>");
-                        break;
-                    case "gcombogrid":
-                    case "lovinput":
-                        sb.AppendLine(@"      <div class=""relative flex"">");
-                        sb.AppendLine($@"        <input type=""text"" x-model=""{model}"" class=""w-full pr-10 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                        sb.AppendLine($@"        <button type=""button"" @click=""invokeQueryDefaultMethod('{field}')"" class=""absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600"" title=""選取"">");
-                        sb.AppendLine(@"          <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/></svg>");
-                        sb.AppendLine(@"        </button>");
-                        sb.AppendLine(@"      </div>");
-                        break;
-                    default:
-                        sb.AppendLine($@"      <input type=""text"" x-model=""{model}"" class=""w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"">");
-                        break;
-                }
+                sb.AppendLine(BuildQueryFieldEditor(col, model, field));
                 sb.AppendLine(@"    </div>");
             }
 
             sb.AppendLine(@"    </div>");
-            sb.AppendLine(@"    <div class=""flex items-center gap-2 mt-3"">");
-            sb.AppendLine(@"      <button type=""button"" @click=""executeQuery()"" class=""inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"">");
-            sb.AppendLine(@"        <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/></svg>");
-            sb.AppendLine(@"        <span>查詢</span>");
-            sb.AppendLine(@"      </button>");
-            sb.AppendLine(@"    </div>");
+            sb.AppendLine($@"    <div class=""flex items-center gap-2 mt-3"">
+      <button type=""button"" @click=""executeQuery()""
+              class=""{CssBtnPrimary}"">
+        <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+          <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/>
+        </svg>
+        <span>查詢</span>
+      </button>
+      <button type=""button"" @click=""initQueryColumns(); executeQuery()""
+              class=""{CssBtnSecondary}"">
+        <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+          <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>
+        </svg>
+        <span>清除</span>
+      </button>
+    </div>");
             sb.AppendLine(@"  </div>");
             sb.AppendLine(@"</div>");
-
             return sb.ToString();
         }
 
-        private static List<(string Field, string Title, string Width, string Align, string EditorType, string EditorOptions, string FilterType)> ParseColumns(string cols)
+        /// <summary>依 Editor 類型產生對應的輸入元件</summary>
+        private static string BuildQueryFieldEditor(QueryColumnDefinition col, string model, string field)
         {
-            if (string.IsNullOrWhiteSpace(cols)) return new();
-            return cols.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(c =>
-                {
-                    var parts = c.Trim().Split(':');
-                    return (
-                        Field : parts.ElementAtOrDefault(0)?.Trim() ?? "",
-                        Title : parts.ElementAtOrDefault(1)?.Trim() ?? parts[0].Trim(),
-                        Width : parts.ElementAtOrDefault(2)?.Trim() ?? "",
-                        Align : parts.ElementAtOrDefault(3)?.Trim() ?? "left",
-                        EditorType : parts.ElementAtOrDefault(4)?.Trim() ?? "readonly",
-                        EditorOptions : parts.ElementAtOrDefault(5)?.Trim() ?? "",
-                        FilterType : parts.ElementAtOrDefault(6)?.Trim() ?? ""
-                    );
-                })
-                .Where(c => !string.IsNullOrEmpty(c.Field))
-                .ToList();
+            return col.Editor switch
+            {
+                "numberbox" =>
+                    $@"<input type=""number"" x-model=""{model}"" class=""{CssInput}"">",
+
+                "datebox" =>
+                    $@"<input type=""date"" x-model=""{model}"" class=""{CssInput}"">",
+
+                "password" =>
+                    $@"<input type=""password"" x-model=""{model}"" class=""{CssInput}"">",
+
+                "checkbox" =>
+                    $@"<label class=""inline-flex items-center gap-2 py-2"">
+                        <input type=""checkbox""
+                               :checked=""{model}==='Y' || {model}===true || {model}===1""
+                               @change=""{model} = $event.target.checked ? 'Y' : 'N'""
+                               class=""w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"">
+                        <span class=""text-sm text-slate-600"">是/否</span>
+                    </label>",
+
+                "gcombobox" =>
+                    $@"<select x-model=""{model}"" class=""{CssInput}"">
+                        <option value="""">請選擇</option>
+                        {string.Join("", ParseEditorOptions(col.EditorOptions)
+                            .Select(o => $@"<option value=""{Enc(o.Value)}"">{Enc(o.Text)}</option>"))}
+                    </select>",
+
+                "gcombogrid" or "lovinput" or "gcombogrid" =>
+                    $@"<div class=""relative flex"">
+                        <input type=""text"" id=""{field}_query_input""
+                               x-model=""queryDisplayValues['{field}']""
+                               @input=""queryValues['{field}'] = queryDisplayValues['{field}']""
+                               class=""w-full pr-10 {CssInput}""
+                               @keydown.enter.prevent=""onQueryInputEnter('{field}', '{field}_query_input', queryDisplayValues['{field}'])"">
+                        <button type=""button"" @click=""invokeQueryDefaultMethod('{field}', '{field}_query_input', queryDisplayValues['{field}'])""
+                                class=""absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600 transition-colors"" title=""選取"">
+                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/>
+                            </svg>
+                        </button>
+                    </div>",
+
+                _ =>
+                    $@"<input type=""text"" x-model=""{model}"" class=""{CssInput}"">",
+            };
         }
+
+        // ─────────────────────────────────────────────
+        // 動態表單 Dialog
+        // ─────────────────────────────────────────────
+
+        private static string BuildGeneratedFormDialog(string compId, List<FormColumnDefinition> formColumns)
+        {
+            if (formColumns.Count == 0) return "";
+
+            var dialogId = $"{compId}_formdlg";
+            var fields   = string.Join("", formColumns.Where(c => !c.Hidden).Select(BuildGeneratedFormField));
+
+            return $@"
+<div id=""{dialogId}"" role=""dialog"" aria-modal=""true""
+     class=""fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] items-center justify-center p-4""
+     style=""display:none;""
+     @keydown.escape.window=""gDialogClose('{dialogId}')""
+     onclick=""if(event.target===this)gDialogClose('{dialogId}')"">
+    <div class=""relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl overflow-hidden"">
+
+        <!-- 標題列：依模式顯示不同底色 -->
+        <div class=""flex items-center justify-between px-5 py-4 text-white""
+             :class=""formMode==='add' ? 'bg-emerald-700' : formMode==='edit' ? 'bg-blue-700' : 'bg-slate-700'"">
+            <div class=""flex items-center gap-2.5"">
+                <!-- 模式圖示 -->
+                <template x-if=""formMode==='add'"">
+                    <svg class=""w-5 h-5 shrink-0"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 4v16m8-8H4""/>
+                    </svg>
+                </template>
+                <template x-if=""formMode==='edit'"">
+                    <svg class=""w-5 h-5 shrink-0"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z""/>
+                    </svg>
+                </template>
+                <template x-if=""formMode==='view'"">
+                    <svg class=""w-5 h-5 shrink-0"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                              d=""M15 12a3 3 0 11-6 0 3 3 0 016 0""/>
+                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                              d=""M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z""/>
+                    </svg>
+                </template>
+                <h3 class=""text-base font-bold""
+                    x-text=""formMode==='add' ? '新增資料' : (formMode==='edit' ? '修改資料' : '檢視資料')""></h3>
+            </div>
+            <button type=""button"" onclick=""gDialogClose('{dialogId}')""
+                    class=""text-white/70 hover:text-white transition-colors rounded-lg p-1 hover:bg-white/10"">
+                <svg class=""w-5 h-5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                    <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- 欄位 -->
+        <div class=""p-5 overflow-y-auto max-h-[70vh]"">
+            <div class=""grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4"">
+                {fields}
+            </div>
+        </div>
+
+        <!-- 按鈕列 -->
+        <div class=""flex items-center justify-between gap-2 px-5 py-3.5 border-t border-slate-200 bg-slate-50"">
+            <span class=""text-xs text-slate-400"" x-show=""formMode !== 'view'"">
+                <span class=""text-red-400"">*</span> 為必填欄位
+            </span>
+            <div class=""flex gap-2 ml-auto"">
+                <button type=""button"" onclick=""gDialogClose('{dialogId}')""
+                        class=""{CssBtnSecondary}"">
+                    <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M6 18L18 6M6 6l12 12""/>
+                    </svg>
+                    關閉
+                </button>
+                <button type=""button"" x-show=""formMode !== 'view'"" @click=""saveGeneratedForm()""
+                        class=""{CssBtnPrimary}"">
+                    <svg class=""w-3.5 h-3.5"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                        <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M5 13l4 4L19 7""/>
+                    </svg>
+                    儲存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>";
+        }
+
+        private static string BuildGeneratedFormField(FormColumnDefinition col)
+        {
+            var f           = Js(col.FieldName);
+            var roExpr      = col.AlwaysReadOnly || col.IsPrimaryKey ? "formMode !== 'add'" : "formMode === 'view'";
+            var wrapperSpan = col.ColSpan > 1 ? $"md:col-span-{col.ColSpan} " : "";
+            var req         = col.Required ? @"<span class=""text-red-500 ml-0.5"">*</span>" : "";
+            var placeholder = string.IsNullOrWhiteSpace(col.Placeholder) ? "" : $@" placeholder=""{Enc(col.Placeholder)}""";
+            var maxLength   = col.MaxLength.HasValue ? $@" maxlength=""{col.MaxLength.Value}""" : "";
+            var min         = col.Min.HasValue ? $@" min=""{col.Min.Value}""" : "";
+            var max         = col.Max.HasValue ? $@" max=""{col.Max.Value}""" : "";
+
+            // readonly 時輸入框加上灰底樣式
+            var roClass = $@" :class=""{roExpr} ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-white'""";
+
+            var sb = new StringBuilder();
+            sb.Append($@"<div class=""{wrapperSpan}flex flex-col gap-1"">
+    <label class=""text-xs font-semibold text-slate-600"">{Enc(col.Caption)}{req}</label>");
+
+            switch (NormalizeFormColumnType(col.ColumnType))
+            {
+                case FormColumnType.Select:
+                    sb.Append($@"<select x-model=""formRecord['{f}']"" :disabled=""{roExpr}""{roClass} class=""{CssInput}"">
+                        <option value="""">請選擇</option>");
+                    foreach (var opt in (col.Options ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var parts = opt.Split(':', 2);
+                        sb.Append($@"<option value=""{Enc(parts[0].Trim())}"">{Enc(parts.Length > 1 ? parts[1].Trim() : parts[0].Trim())}</option>");
+                    }
+                    sb.Append("</select>");
+                    break;
+
+                case FormColumnType.Date:
+                    sb.Append($@"<input type=""date"" x-model=""formRecord['{f}']"" :readonly=""{roExpr}""{roClass} class=""{CssInput}""{placeholder}>");
+                    break;
+
+                case FormColumnType.Number:
+                    sb.Append($@"<input type=""number"" x-model=""formRecord['{f}']"" :readonly=""{roExpr}""{roClass} class=""{CssInput}""{placeholder}{min}{max}>");
+                    break;
+
+                case FormColumnType.Lov:
+                    // LOV 欄位：文字輸入 + 查詢按鈕（使用 LovApi 或 defaultMethod）
+                    sb.Append($@"<div class=""relative flex items-center"">
+                        <input type=""hidden"" x-model=""formRecord['{f}']"">
+                        <input type=""text"" x-model=""formRecord['{f}__DISPLAY']"" :readonly=""true""
+                               {roClass} class=""w-full pr-9 {CssInput}""{placeholder}{maxLength}>
+                        <button type=""button""
+                                x-show=""!({roExpr})""
+                                @click=""openFormLov('{f}')""
+                                class=""absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors"" title=""選取"">
+                            <svg class=""w-4 h-4"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24"">
+                                <path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2""
+                                      d=""M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z""/>
+                            </svg>
+                        </button>
+                    </div>");
+                    break;
+
+                default:
+                    sb.Append($@"<input type=""text"" x-model=""formRecord['{f}']"" :readonly=""{roExpr}""{roClass} class=""{CssInput}""{placeholder}{maxLength}>");
+                    break;
+            }
+
+            sb.Append("</div>");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────
+        // 解析輔助方法
+        // ─────────────────────────────────────────────
+
+        private static List<ColumnDef> ParseColumns(string cols) =>
+            string.IsNullOrWhiteSpace(cols)
+                ? new()
+                : cols.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                      .Select(c =>
+                      {
+                          var p = c.Trim().Split(':');
+                          return new ColumnDef(
+                              Field       : p.ElementAtOrDefault(0)?.Trim() ?? "",
+                              Title       : p.ElementAtOrDefault(1)?.Trim() ?? p[0].Trim(),
+                              Width       : p.ElementAtOrDefault(2)?.Trim() ?? "",
+                              Align       : p.ElementAtOrDefault(3)?.Trim() ?? "left",
+                              EditorType  : p.ElementAtOrDefault(4)?.Trim() ?? "readonly",
+                              EditorOptions: p.ElementAtOrDefault(5)?.Trim() ?? "",
+                              FilterType  : p.ElementAtOrDefault(6)?.Trim() ?? "");
+                      })
+                      .Where(c => !string.IsNullOrEmpty(c.Field))
+                      .ToList();
+
+        private static HashSet<string> ParseSortableFields(string sortableColumns, List<ColumnDef> cols)
+        {
+            if (string.IsNullOrWhiteSpace(sortableColumns))
+                return cols.Select(c => c.Field).Where(f => !string.IsNullOrWhiteSpace(f))
+                           .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            return sortableColumns
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(f => !string.IsNullOrWhiteSpace(f))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static List<QueryColumnDefinition> ParseQueryColumns(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return new();
+            try
+            {
+                var list = JsonSerializer.Deserialize<List<QueryColumnDefinition>>(raw,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                foreach (var q in list)
+                {
+                    q.FieldName = q.FieldName.Trim();
+                    q.Caption   = string.IsNullOrWhiteSpace(q.Caption) ? q.FieldName : q.Caption.Trim();
+                    q.Condition = NormalizeQueryCondition(q.Condition);
+                    q.AndOr     = NormalizeAndOr(q.AndOr);
+                    q.DataType  = NormalizeDataType(q.DataType);
+                    q.Editor    = NormalizeEditor(q.Editor);
+                    q.Span      = Math.Clamp(q.Span <= 0 ? 3 : q.Span, 1, 12);
+                    q.RowSpan   = q.RowSpan <= 0 ? 1 : q.RowSpan;
+                    q.LovTitle  = q.LovTitle?.Trim() ?? "";
+                    q.LovApi    = q.LovApi?.Trim() ?? "";
+                    q.LovColumns = q.LovColumns?.Trim() ?? "";
+                    q.LovFields  = q.LovFields?.Trim() ?? "";
+                    q.LovKeyValue = q.LovKeyValue?.Trim() ?? "";
+                    q.LovKeyDisplay = q.LovKeyDisplay?.Trim() ?? "";
+                    q.LovDisplayFormat = q.LovDisplayFormat?.Trim() ?? "";
+                }
+                return list.Where(q => !string.IsNullOrWhiteSpace(q.FieldName)).ToList();
+            }
+            catch { return new(); }
+        }
+
+        private static List<FormColumnDefinition> ParseFormColumns(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return new();
+            try
+            {
+                return JsonSerializer.Deserialize<List<FormColumnDefinition>>(raw,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                    ?.Where(x => !string.IsNullOrWhiteSpace(x.FieldName)).ToList() ?? new();
+            }
+            catch { return new(); }
+        }
+
+        private static List<(string Value, string Text)> ParseEditorOptions(string options)
+        {
+            if (string.IsNullOrWhiteSpace(options)) return new();
+            return options.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(part =>
+                {
+                    var idx = part.IndexOf('=');
+                    if (idx <= 0) return (part, part);
+                    var v = part[..idx].Trim();
+                    var t = part[(idx + 1)..].Trim();
+                    return (v, string.IsNullOrWhiteSpace(t) ? v : t);
+                }).ToList();
+        }
+
+        // ─────────────────────────────────────────────
+        // 正規化輔助方法
+        // ─────────────────────────────────────────────
+
+        private static string NormalizeEditor(string? editor) =>
+            (editor ?? "").Trim().ToLowerInvariant() switch
+            {
+                "checkbox"                                        => "checkbox",
+                "numberbox"                                       => "numberbox",
+                "datebox"                                         => "datebox",
+                "infocombobox" or "gcombobox"                     => "gcombobox",
+                "infocombogrid" or "gcombogrid"                   => "gcombogrid",
+                "inforefval" or "glovinput" or "lovinput"         => "lovinput",
+                "password"                                        => "password",
+                // gtext / text 明確對應，語意清楚
+                "gtext" or "text"                                 => "text",
+                _                                                 => "text"
+            };
+
+        private static string NormalizeQueryCondition(string? condition) =>
+            (condition ?? "").Trim() switch
+            {
+                "=" => "=", "!=" or "<>" => "!=",
+                ">" => ">", ">=" => ">=",
+                "<" => "<", "<=" => "<=",
+                "%" => "%", "%%" => "%%",
+                _   => "="
+            };
+
+        private static string NormalizeAndOr(string? andOr) =>
+            string.Equals((andOr ?? "").Trim(), "OR", StringComparison.OrdinalIgnoreCase) ? "OR" : "AND";
+
+        private static string NormalizeDataType(string? dataType) =>
+            (dataType ?? "").Trim().ToLowerInvariant() switch
+            {
+                "number"   => "number",
+                "datetime" => "datetime",
+                "guid"     => "guid",
+                _          => "string"
+            };
+
+        private static FormColumnType NormalizeFormColumnType(string? raw) =>
+            (raw ?? "").Trim().ToLowerInvariant() switch
+            {
+                "select" or "combobox" or "gcombobox" or "g-combobox"           => FormColumnType.Select,
+                "date" or "datebox" or "gdatebox" or "g-datebox"                => FormColumnType.Date,
+                "number" or "numberbox" or "gnumberbox" or "g-numberbox"        => FormColumnType.Number,
+                "lov" or "lovinput" or "glovinput" or "g-lov-input"             => FormColumnType.Lov,
+                _                                                                => FormColumnType.Text
+            };
+
+        // ─────────────────────────────────────────────
+        // 通用工具方法
+        // ─────────────────────────────────────────────
+
+        private static string Enc(string? v) => System.Net.WebUtility.HtmlEncode(v ?? "");
+        private static string Js(string? v)  => (v ?? "").Replace("\\", "\\\\").Replace("'", "\\'");
+        private static string BoolJs(bool v) => v ? "true" : "false";
+        private static string Serialize(object obj) => JsonSerializer.Serialize(obj, new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
     }
 }
-
-
-
-
-
-

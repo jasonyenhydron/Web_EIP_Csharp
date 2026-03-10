@@ -311,8 +311,8 @@ namespace Web_EIP_Csharp.Views.Components
             var displayMap = string.IsNullOrWhiteSpace(col.LovDisplayFormat)
                 ? $"'{keyDisp}':'{HtmlAttr(inputId)}'"
                 : $"'FORMATTED_DISPLAY':'{HtmlAttr(inputId)}'";
-            var onConfirm = $"function(selected){{const root=document.getElementById('{HtmlAttr(formId)}');if(!root||!root._x_dataStack)return;const data=Alpine.$data(root);if(data){{data.queryValues['{field}']=selected['{keyVal}']??'';data.queryValues['{displayFieldJs}']={(string.IsNullOrWhiteSpace(fmt) ? $"(selected['{keyDisp}']??'')" : $"`{fmt.Replace("{", "${{selected.").Replace("}", "}}")}`")};}}}}";
-            var openJs = $"gLov.open({{title:'{title}',api:'{api}',columns:['{cols}'.split(',')].flat(),fields:['{fields}'.split(',')].flat(),map:{{'{keyVal}':'{HtmlAttr(inputId)}_hidden',{displayMap}}},formatDisplay:{(string.IsNullOrWhiteSpace(fmt) ? "null" : $"function(d){{return `{fmt.Replace("{", "${{d.").Replace("}", "}}")}`;}}")},onConfirm:{onConfirm}}})";
+            var onConfirm = $"function(selected){{const root=document.getElementById('{HtmlAttr(formId)}');if(!root||!root._x_dataStack)return;const data=Alpine.$data(root);if(data){{data.queryValues['{field}']=selected['{keyVal}']??'';data.queryValues['{displayFieldJs}']={(string.IsNullOrWhiteSpace(fmt) ? $"(selected['{keyDisp}']??'')" : BuildLovDisplayExpression(fmt, "selected"))};}}}}";
+            var openJs = $"gLov.open({{title:'{title}',api:'{api}',columns:['{cols}'.split(',')].flat(),fields:['{fields}'.split(',')].flat(),map:{{'{keyVal}':'{HtmlAttr(inputId)}_hidden',{displayMap}}},formatDisplay:{(string.IsNullOrWhiteSpace(fmt) ? "null" : $"function(d){{return {BuildLovDisplayExpression(fmt, "d")};}}")},onConfirm:{onConfirm}}})";
 
             return "<div class=\"flex\">"
                  + $"<input type=\"hidden\" id=\"{inputId}_hidden\" x-model=\"queryValues['{field}']\"{queryAttr}>"
@@ -606,7 +606,7 @@ namespace Web_EIP_Csharp.Views.Components
             var openJs = $"gLov.open({{title:'{title}',api:'{api}',columns:['{cols}'.split(',')].flat(),"
                        + $"fields:['{fields}'.split(',')].flat(),"
                        + $"map:{{'{keyVal}':'{HtmlAttr(inputId)}_hidden',{displayMap}}},"
-                       + $"formatDisplay:{(string.IsNullOrWhiteSpace(fmt) ? "null" : $"function(d){{return `{fmt.Replace("{", "${{d.").Replace("}", "}}")}`;}}")}"
+                       + $"formatDisplay:{(string.IsNullOrWhiteSpace(fmt) ? "null" : $"function(d){{return {BuildLovDisplayExpression(fmt, "d")};}}")}"
                        + $",onConfirm:{cb}}})";
 
             return "<div class=\"flex\">"
@@ -662,6 +662,34 @@ namespace Web_EIP_Csharp.Views.Components
             if (ctx.Items.ContainsKey(RuntimeInjectedKey)) return;
             ctx.Items[RuntimeInjectedKey] = true;
             output.PostElement.AppendHtml("<script src=\"/js/g-dataform.js\"></script>");
+        }
+
+        private static string BuildLovDisplayExpression(string format, string dataVar)
+        {
+            if (string.IsNullOrWhiteSpace(format)) return "''";
+            var parts = new List<string>();
+            var matches = System.Text.RegularExpressions.Regex.Matches(format, "\\{([^}]+)\\}");
+            var lastIndex = 0;
+
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                if (match.Index > lastIndex)
+                {
+                    var literal = format.Substring(lastIndex, match.Index - lastIndex);
+                    parts.Add(JsonSerializer.Serialize(literal));
+                }
+
+                var key = JsEsc(match.Groups[1].Value.Trim());
+                parts.Add($"(({dataVar} && {dataVar}['{key}'] != null) ? String({dataVar}['{key}']) : '')");
+                lastIndex = match.Index + match.Length;
+            }
+
+            if (lastIndex < format.Length)
+            {
+                parts.Add(JsonSerializer.Serialize(format[lastIndex..]));
+            }
+
+            return parts.Count == 0 ? "''" : string.Join(" + ", parts);
         }
 
         private static string JsEsc(string s) => (s ?? "").Replace("\\", "\\\\").Replace("'", "\\'");

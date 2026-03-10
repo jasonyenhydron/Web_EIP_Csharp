@@ -1,10 +1,13 @@
-﻿@model Web_EIP_Csharp.Models.ViewModels.IdmGd01ViewModel
 @{
-    var _viewName = System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
-    ViewData["Title"] = ViewBag.ProgramTitle ?? _viewName;
+    ViewData["Title"] = ViewBag.ProgramTitle ?? System.IO.Path.GetFileNameWithoutExtension(ViewContext.ExecutingFilePath);
     ViewData["HidePopupFooterClose"] = false;
     ViewData["PopupFullscreenTargetId"] = "idmgRootPanel";
     Layout = "~/Views/Shared/_PopupLayout.cshtml";
+    var employeeLov = ViewBag.EmployeeLov as Web_EIP_Csharp.Models.Lov.LovInputConfig ?? new();
+    var employeeLovTitleJson = System.Text.Json.JsonSerializer.Serialize(employeeLov.Title);
+    var employeeLovApiJson = System.Text.Json.JsonSerializer.Serialize(employeeLov.Api);
+    var employeeLovColumnsJson = System.Text.Json.JsonSerializer.Serialize(employeeLov.Columns);
+    var employeeLovFieldsJson = System.Text.Json.JsonSerializer.Serialize(employeeLov.Fields);
 }
 
 @section Styles {
@@ -12,16 +15,29 @@
 }
 
 <div class="absolute inset-0 p-0 idmg-shell overflow-hidden" x-data="idmgd01App()" x-init="init()">
-<div id="idmgRootPanel" class="idmg-panel flex flex-col h-full min-h-0 overflow-hidden">
+<div id="idmgRootPanel" class="idmg-panel flex flex-col h-full min-h-0 overflow-y-auto overflow-x-hidden">
 
-    <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div class="flex flex-col flex-1 min-h-0">
         <g-datagrid id="idmGrid"
                     api="/Idm/select?DataMember=IDMGD01"
                     columns="PROGRAM_NO:程式編號:150:left,EMPLOYEE_ID:員工:120:left,DISPLAY_CODE:顯示碼:80:center"
                     query-columns='[
-                        {"FieldName":"programNo","Caption":"程式編號","Condition":"%","DataType":"string","Editor":"text","Span":3},
-                        {"FieldName":"employeeId","Caption":"員工編號","Condition":"=","DataType":"string","Editor":"text","Span":3},
+                        {"FieldName":"programNo","Caption":"程式編號","Condition":"%","DataType":"string","Editor":"gtext","Span":3},
+                        {"FieldName":"employeeId","Caption":"員工編號","Condition":"=","DataType":"string","Editor":"lovinput","LovTitle":@Html.Raw(employeeLovTitleJson),"LovApi":@Html.Raw(employeeLovApiJson),"LovColumns":@Html.Raw(employeeLovColumnsJson),"LovFields":@Html.Raw(employeeLovFieldsJson),"LovKeyValue":"employee_id","LovKeyDisplay":"employee_name","LovDisplayFormat":"{employee_id}-{employee_name}","Span":3},
                         {"FieldName":"displayCode","Caption":"顯示碼","Condition":"=","DataType":"string","Editor":"infocombobox","EditorOptions":"Y=是;N=否","Span":2}
+                    ]'
+                    form-columns='[
+                        {"FieldName":"PROGRAM_NO","Caption":"程式編號","ColumnType":"gtext","Required":true,"IsPrimaryKey":true,"Placeholder":"例：IDMGD99"},
+                        {"FieldName":"DISPLAY_CODE","Caption":"顯示碼","ColumnType":"gcombobox","Options":"Y:Y - 顯示,N:N - 隱藏"},
+                        {"FieldName":"EMPLOYEE_ID","Caption":"員工編號","ColumnType":"lovinput","LovTitle":@Html.Raw(employeeLovTitleJson),"LovApi":@Html.Raw(employeeLovApiJson),"LovColumns":@Html.Raw(employeeLovColumnsJson),"LovFields":@Html.Raw(employeeLovFieldsJson),"LovKeyValue":"employee_id","LovKeyDisplay":"employee_name","LovDisplayFormat":"{employee_id}-{employee_name}"},
+                        {"FieldName":"PROGRAM_TYPE","Caption":"程式型態","ColumnType":"gtext"},
+                        {"FieldName":"PURPOSE","Caption":"用途","ColumnType":"gtext","ColSpan":2},
+                        {"FieldName":"PLAN_START_DEVELOP_DATE","Caption":"預計開發開始日","ColumnType":"date"},
+                        {"FieldName":"REAL_START_DEVELOP_DATE","Caption":"實際開發開始日","ColumnType":"date"},
+                        {"FieldName":"PLAN_FINISH_DEVELOP_DATE","Caption":"預計開發完工日","ColumnType":"date"},
+                        {"FieldName":"REAL_FINISH_DEVELOP_DATE","Caption":"實際開發完工日","ColumnType":"date"},
+                        {"FieldName":"PLAN_WORK_HOURS","Caption":"預計工時","ColumnType":"number"},
+                        {"FieldName":"REAL_WORK_HOURS","Caption":"實際工時","ColumnType":"number"}
                     ]'
                     pagination="true"
                     page-list="20,50,100"
@@ -35,15 +51,9 @@
                     allow-update="true"
                     allow-delete="true"
                     view-command-visible="true"
-                    on-insert="idmOpenCreate"
-                    on-view="idmViewRecord"
-                    on-update="idmEditRecord"
                     on-load-success="idmGridLoaded"
                     on-row-click="idmSelectProgram"
-                    @@add="openCreate()"
-                    @@view="viewRecord($event.detail.row)"
-                    @@edit="editRecord($event.detail.row)"
-                    @@delete="confirmDelete($event.detail.row)"
+                    @@delete="document.getElementById('idmGrid')?.gDataGrid?.confirmDelete($event.detail.row, { confirmMessage: () => `確定刪除程式 ${$event.detail.row?.PROGRAM_NO || ''}？\n此操作無法還原。`, url: '/Idm/delete?DataMember=IDMGD01' })"
                     extra-class="flex-1 min-h-0 max-h-[52vh]"
                     clean-style="false"></g-datagrid>
 
@@ -53,123 +63,6 @@
         </div>
 
     </div>
-
-<g-dialog id="dlgRecord" title="程式資料" width="lg">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <g-textbox label="程式編號"
-                   required="true"
-                   x-model="formRecord.PROGRAM_NO"
-                   x-bind-readonly="recordMode!=='create'"
-                   placeholder="例：IDMGD99"
-                   extra-class="uppercase">
-        </g-textbox>
-
-        <g-combobox label="顯示碼"
-                    x-model="formRecord.DISPLAY_CODE"
-                    x-bind-disabled="recordMode==='view'"
-                    items="Y:Y - 顯示,N:N - 隱藏"
-                    placeholder="">
-        </g-combobox>
-
-        <g-textbox label="員工編號"
-                   x-model="formRecord.EMPLOYEE_ID"
-                   x-bind-readonly="recordMode==='view'">
-        </g-textbox>
-
-        <g-textbox label="程式型態"
-                   x-model="formRecord.PROGRAM_TYPE"
-                   x-bind-readonly="recordMode==='view'">
-        </g-textbox>
-
-        <g-textbox label="用途"
-                   x-model="formRecord.PURPOSE"
-                   x-bind-readonly="recordMode==='view'"
-                   wrapper-class="flex flex-col gap-1 md:col-span-2">
-        </g-textbox>
-
-        <g-textbox label="預計開發開始日"
-                   type="date"
-                   x-model="formRecord.PLAN_START_DEVELOP_DATE"
-                   x-bind-readonly="recordMode==='view'">
-        </g-textbox>
-
-        <g-textbox label="實際開發開始日"
-                   type="date"
-                   x-model="formRecord.REAL_START_DEVELOP_DATE"
-                   x-bind-readonly="recordMode==='view'">
-        </g-textbox>
-
-        <g-textbox label="預計開發完工日"
-                   type="date"
-                   x-model="formRecord.PLAN_FINISH_DEVELOP_DATE"
-                   x-bind-readonly="recordMode==='view'">
-        </g-textbox>
-
-        <g-textbox label="實際開發完工日"
-                   type="date"
-                   x-model="formRecord.REAL_FINISH_DEVELOP_DATE"
-                   x-bind-readonly="recordMode==='view'">
-        </g-textbox>
-
-        <g-textbox label="預計工時"
-                   type="number"
-                   step="0.1"
-                   x-model="formRecord.PLAN_WORK_HOURS"
-                   x-bind-readonly="recordMode==='view'"
-                   extra-class="text-right">
-        </g-textbox>
-
-        <g-textbox label="實際工時"
-                   type="number"
-                   step="0.1"
-                   x-model="formRecord.REAL_WORK_HOURS"
-                   x-bind-readonly="recordMode==='view'"
-                   extra-class="text-right">
-        </g-textbox>
-    </div>
-
-    <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
-        <g-button text="取消" icon="close" type="secondary" onclick="gDialogClose('dlgRecord')"></g-button>
-        <g-button text="儲存" icon="save" type="success" x-show="recordMode!=='view'" onclick="window._idmApp?.saveRecord()"></g-button>
-    </div>
-</g-dialog>
-
-<g-dialog id="dlgRoleRecord" title="角色功能維護" width="md">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <g-textbox label="角色代號"
-                   x-model="roleRecord.ROLE_NO"
-                   x-bind-readonly="roleMode==='view'">
-        </g-textbox>
-        <g-textbox label="角色名稱"
-                   x-model="roleRecord.ROLE_NAME"
-                   x-bind-readonly="roleMode==='view'">
-        </g-textbox>
-        <g-textbox label="功能編號"
-                   x-model="roleRecord.FUNCTION_NO"
-                   x-bind-readonly="roleMode==='view'">
-        </g-textbox>
-        <g-textbox label="序"
-                   type="number"
-                   x-model="roleRecord.DISPLAY_ORDER"
-                   x-bind-readonly="roleMode==='view'">
-        </g-textbox>
-        <g-textbox label="顏色"
-                   x-model="roleRecord.DISPLAY_COLOR"
-                   x-bind-readonly="roleMode==='view'">
-        </g-textbox>
-    </div>
-    <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
-        <g-button text="取消" icon="close" type="secondary" onclick="gDialogClose('dlgRoleRecord')"></g-button>
-        <g-button text="儲存" icon="save" type="success" x-show="roleMode!=='view'" onclick="window._idmApp?.saveRoleRecord()"></g-button>
-    </div>
-</g-dialog>
-
-<form id="idmgHtmxForm"
-      class="hidden"
-      hx-ext="json-enc"
-      hx-target="#idmgHtmxSink"
-      hx-swap="none"></form>
-<div id="idmgHtmxSink" class="hidden" aria-hidden="true"></div>
 
 </div>
 </div>
@@ -183,325 +76,36 @@
           extras="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></g-js>
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.store('idmgd01', {
-                employeeLov: {
-                    title: '@Model.EmployeeLov.Title',
-                    api: '@Html.Raw(Model.EmployeeLov.Api)',
-                    columns: '@Model.EmployeeLov.Columns',
-                    fields: '@Model.EmployeeLov.Fields'
-                },
-                toDateInput(v) {
-                    if (!v) return '';
-                    const s = String(v);
-                    return s.length >= 10 ? s.slice(0, 10) : '';
-                },
-                async htmxJson(method, url, payload) {
-                    if (!window.htmx) {
-                        const res = await fetch(url, {
-                            method,
-                            headers: { 'Content-Type': 'application/json' },
-                            body: payload ? JSON.stringify(payload) : undefined
-                        });
-                        let json = null;
-                        try { json = await res.json(); } catch { json = null; }
-                        return { ok: res.ok, status: res.status, json };
-                    }
-
-                    const form = document.getElementById('idmgHtmxForm');
-                    const sink = document.getElementById('idmgHtmxSink');
-                    if (!form || !sink) throw new Error('HTMX form not found');
-
-                    ['hx-get', 'hx-post', 'hx-put', 'hx-delete', 'hx-patch'].forEach((a) => form.removeAttribute(a));
-                    form.setAttribute(`hx-${String(method || 'POST').toLowerCase()}`, url);
-                    form.innerHTML = '';
-
-                    const data = payload || {};
-                    Object.entries(data).forEach(([k, v]) => {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = k;
-                        input.value = v == null ? '' : String(v);
-                        form.appendChild(input);
-                    });
-
-                    htmx.process(form);
-
-                    return await new Promise((resolve, reject) => {
-                        const onAfter = (evt) => {
-                            if (evt.detail.elt !== form) return;
-                            cleanup();
-                            const xhr = evt.detail.xhr;
-                            let json = null;
-                            try { json = JSON.parse(xhr.responseText || '{}'); } catch { json = null; }
-                            resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json });
-                        };
-
-                        const onError = (evt) => {
-                            if (evt.detail.elt !== form) return;
-                            cleanup();
-                            reject(new Error(evt.detail?.error || 'HTMX request failed'));
-                        };
-
-                        const cleanup = () => {
-                            document.body.removeEventListener('htmx:afterRequest', onAfter);
-                            document.body.removeEventListener('htmx:sendError', onError);
-                            document.body.removeEventListener('htmx:responseError', onError);
-                        };
-
-                        document.body.addEventListener('htmx:afterRequest', onAfter);
-                        document.body.addEventListener('htmx:sendError', onError);
-                        document.body.addEventListener('htmx:responseError', onError);
-                        htmx.trigger(form, 'submit');
-                    });
-                },
-                openEmployeeLov(fieldName, queryValues) {
-                    const lov = this.employeeLov;
-                    const columns = (lov.columns || '').split(',').map(s => s.trim()).filter(Boolean);
-                    const fields = (lov.fields || '').split(',').map(s => s.trim()).filter(Boolean);
-                    if (!columns.length || !fields.length) return;
-
-                    openGenericLov(
-                        lov.title || '員工查詢',
-                        lov.api,
-                        columns,
-                        fields,
-                        null,
-                        null,
-                        (selected) => {
-                            const v = selected?.employee_id ?? selected?.employee_no ?? '';
-                            if (queryValues && fieldName) queryValues[fieldName] = v;
-                        }
-                    );
-                }
-            });
-
-            window.idmQueryEmployeeLov = (fieldName, currentValue, queryValues) => {
-                Alpine.store('idmgd01').openEmployeeLov(fieldName, queryValues);
-            };
-
             Alpine.data('idmgd01App', () => ({
                 programs: [],
                 selectedProgram: null,
-                recordMode: 'view', // view | edit | create
-                formRecord: {},
-                roleMode: 'view', // view | edit | create
-                roleRecord: {},
-                rolePosition: 1,
 
                 init() {
-                    window._idmApp = this;
-                    window.idmOpenCreate = () => window._idmApp?.openCreate();
-                    window.idmViewRecord = (row) => window._idmApp?.viewRecord(row);
-                    window.idmEditRecord = (row) => window._idmApp?.editRecord(row);
-                    window.idmSelectProgram = (row) => window._idmApp?.selectProgram(row);
-                    window.idmAddRole1 = () => window._idmApp?.openRoleCreate(1);
-                    window.idmAddRole2 = () => window._idmApp?.openRoleCreate(2);
-                    window.idmAddRole3 = () => window._idmApp?.openRoleCreate(3);
-                    window.idmEditRole1 = (row) => window._idmApp?.editRoleRecord(row, 1);
-                    window.idmEditRole2 = (row) => window._idmApp?.editRoleRecord(row, 2);
-                    window.idmEditRole3 = (row) => window._idmApp?.editRoleRecord(row, 3);
-                    window.idmDeleteRole = (row) => window._idmApp?.deleteRoleRecord(row);
-                    window.idmGridLoaded = (rows) => window._idmApp?.onGridLoaded(rows);
-                    console.log('[IDMGD01] app initialized');
+                    window.gDataGridRuntime?.registerAppCallbacks(this, {
+                        appKey: '_idmApp',
+                        callbacks: {
+                            idmSelectProgram: 'selectProgram',
+                            idmGridLoaded: 'onGridLoaded'
+                        }
+                    });
                     this.executeQuery();
                 },
 
-                showToast(msg, type = 'success') { gToast(msg, type); },
-
-                normalizeRecord(row) {
-                    return {
-                        ...row,
-                        PROGRAM_NO: row?.PROGRAM_NO ?? '',
-                        DISPLAY_CODE: row?.DISPLAY_CODE ?? 'Y',
-                        EMPLOYEE_ID: row?.EMPLOYEE_ID ?? '',
-                        PURPOSE: row?.PURPOSE ?? '',
-                        PROGRAM_TYPE: row?.PROGRAM_TYPE ?? '',
-                        PLAN_START_DEVELOP_DATE: this.$store.idmgd01.toDateInput(row?.PLAN_START_DEVELOP_DATE),
-                        PLAN_FINISH_DEVELOP_DATE: this.$store.idmgd01.toDateInput(row?.PLAN_FINISH_DEVELOP_DATE),
-                        REAL_START_DEVELOP_DATE: this.$store.idmgd01.toDateInput(row?.REAL_START_DEVELOP_DATE),
-                        REAL_FINISH_DEVELOP_DATE: this.$store.idmgd01.toDateInput(row?.REAL_FINISH_DEVELOP_DATE),
-                        PLAN_WORK_HOURS: row?.PLAN_WORK_HOURS ?? '',
-                        REAL_WORK_HOURS: row?.REAL_WORK_HOURS ?? ''
-                    };
-                },
-
                 async executeQuery() {
-                    const grid = document.getElementById('idmGrid')?.gDataGrid;
-                    if (!grid) return;
-                    if (typeof grid.executeQuery === 'function') {
-                        grid.executeQuery();
-                    } else {
-                        await grid.fetchData({});
-                    }
+                    await window.gDataGridRuntime?.executeGridQuery('idmGrid');
                 },
 
                 async onGridLoaded(rows) {
                     this.programs = rows || [];
-                    if (this.programs.length > 0) {
-                        this.selectProgram(this.programs[0]);
-                    } else {
-                        this.selectedProgram = null;
-                        await this.reloadRoleGrids();
-                    }
+                    this.selectedProgram = this.programs.length > 0
+                        ? window.gDataGridRuntime?.cloneData(this.programs[0], null)
+                        : null;
                 },
 
                 selectProgram(row) {
-                    this.selectedProgram = row ? JSON.parse(JSON.stringify(row)) : null;
-                    this.reloadRoleGrids();
-                },
-
-                async reloadRoleGrids() {
-                    const programId = this.selectedProgram?.PROGRAM_ID;
-                    const grids = [
-                        { id: 'roleGrid1', pos: 1 },
-                        { id: 'roleGrid2', pos: 2 },
-                        { id: 'roleGrid3', pos: 3 }
-                    ];
-
-                    for (const g of grids) {
-                        const grid = document.getElementById(g.id)?.gDataGrid;
-                        if (!grid) continue;
-                        await grid.fetchData(programId ? { programId } : { programId: '' });
-                    }
-                },
-
-                normalizeRoleRecord(row) {
-                    return {
-                        ROWID: row?.ROWID ?? '',
-                        ROLE_FUNCTION_ID: row?.ROLE_FUNCTION_ID ?? '',
-                        PROGRAM_ID: row?.PROGRAM_ID ?? this.selectedProgram?.PROGRAM_ID ?? '',
-                        POSITION_NO: row?.POSITION_NO ?? this.rolePosition,
-                        ROLE_ID: row?.ROLE_ID ?? '',
-                        ROLE_NO: row?.ROLE_NO ?? '',
-                        ROLE_NAME: row?.ROLE_NAME ?? '',
-                        FUNCTION_NO: row?.FUNCTION_NO ?? '',
-                        DISPLAY_ORDER: row?.DISPLAY_ORDER ?? '',
-                        DISPLAY_COLOR: row?.DISPLAY_COLOR ?? ''
-                    };
-                },
-
-                openRoleCreate(positionNo) {
-                    if (!this.selectedProgram?.PROGRAM_ID) {
-                        this.showToast('請先選擇一筆程式資料', 'warning');
-                        return;
-                    }
-                    this.roleMode = 'create';
-                    this.rolePosition = positionNo;
-                    this.roleRecord = this.normalizeRoleRecord({ POSITION_NO: positionNo });
-                    gDialogOpen('dlgRoleRecord');
-                },
-
-                editRoleRecord(row, positionNo) {
-                    this.roleMode = 'edit';
-                    this.rolePosition = positionNo ?? row?.POSITION_NO ?? 1;
-                    this.roleRecord = this.normalizeRoleRecord(row);
-                    gDialogOpen('dlgRoleRecord');
-                },
-
-                async deleteRoleRecord(row) {
-                    const ok = await gConfirm(`確定刪除角色 ${row?.ROLE_NO || ''} / 功能 ${row?.FUNCTION_NO || ''}？`, '刪除確認');
-                    if (!ok) return;
-                    try {
-                        const res = await this.$store.idmgd01.htmxJson('POST', '/Idm/deleteRoleFunctionProgram?DataMember=IDMGD01', row || {});
-                        const result = res.json || {};
-                        if (!res.ok || result.status !== 'success') {
-                            this.showToast('刪除失敗: ' + (result.message || `HTTP ${res.status}`), 'error');
-                            return;
-                        }
-                        this.showToast('刪除成功', 'success');
-                        await this.reloadRoleGrids();
-                    } catch (e) {
-                        this.showToast('刪除失敗: ' + e, 'error');
-                    }
-                },
-
-                async saveRoleRecord() {
-                    if (!this.selectedProgram?.PROGRAM_ID) {
-                        this.showToast('請先選擇一筆程式資料', 'warning');
-                        return;
-                    }
-                    const payload = {
-                        ...this.roleRecord,
-                        PROGRAM_ID: this.selectedProgram.PROGRAM_ID,
-                        POSITION_NO: this.rolePosition
-                    };
-                    if (!payload.ROLE_NO) {
-                        this.showToast('角色代號為必填', 'warning');
-                        return;
-                    }
-                    try {
-                        const res = await this.$store.idmgd01.htmxJson('POST', '/Idm/upsertRoleFunctionProgram?DataMember=IDMGD01', payload);
-                        const result = res.json || {};
-                        if (!res.ok || result.status !== 'success') {
-                            this.showToast('儲存失敗: ' + (result.message || `HTTP ${res.status}`), 'error');
-                            return;
-                        }
-                        gDialogClose('dlgRoleRecord');
-                        this.showToast(this.roleMode === 'create' ? '新增成功' : '更新成功', 'success');
-                        await this.reloadRoleGrids();
-                    } catch (e) {
-                        this.showToast('儲存失敗: ' + e, 'error');
-                    }
-                },
-
-                openCreate() {
-                    this.recordMode = 'create';
-                    this.formRecord = this.normalizeRecord({ DISPLAY_CODE: 'Y' });
-                    gDialogOpen('dlgRecord');
-                },
-                viewRecord(row) {
-                    console.log('[IDMGD01] viewRecord()', row);
-                    this.recordMode = 'view';
-                    this.formRecord = this.normalizeRecord(JSON.parse(JSON.stringify(row)));
-                    gDialogOpen('dlgRecord');
-                },
-                editRecord(row) {
-                    console.log('[IDMGD01] editRecord()', row);
-                    this.recordMode = 'edit';
-                    this.formRecord = this.normalizeRecord(JSON.parse(JSON.stringify(row)));
-                    gDialogOpen('dlgRecord');
-                },
-
-                async saveRecord() {
-                    const payload = { ...this.formRecord };
-                    if (!payload.PROGRAM_NO) {
-                        this.showToast('程式編號為必填', 'warning');
-                        return;
-                    }
-
-                    try {
-                        const isCreate = this.recordMode === 'create';
-                        const api = isCreate ? '/Idm/insert?DataMember=IDMGD01' : '/Idm/update?DataMember=IDMGD01';
-                        const res = await this.$store.idmgd01.htmxJson('POST', api, payload);
-                        const result = res.json || {};
-                        if (!res.ok || result.status !== 'success') {
-                            this.showToast('儲存失敗: ' + (result.message || `HTTP ${res.status}`), 'error');
-                            return;
-                        }
-
-                        gDialogClose('dlgRecord');
-                        this.showToast(isCreate ? '新增成功' : '更新成功', 'success');
-                        await this.executeQuery();
-                    } catch (e) {
-                        this.showToast('儲存失敗: ' + e, 'error');
-                    }
-                },
-
-                async confirmDelete(row) {
-                    const ok = await gConfirm(`確定刪除程式 ${row.PROGRAM_NO}？\n此操作無法還原。`, '刪除確認');
-                    if (!ok) return;
-                    try {
-                        const res = await this.$store.idmgd01.htmxJson('POST', '/Idm/delete?DataMember=IDMGD01', row);
-                        const result = res.json || {};
-                        if (!res.ok || result.status !== 'success') {
-                            this.showToast('刪除失敗: ' + (result.message || `HTTP ${res.status}`), 'error');
-                            return;
-                        }
-                        this.showToast('刪除成功', 'success');
-                        await this.executeQuery();
-                    } catch (e) {
-                        this.showToast('刪除失敗: ' + e, 'error');
-                    }
+                    this.selectedProgram = row
+                        ? window.gDataGridRuntime?.cloneData(row, null)
+                        : null;
                 }
             }));
         });

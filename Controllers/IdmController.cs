@@ -115,6 +115,36 @@ WHERE rn > :offset AND rn <= :endRow");
             };
         }
 
+        /// <summary>
+        /// 提供 IDMGD01 使用的員工 LOV 設定，避免舊編碼污染造成中文亂碼。
+        /// </summary>
+        private static LovInputConfig BuildEmployeeLovConfigClean()
+        {
+            var employeeLovSql = Uri.EscapeDataString(@"
+SELECT employee_id, employee_no, employee_name
+FROM (
+    SELECT employee_id, employee_no, employee_name,
+           ROW_NUMBER() OVER (ORDER BY employee_no ASC) AS rn
+    FROM hrm_employee_v
+    WHERE (UPPER(employee_no) LIKE :q OR UPPER(employee_name) LIKE :q)
+)
+WHERE rn > :offset AND rn <= :endRow");
+
+            return new LovInputConfig
+            {
+                Title = "員工資料 (Employee)",
+                Api = $"/api/lov/query?sql={employeeLovSql}",
+                Columns = "員工編號,員工姓名,ID",
+                Fields = "employee_no,employee_name,employee_id",
+                KeyHidden = "employee_id",
+                KeyCode = "employee_no",
+                KeyName = "employee_name",
+                BufferView = true,
+                PageSize = 50,
+                SortEnabled = true
+            };
+        }
+
         [HttpGet("Idm/IDMGD01")]
         public IActionResult IDMGD01()
         {
@@ -126,11 +156,8 @@ WHERE rn > :offset AND rn <= :endRow");
             ViewBag.UserName = HttpContext.Session.GetString("user_name");
             ViewBag.NumericUserId = HttpContext.Session.GetString("numeric_user_id");
 
-            var vm = new IdmGd01ViewModel
-            {
-                EmployeeLov = BuildEmployeeLovConfig()
-            };
-            return View("~/Views/MisPrograms/IDMGD01.cshtml", vm);
+            ViewBag.EmployeeLov = BuildEmployeeLovConfigClean();
+            return View("~/Views/MisPrograms/IDMGD01.cshtml");
         }
 
         [HttpGet("Idm/select")]
@@ -976,6 +1003,4 @@ WHERE rn > :offset AND rn <= :endRow");
         private static object ToDb(long? value) => value.HasValue ? value.Value : DBNull.Value;
     }
 }
-
-
 

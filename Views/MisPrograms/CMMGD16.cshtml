@@ -128,11 +128,15 @@
                 });
         }
 
-        function openCmmEmployeeLovQuery(fieldName, currentValue, queryValues) {
+        function openCmmEmployeeLovQuery(fieldName, currentValue, queryValues, ctx) {
             openGenericLov(_cmmEmployeeLov.title, _cmmEmployeeLov.api, _cmmEmployeeLov.columns, _cmmEmployeeLov.fields, null, null,
                 function (selected) {
                     const employeeId = selected?.employee_id ?? "";
                     if (queryValues && fieldName) queryValues[fieldName] = employeeId;
+                },
+                {
+                    initialQuery: String(currentValue || "").trim(),
+                    sourceInputId: ctx?.sourceInputId || ""
                 });
         }
 
