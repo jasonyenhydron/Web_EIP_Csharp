@@ -5,6 +5,7 @@
         Text,
         Number,
         Date,
+        DateTimeLocal,
         Select,
         Checkbox,
         Radio,
@@ -49,8 +50,31 @@
 
         public string ValidateFn { get; set; } = string.Empty;
         public string ValidateMessage { get; set; } = string.Empty;
+        public string CompareField { get; set; } = string.Empty;
+        public string CompareMode { get; set; } = string.Empty;
+        public string ValueType { get; set; } = string.Empty;
 
         public string OnChange { get; set; } = string.Empty;
+    }
+
+    public class QueryColumn
+    {
+        public string FieldName { get; set; } = string.Empty;
+        public string QueryField { get; set; } = string.Empty;
+        public string Caption { get; set; } = string.Empty;
+        public string Editor { get; set; } = "text";
+        public int Span { get; set; } = 3;
+        public string? DefaultValue { get; set; }
+        public string Placeholder { get; set; } = string.Empty;
+        public string Options { get; set; } = string.Empty;
+        public string LovTitle { get; set; } = string.Empty;
+        public string LovApi { get; set; } = string.Empty;
+        public string LovColumns { get; set; } = string.Empty;
+        public string LovFields { get; set; } = string.Empty;
+        public string LovKeyValue { get; set; } = string.Empty;
+        public string LovKeyDisplay { get; set; } = string.Empty;
+        public string LovDisplayFormat { get; set; } = string.Empty;
+        public bool Readonly { get; set; } = false;
     }
 
     public class FormToolItem
@@ -67,5 +91,11 @@
     {
         public string MasterField { get; set; } = string.Empty;
         public string DetailField { get; set; } = string.Empty;
+    }
+
+    public class FormColumnContext
+    {
+        public List<FormColumn> Columns { get; } = new();
+        public List<QueryColumn> QueryColumns { get; } = new();
     }
 }

@@ -52,59 +52,6 @@
             <span class="text-slate-400 ml-2" x-text="selectedProgram?.PURPOSE || '請先點選上方程式資料'"></span>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch p-3 pb-4 bg-slate-200/60 border-t border-slate-300 min-h-[340px]">
-            <g-datagrid id="roleGrid1"
-                        title="位置一"
-                        api="/Idm/selectRoleFunctionPrograms?DataMember=IDMGD01&positionNo=1"
-                        columns="ROLE_NO:角色:100:left:text::text,ROLE_NAME:角色名稱:150:left:text::text,FUNCTION_NO:功能編號:120:left:text::text,DISPLAY_ORDER:序:60:right:number::number,DISPLAY_COLOR:顏色:90:left:text::text"
-                        page-size="8"
-                        row-numbers="false"
-                        pagination="true"
-                        allow-add="true"
-                        allow-update="true"
-                        allow-delete="true"
-                        auto-apply="false"
-                        extra-class="w-full"
-                        on-insert="idmAddRole1"
-                        on-update="idmEditRole1"
-                        on-delete="idmDeleteRole">
-            </g-datagrid>
-
-            <g-datagrid id="roleGrid2"
-                        title="位置二"
-                        api="/Idm/selectRoleFunctionPrograms?DataMember=IDMGD01&positionNo=2"
-                        columns="ROLE_NO:角色:100:left:text::text,ROLE_NAME:角色名稱:150:left:text::text,FUNCTION_NO:功能編號:120:left:text::text,DISPLAY_ORDER:序:60:right:number::number,DISPLAY_COLOR:顏色:90:left:text::text"
-                        page-size="8"
-                        row-numbers="false"
-                        pagination="true"
-                        allow-add="true"
-                        allow-update="true"
-                        allow-delete="true"
-                        auto-apply="false"
-                        extra-class="w-full"
-                        on-insert="idmAddRole2"
-                        on-update="idmEditRole2"
-                        on-delete="idmDeleteRole">
-            </g-datagrid>
-
-            <g-datagrid id="roleGrid3"
-                        title="位置三"
-                        api="/Idm/selectRoleFunctionPrograms?DataMember=IDMGD01&positionNo=3"
-                        columns="ROLE_NO:角色:100:left:text::text,ROLE_NAME:角色名稱:150:left:text::text,FUNCTION_NO:功能編號:120:left:text::text,DISPLAY_ORDER:序:60:right:number::number,DISPLAY_COLOR:顏色:90:left:text::text"
-                        page-size="8"
-                        row-numbers="false"
-                        pagination="true"
-                        allow-add="true"
-                        allow-update="true"
-                        allow-delete="true"
-                        auto-apply="false"
-                        extra-class="w-full"
-                        on-insert="idmAddRole3"
-                        on-update="idmEditRole3"
-                        on-delete="idmDeleteRole">
-            </g-datagrid>
-        </div>
-
     </div>
 
 <g-dialog id="dlgRecord" title="程式資料" width="lg">

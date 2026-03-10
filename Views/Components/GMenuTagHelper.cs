@@ -37,7 +37,7 @@ namespace Web_EIP_Csharp.Views.Components
                 _         => "text-slate-700 hover:bg-blue-50 hover:text-blue-700"  // hover 跟隨 --dx-brand-soft
             };
             var disAttr     = Disabled ? "pointer-events-none opacity-40" : "";
-            var iconHtml    = !string.IsNullOrEmpty(Icon) ? GButtonTagHelper.GetIconSvg(Icon, "w-4 h-4 shrink-0") : @"<span class=""w-4 h-4""></span>";
+            var iconHtml    = !string.IsNullOrEmpty(Icon) ? GIconSet.Render(Icon, "w-4 h-4 shrink-0") : @"<span class=""w-4 h-4""></span>";
             var clickAttr   = !string.IsNullOrEmpty(Onclick) ? $@"onclick=""{Onclick}""" : "";
             var hrefAttr    = !string.IsNullOrEmpty(Href) ? $@"href=""{Href}""" : @"href=""#""";
             var tag         = !string.IsNullOrEmpty(Href) ? "a" : "button";

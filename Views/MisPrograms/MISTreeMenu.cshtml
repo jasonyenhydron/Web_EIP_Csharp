@@ -34,53 +34,51 @@
 
             <section class="mis-panel p-4">
                 <h2 class="mis-panel-title mb-3">查詢條件</h2>
-                <form method="get" action="/mis/programs" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                    <div>
-                        <label class="mis-filter-label">程式編號</label>
-                        <input type="text" name="program_no" value="@programNoFilter" placeholder="請輸入程式編號" class="mis-filter-input uppercase" autocomplete="off" />
-                    </div>
-                    <div>
-                        <label class="mis-filter-label">員工編號</label>
-                        <input type="text" name="employee_id" value="@employeeIdFilter" placeholder="請輸入員工編號" class="mis-filter-input" />
-                    </div>
-                    <div>
-                        <label class="mis-filter-label">顯示碼</label>
-                        <select name="display_code" class="mis-filter-input">
-                            @if (string.IsNullOrEmpty(displayCodeFilter))
-                            {
-                                <option value="" selected>全部</option>
-                            }
-                            else
-                            {
-                                <option value="">全部</option>
-                            }
-                            @if (displayCodeFilter == "Y")
-                            {
-                                <option value="Y" selected>是</option>
-                            }
-                            else
-                            {
-                                <option value="Y">是</option>
-                            }
-                            @if (displayCodeFilter == "N")
-                            {
-                                <option value="N" selected>否</option>
-                            }
-                            else
-                            {
-                                <option value="N">否</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="flex gap-2">
-                        <button type="submit" class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700">查詢</button>
-                        <a href="/mis/programs" class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">清除</a>
-                        <button type="button" class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200" onclick="runProgram()">執行</button>
+                <form method="get" action="/mis/programs" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <g-suggest-input label="程式編號"
+                                     name="program_no"
+                                     id="program_no"
+                                     value="@programNoFilter"
+                                     placeholder="請輸入程式編號"
+                                     class="mis-filter-input uppercase"
+                                     suggest-api="/api/mis/programs/suggestions"
+                                     suggest-query-param="q"
+                                     suggest-value-field="program_no"
+                                     suggest-primary-field="program_no"
+                                     suggest-secondary-field="program_name"
+                                     min-length="1"
+                                     debounce-ms="280">
+                    </g-suggest-input>
+                    <g-lov-input label="員工編號"
+                                 hidden-id="employee_id"
+                                 hidden-value="@employeeIdFilter"
+                                 code-id="employee_id_code"
+                                 code-value="@employeeIdFilter"
+                                 code-placeholder="請輸入員工編號"
+                                 code-width="w-1/2"
+                                 name-id="employee_id_name"
+                                 name-placeholder="請選擇員工"
+                                 config="Model.EmployeeLov"
+                                 lov-key-name="employee_name"
+                                 row-span="1"
+                                 selectonly="false">
+                    </g-lov-input>
+                    <g-combobox label="顯示碼"
+                                name="display_code"
+                                id="display_code"
+                                value="@displayCodeFilter"
+                                placeholder="全部"
+                                items="Y=是,N=否"
+                                input-class="mis-filter-input"
+                                col-span="1">
+                    </g-combobox>
+                    <div class="flex gap-2 md:col-span-3">
+                        <g-button icon="search" text="查詢" type="primary" submit="true"></g-button>
+                        <g-button icon="refresh"  text="清除" type="secondary" href="/mis/programs"></g-button>
+                        <g-button icon="excute" text="執行" type="secondary" onclick="runProgram()"></g-button>
                     </div>
                 </form>
             </section>
-
-            <div id="suggestionList" class="hidden"></div>
 
             <section class="grid grid-cols-1 xl:grid-cols-12 gap-4">
                 <div class="xl:col-span-5 mis-panel p-4">

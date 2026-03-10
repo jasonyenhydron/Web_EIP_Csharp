@@ -16,7 +16,7 @@ namespace Web_EIP_Csharp.Views.Components
         public string CaptionAlignment { get; set; } = "left";
 
         [HtmlAttributeName("column-type")]
-        public FormColumnType ColumnType { get; set; } = FormColumnType.Text;
+        public string ColumnType { get; set; } = "g-textbox";
 
         [HtmlAttributeName("col-span")]
         public int ColSpan { get; set; } = 1;
@@ -87,6 +87,15 @@ namespace Web_EIP_Csharp.Views.Components
         [HtmlAttributeName("validate-message")]
         public string ValidateMessage { get; set; } = string.Empty;
 
+        [HtmlAttributeName("compare-field")]
+        public string CompareField { get; set; } = string.Empty;
+
+        [HtmlAttributeName("compare-mode")]
+        public string CompareMode { get; set; } = string.Empty;
+
+        [HtmlAttributeName("value-type")]
+        public string ValueType { get; set; } = string.Empty;
+
         [HtmlAttributeName("on-change")]
         public string OnChange { get; set; } = string.Empty;
 
@@ -103,7 +112,7 @@ namespace Web_EIP_Csharp.Views.Components
                 FieldName = FieldName,
                 Caption = string.IsNullOrWhiteSpace(Caption) ? FieldName : Caption,
                 CaptionAlignment = CaptionAlignment,
-                ColumnType = ColumnType,
+                ColumnType = ResolveColumnType(ColumnType),
                 ColSpan = ColSpan,
                 NewLine = NewLine,
                 AlwaysReadOnly = AlwaysReadOnly,
@@ -127,8 +136,74 @@ namespace Web_EIP_Csharp.Views.Components
                 LovOnConfirm = LovOnConfirm,
                 ValidateFn = ValidateFn,
                 ValidateMessage = ValidateMessage,
+                CompareField = CompareField,
+                CompareMode = CompareMode,
+                ValueType = ValueType,
                 OnChange = OnChange
             });
+        }
+
+        private static FormColumnType ResolveColumnType(string raw)
+        {
+            var value = (raw ?? string.Empty).Trim().ToLowerInvariant();
+            return value switch
+            {
+                "" => FormColumnType.Text,
+                "text" => FormColumnType.Text,
+                "textbox" => FormColumnType.Text,
+                "gtextbox" => FormColumnType.Text,
+                "g-textbox" => FormColumnType.Text,
+
+                "number" => FormColumnType.Number,
+                "numberbox" => FormColumnType.Number,
+                "gnumberbox" => FormColumnType.Number,
+                "g-numberbox" => FormColumnType.Number,
+
+                "date" => FormColumnType.Date,
+                "datebox" => FormColumnType.Date,
+                "gdatebox" => FormColumnType.Date,
+                "g-datebox" => FormColumnType.Date,
+
+                "datetimelocal" => FormColumnType.DateTimeLocal,
+                "datetime-local" => FormColumnType.DateTimeLocal,
+                "datetimebox" => FormColumnType.DateTimeLocal,
+                "gdatetimebox" => FormColumnType.DateTimeLocal,
+                "g-datetimebox" => FormColumnType.DateTimeLocal,
+
+                "select" => FormColumnType.Select,
+                "combobox" => FormColumnType.Select,
+                "gcombobox" => FormColumnType.Select,
+                "g-combobox" => FormColumnType.Select,
+
+                "checkbox" => FormColumnType.Checkbox,
+                "gcheckbox" => FormColumnType.Checkbox,
+                "g-checkbox" => FormColumnType.Checkbox,
+
+                "radio" => FormColumnType.Radio,
+                "radiogroup" => FormColumnType.Radio,
+                "gradiogroup" => FormColumnType.Radio,
+                "g-radiogroup" => FormColumnType.Radio,
+
+                "lov" => FormColumnType.Lov,
+                "lovinput" => FormColumnType.Lov,
+                "glovinput" => FormColumnType.Lov,
+                "g-lov-input" => FormColumnType.Lov,
+
+                "readonly" => FormColumnType.Readonly,
+                "greadonly" => FormColumnType.Readonly,
+                "g-readonly" => FormColumnType.Readonly,
+
+                "textarea" => FormColumnType.Textarea,
+                "gtextarea" => FormColumnType.Textarea,
+                "g-textarea" => FormColumnType.Textarea,
+
+                "hidden" => FormColumnType.Hidden,
+                "ghidden" => FormColumnType.Hidden,
+                "g-hidden" => FormColumnType.Hidden,
+
+                _ when Enum.TryParse<FormColumnType>(raw, true, out var parsed) => parsed,
+                _ => FormColumnType.Text
+            };
         }
     }
 }

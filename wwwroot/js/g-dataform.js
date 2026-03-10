@@ -1,10 +1,13 @@
 ﻿'use strict';
 
-window.gDataForm = function (formId, initialFields) {
+window.gDataForm = function (formId, initialFields, initialQueryValues) {
   return {
     formId,
     mode: 'view',
     formData: { ...initialFields },
+    queryDefaults: { ...(initialQueryValues || {}) },
+    queryValues: { ...(initialQueryValues || {}) },
+    queryPanelOpen: true,
     originalData: {},
     errors: {},
     selectOptions: {},
@@ -25,7 +28,8 @@ window.gDataForm = function (formId, initialFields) {
       }
 
       const api = el.dataset.api;
-      if (api && !parentId) {
+      const notInitLoad = el.dataset.notInitLoad === '1';
+      if (api && !parentId && !notInitLoad) {
         this._loadData(el);
       }
 
@@ -33,6 +37,16 @@ window.gDataForm = function (formId, initialFields) {
       if (cb && typeof window[cb] === 'function') {
         this.$nextTick(() => window[cb](this.formData));
       }
+    },
+
+    async executeQuery() {
+      const el = document.getElementById(this.formId);
+      if (!el) return;
+      await this._queryData(el);
+    },
+
+    resetQuery() {
+      this.queryValues = { ...this.queryDefaults };
     },
 
     handleToolAction(action, customFn, formIdValue) {
@@ -119,6 +133,7 @@ window.gDataForm = function (formId, initialFields) {
       const validateStyle = el.dataset.validateStyle || 'hint';
       const isValid = this._validate(el);
       if (!isValid) {
+        this._setStatus(el, el.dataset.validateFailedMessage || '錯誤：欄位驗證未通過。');
         if (validateStyle === 'dialog') {
           const msgs = Object.values(this.errors).filter(Boolean).join('\n');
           alert(`請修正以下錯誤：\n${msgs}`);
@@ -128,16 +143,19 @@ window.gDataForm = function (formId, initialFields) {
 
       if (this._triggerCallback(el, 'onApply', this.formData) === false) return;
 
+      const payload = this._buildSubmitPayload(el);
       const dupCheck = el.dataset.duplicateCheck === '1';
       if (dupCheck && this.mode === 'add') {
-        const isDup = await this._checkDuplicate(api);
+        const isDup = await this._checkDuplicate(api, payload);
         if (isDup) {
-          gDataFormToast.error('資料重複，請確認後再送出');
+          const dupMessage = el.dataset.errorToastMessage || '資料重複，請確認後再送出';
+          gDataFormToast.error(this._formatMessage(dupMessage, { message: '資料重複，請確認後再送出' }, payload));
           return;
         }
       }
 
       this.loading = true;
+      this._setStatus(el, el.dataset.savingMessage || '資料庫寫入中...');
       try {
         const isAdd = this.mode === 'add';
         const pkVal = this._getPrimaryKeyValue(el);
@@ -147,29 +165,43 @@ window.gDataForm = function (formId, initialFields) {
         const res = await fetch(url, {
           method,
           headers: this._headers(),
-          body: JSON.stringify(this.formData)
+          body: JSON.stringify(payload)
         });
         const json = await res.json().catch(() => ({}));
 
         if (res.ok && (json.status === 'success' || res.status === 200 || res.status === 201)) {
-          gDataFormToast.success(isAdd ? '新增成功' : '儲存成功');
+          const pkField = el.querySelector('[data-is-pk="1"]');
+          if (pkField && json.id != null) {
+            this.formData[pkField.dataset.fieldName] = json.id;
+            payload[pkField.dataset.fieldName] = json.id;
+          }
 
           if (el.dataset.showApplyButton === '1' && json.data) {
             this.formData = { ...this.formData, ...json.data };
           }
 
-          this._triggerCallback(el, 'onApplied', json.data || this.formData);
+          this._setStatus(el, this._formatMessage(
+            el.dataset.saveSuccessMessage || 'Success: {message} (流水號: {id})',
+            json,
+            json.data || payload
+          ));
+          const successToast = el.dataset.successToastMessage || '';
+          gDataFormToast.success(successToast
+            ? this._formatMessage(successToast, json, json.data || payload)
+            : (isAdd ? '新增成功' : '儲存成功'));
+
+          this._triggerCallback(el, 'onApplied', json.data || payload);
 
           const continueAdd = el.dataset.continueAdd === '1';
           if (continueAdd && isAdd) {
             this.formData = this._getDefaults(el);
             this.errors = {};
-          } else {
-            this.closeModal(modalId);
-            if (json.data) this.formData = { ...this.formData, ...json.data };
-            this.hasSelection = true;
-            this.mode = 'view';
-          }
+            } else {
+              this.closeModal(modalId);
+              if (json.data) this.formData = { ...this.formData, ...json.data };
+              this.hasSelection = !!this._getPrimaryKeyValue(el);
+              this.mode = 'view';
+            }
 
           this._notifyChain(el);
 
@@ -177,10 +209,26 @@ window.gDataForm = function (formId, initialFields) {
             setTimeout(() => window.close(), 800);
           }
         } else {
-          gDataFormToast.error(json.message || '儲存失敗');
+          this._setStatus(el, this._formatMessage(
+            el.dataset.saveErrorMessage || 'Error: {message}',
+            json,
+            this.formData
+          ));
+          const errorToast = el.dataset.errorToastMessage || '';
+          gDataFormToast.error(errorToast
+            ? this._formatMessage(errorToast, json, this.formData)
+            : (json.message || '儲存失敗'));
         }
       } catch (err) {
-        gDataFormToast.error(`儲存失敗：${err.message}`);
+        this._setStatus(el, this._formatMessage(
+          el.dataset.saveErrorMessage || 'Error: {message}',
+          { message: '系統例外錯誤。' },
+          this.formData
+        ));
+        const exceptionToast = el.dataset.exceptionToastMessage || el.dataset.errorToastMessage || '';
+        gDataFormToast.error(exceptionToast
+          ? this._formatMessage(exceptionToast, { message: '系統例外錯誤。' }, this.formData)
+          : `儲存失敗：${err.message}`);
       } finally {
         this.loading = false;
       }
@@ -208,10 +256,45 @@ window.gDataForm = function (formId, initialFields) {
         const json = await res.json().catch(() => ({}));
         if (res.ok && json.data) {
           this.formData = { ...this.formData, ...json.data };
-          this.hasSelection = true;
+          this.hasSelection = !!this._getPrimaryKeyValue(el);
           this._triggerCallback(el, 'onLoadSuccess', this.formData);
         }
       } catch (_) {
+      }
+    },
+
+    async _queryData(el) {
+      const api = el.dataset.queryApi || el.dataset.api;
+      if (!api) return;
+
+      const params = this._buildQueryParams(el);
+      const query = new URLSearchParams(params).toString();
+      const url = query ? `${api}${api.includes('?') ? '&' : '?'}${query}` : api;
+
+      try {
+        const res = await fetch(url, { headers: this._headers() });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          gDataFormToast.error(json.message || '查詢失敗');
+          return;
+        }
+
+        const payload = json.data;
+        const row = Array.isArray(payload) ? (payload[0] || null) : payload;
+        if (!row) {
+          gDataFormToast.warn('查無資料');
+          this.hasSelection = false;
+          this._triggerCallback(el, 'onQueryLoaded', null);
+          return;
+        }
+
+        this.formData = { ...this.formData, ...row };
+        this.hasSelection = !!this._getPrimaryKeyValue(el);
+        this.mode = 'view';
+        this._triggerCallback(el, 'onQueryLoaded', { row, rows: Array.isArray(payload) ? payload : [payload], raw: json });
+        this._triggerCallback(el, 'onLoadSuccess', this.formData);
+      } catch (err) {
+        gDataFormToast.error(`查詢失敗：${err.message}`);
       }
     },
 
@@ -265,12 +348,69 @@ window.gDataForm = function (formId, initialFields) {
         const required = f.dataset.required === '1';
         const validateFn = f.dataset.validateFn;
         const validateMsg = f.dataset.validateMsg;
+        const min = f.dataset.min;
+        const max = f.dataset.max;
+        const compareField = f.dataset.compareField;
+        const compareMode = f.dataset.compareMode;
         const val = this.formData[name];
 
         if (required && (val === null || val === undefined || String(val).trim() === '')) {
           this.errors[name] = validateMsg || `${f.dataset.caption || name} 為必填`;
           valid = false;
           return;
+        }
+
+        if (compareField && compareMode && val !== null && val !== undefined && String(val).trim() !== '') {
+          const compareVal = this.formData[compareField];
+          if (compareVal !== null && compareVal !== undefined && String(compareVal).trim() !== '') {
+            const leftDate = Date.parse(val);
+            const rightDate = Date.parse(compareVal);
+            const useDate = !Number.isNaN(leftDate) && !Number.isNaN(rightDate);
+            const leftNum = Number(val);
+            const rightNum = Number(compareVal);
+            const useNumber = !useDate && !Number.isNaN(leftNum) && !Number.isNaN(rightNum);
+            const left = useDate ? leftDate : (useNumber ? leftNum : String(val));
+            const right = useDate ? rightDate : (useNumber ? rightNum : String(compareVal));
+            const caption = f.dataset.caption || name;
+            const otherCaption = compareField;
+
+            if ((compareMode === 'after-field' || compareMode === 'gt-field') && !(left > right)) {
+              this.errors[name] = validateMsg || `${caption} 必須大於 ${otherCaption}`;
+              valid = false;
+              return;
+            }
+            if ((compareMode === 'before-field' || compareMode === 'lt-field') && !(left < right)) {
+              this.errors[name] = validateMsg || `${caption} 必須小於 ${otherCaption}`;
+              valid = false;
+              return;
+            }
+            if ((compareMode === 'gte-field' || compareMode === 'on-or-after-field') && !(left >= right)) {
+              this.errors[name] = validateMsg || `${caption} 必須大於等於 ${otherCaption}`;
+              valid = false;
+              return;
+            }
+            if ((compareMode === 'lte-field' || compareMode === 'on-or-before-field') && !(left <= right)) {
+              this.errors[name] = validateMsg || `${caption} 必須小於等於 ${otherCaption}`;
+              valid = false;
+              return;
+            }
+          }
+        }
+
+        if (val !== null && val !== undefined && String(val).trim() !== '') {
+          const numericVal = Number(val);
+          if (!Number.isNaN(numericVal)) {
+            if (min !== undefined && min !== '' && numericVal < Number(min)) {
+              this.errors[name] = validateMsg || `${f.dataset.caption || name} 必須大於等於 ${min}`;
+              valid = false;
+              return;
+            }
+            if (max !== undefined && max !== '' && numericVal > Number(max)) {
+              this.errors[name] = validateMsg || `${f.dataset.caption || name} 必須小於等於 ${max}`;
+              valid = false;
+              return;
+            }
+          }
         }
 
         if (validateFn && typeof window[validateFn] === 'function') {
@@ -285,13 +425,13 @@ window.gDataForm = function (formId, initialFields) {
       return valid;
     },
 
-    async _checkDuplicate(api) {
+    async _checkDuplicate(api, payload) {
       try {
         const url = `${api}/check-duplicate`;
         const res = await fetch(url, {
           method: 'POST',
           headers: this._headers(),
-          body: JSON.stringify(this.formData)
+          body: JSON.stringify(payload || this.formData)
         });
         const json = await res.json().catch(() => ({}));
         return json.isDuplicate === true;
@@ -345,10 +485,89 @@ window.gDataForm = function (formId, initialFields) {
       }));
     },
 
+    _buildQueryParams(el) {
+      const params = {};
+      el.querySelectorAll('[data-query-field]').forEach((input) => {
+        const fieldName = input.dataset.queryField;
+        const modelName = input.dataset.queryModel || fieldName;
+        const value = this.queryValues[modelName];
+        if (value === undefined || value === null || String(value).trim() === '') return;
+        params[fieldName] = value;
+      });
+      return params;
+    },
+
+    _buildSubmitPayload(el) {
+      const payload = { ...this.formData };
+      const meta = this._getColumnMeta(el);
+      const emptyStringAsNull = el.dataset.emptyStringAsNull === '1';
+
+      for (const col of meta) {
+        const fieldName = col.fieldName;
+        if (!fieldName || !(fieldName in payload)) continue;
+        payload[fieldName] = this._coerceValue(payload[fieldName], col.valueType, emptyStringAsNull);
+      }
+
+      if (emptyStringAsNull) {
+        Object.keys(payload).forEach((key) => {
+          if (payload[key] === '') payload[key] = null;
+        });
+      }
+
+      return payload;
+    },
+
+    _getColumnMeta(el) {
+      if (!el) return [];
+      try {
+        const raw = el.dataset.columnMeta || '[]';
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    },
+
+    _coerceValue(value, valueType, emptyStringAsNull) {
+      if (value === undefined) return value;
+      if (value === null) return null;
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed === '') return emptyStringAsNull ? null : value;
+        value = trimmed;
+      }
+
+      switch (String(valueType || '').toLowerCase()) {
+        case 'int':
+        case 'integer':
+        case 'long': {
+          const n = parseInt(value, 10);
+          return Number.isNaN(n) ? null : n;
+        }
+        case 'decimal':
+        case 'number':
+        case 'float':
+        case 'double': {
+          const n = parseFloat(value);
+          return Number.isNaN(n) ? null : n;
+        }
+        case 'bool':
+        case 'boolean':
+          if (typeof value === 'boolean') return value;
+          if (value === 'Y' || value === 'true' || value === '1') return true;
+          if (value === 'N' || value === 'false' || value === '0') return false;
+          return !!value;
+        default:
+          return value;
+      }
+    },
+
     _triggerCallback(el, dataAttr, payload) {
       if (!el) return;
       const attrMap = {
         onLoadSuccess: 'onLoadSuccess',
+        onQueryLoaded: 'onQueryLoaded',
         onApply: 'onApply',
         onApplied: 'onApplied',
         onCancel: 'onCancel',
@@ -359,6 +578,25 @@ window.gDataForm = function (formId, initialFields) {
       if (!cbName) return;
       const fn = window[cbName];
       if (typeof fn === 'function') return fn(payload);
+    },
+
+    _setStatus(el, message) {
+      if (!el) return;
+      const targetId = el.dataset.statusTargetId;
+      if (!targetId) return;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      target.value = message || '';
+    },
+
+    _formatMessage(template, response, formData) {
+      const payload = response || {};
+      const data = formData || {};
+      return String(template || '')
+        .replaceAll('{message}', payload.message ?? '')
+        .replaceAll('{id}', payload.id ?? data.emAskForLeaveId ?? '')
+        .replaceAll('{status}', payload.status ?? '')
+        .replaceAll('{mode}', this.mode ?? '');
     },
 
     _headers() {

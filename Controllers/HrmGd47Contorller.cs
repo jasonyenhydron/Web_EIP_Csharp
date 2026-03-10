@@ -41,6 +41,99 @@ namespace Web_EIP_Csharp.Controllers
             return View("~/Views/MisPrograms/HRMGD47.cshtml");
         }
 
+        [HttpGet("Hrm/leave-application")]
+        public IActionResult GetLeaveApplicationTemplate()
+        {
+            if (!TryGetLoginContext(out var username, out _, out _))
+                return Unauthorized(new { status = "error", message = "Session expired. Please log in again." });
+
+            var numericId = new string(username.Where(char.IsDigit).ToArray());
+            var employeeId = string.IsNullOrEmpty(numericId) ? username : numericId;
+
+            return Ok(new
+            {
+                status = "success",
+                data = new
+                {
+                    emAskForLeaveId = (long?)null,
+                    employeeId,
+                    employeeNo = username,
+                    employeeName = HttpContext.Session.GetString("user_name") ?? username,
+                    employeeDisplay = $"{username} - {HttpContext.Session.GetString("user_name") ?? username}",
+                    leaveId = (long?)null,
+                    leaveTypeDisplay = string.Empty,
+                    startTime = string.Empty,
+                    endTime = string.Empty,
+                    leaveHours = (decimal?)null,
+                    leaveDays = (decimal?)null,
+                    punchDate = string.Empty,
+                    agentEmployeeId = (long?)null,
+                    agentEmployeeName = string.Empty,
+                    askForLeaveReason = string.Empty,
+                    destinationPlace = string.Empty,
+                    talkingAbout = string.Empty,
+                    returnYn = "N",
+                    overseasYn = "N",
+                    emAskForLeaveStatus = "00",
+                    flowYn = "N"
+                }
+            });
+        }
+
+        [HttpPost("Hrm/leave-application")]
+        public Task<IActionResult> CreateLeaveApplication([FromBody] HrmEmAskForLeave model)
+            => InsertLeaveApplication(model);
+
+        [HttpPut("Hrm/leave-application/{id:long}")]
+        public Task<IActionResult> UpdateLeaveApplicationRest(long id, [FromBody] HrmEmAskForLeave model)
+        {
+            model.EmAskForLeaveId = id;
+            return UpdateLeaveApplication(model);
+        }
+
+        [HttpDelete("Hrm/leave-application/{id:long}")]
+        public Task<IActionResult> DeleteLeaveApplicationRest(long id)
+            => DeleteLeaveApplication(new HrmEmAskForLeave { EmAskForLeaveId = id });
+
+        [HttpPost("Hrm/leave-application/check-duplicate")]
+        public async Task<IActionResult> CheckLeaveApplicationDuplicate([FromBody] HrmEmAskForLeave model)
+        {
+            if (!TryGetLoginContext(out _, out _, out var tns))
+                return Unauthorized(new { status = "error", message = "Session expired. Please log in again." });
+
+            try
+            {
+                const string sql = @"
+                    SELECT COUNT(1)
+                    FROM hrm_em_ask_for_leave
+                    WHERE employee_id = :employee_id
+                      AND leave_id = :leave_id
+                      AND start_time = :start_time
+                      AND end_time = :end_time
+                      AND (:em_ask_for_leave_id IS NULL OR em_ask_for_leave_id <> :em_ask_for_leave_id)";
+
+                var countObj = await DbHelper.ExecuteScalarAsync(
+                    BuildDbConnectionString(tns),
+                    CommandType.Text,
+                    sql,
+                    new DbParameter[]
+                    {
+                        DbHelper.CreateParameter("employee_id", model.EmployeeId),
+                        DbHelper.CreateParameter("leave_id", model.LeaveId),
+                        DbHelper.CreateParameter("start_time", model.StartTime),
+                        DbHelper.CreateParameter("end_time", model.EndTime),
+                        DbHelper.CreateParameter("em_ask_for_leave_id", model.EmAskForLeaveId ?? (object)DBNull.Value)
+                    });
+
+                var count = countObj == null || countObj == DBNull.Value ? 0 : Convert.ToInt32(countObj);
+                return Ok(new { status = "success", isDuplicate = count > 0 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = "error", message = ex.Message });
+            }
+        }
+
         [HttpGet("Hrm/leave-types")]
         public async Task<IActionResult> GetLeaveTypes([FromQuery] string query = "")
         {
@@ -147,15 +240,18 @@ namespace Web_EIP_Csharp.Controllers
                 {
                     emAskForLeaveId = r["EM_ASK_FOR_LEAVE_ID"] == DBNull.Value ? (long?)null : Convert.ToInt64(r["EM_ASK_FOR_LEAVE_ID"]),
                     employeeId = r["EMPLOYEE_ID"] == DBNull.Value ? (long?)null : Convert.ToInt64(r["EMPLOYEE_ID"]),
+                    employeeDisplay = r["EMPLOYEE_ID"] == DBNull.Value ? string.Empty : r["EMPLOYEE_ID"].ToString(),
                     startTime = r["START_TIME"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["START_TIME"]),
                     endTime = r["END_TIME"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["END_TIME"]),
                     leaveId = r["LEAVE_ID"] == DBNull.Value ? (long?)null : Convert.ToInt64(r["LEAVE_ID"]),
+                    leaveTypeDisplay = r["LEAVE_ID"] == DBNull.Value ? string.Empty : r["LEAVE_ID"].ToString(),
                     leaveHours = r["LEAVE_HOURS"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["LEAVE_HOURS"]),
                     leaveDays = r["LEAVE_DAYS"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["LEAVE_DAYS"]),
                     askForLeaveReason = r["ASK_FOR_LEAVE_REASON"]?.ToString(),
                     emAskForLeaveStatus = r["EM_ASK_FOR_LEAVE_STATUS"]?.ToString(),
                     flowYn = r["FLOW_YN"]?.ToString(),
                     agentEmployeeId = r["AGENT_EMPLOYEE_ID"] == DBNull.Value ? (long?)null : Convert.ToInt64(r["AGENT_EMPLOYEE_ID"]),
+                    agentEmployeeDisplay = r["AGENT_EMPLOYEE_ID"] == DBNull.Value ? string.Empty : r["AGENT_EMPLOYEE_ID"].ToString(),
                     destinationPlace = r["DESTINATION_PLACE"]?.ToString(),
                     talkingAbout = r["TALKING_ABOUT"]?.ToString(),
                     returnYn = r["RETURN_YN"]?.ToString(),

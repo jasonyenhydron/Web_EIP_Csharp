@@ -42,6 +42,9 @@ namespace Web_EIP_Csharp.Views.Components
         public bool Required { get; set; } = false;
         /// <summary>Grid 欄位跨度（md:col-span-N）</summary>
         public int ColSpan { get; set; } = 1;
+        /// <summary>Grid 列跨度（md:row-span-1 / md:row-span-2）</summary>
+        [HtmlAttributeName("row-span")]
+        public int RowSpan { get; set; } = 1;
 
         // ── 欄位 ID / 值 ──────────────────────────────────────────────────────
         /// <summary>hidden input 的 id/name</summary>
@@ -142,9 +145,9 @@ namespace Web_EIP_Csharp.Views.Components
         /// <summary>前端登錄 LOV 的名稱，可搭配 gLov.openByName() 使用</summary>
         [HtmlAttributeName("lov-name")]
         public string LovName { get; set; } = string.Empty;
-        /// <summary>true = 只能透過 LOV 選取（不可手動鍵入）；false = 可手動輸入代碼</summary>
+        /// <summary>true = 只能透過 LOV 選取（不可手動鍵入）；false = 可手動輸入代碼（預設）</summary>
         [HtmlAttributeName("selectonly")]
-        public bool SelectOnly { get; set; } = true;
+        public bool SelectOnly { get; set; } = false;
 
         // ── UI 控制 ──────────────────────────────────────────────────────────
         /// <summary>顯示 LOV 開啟按鈕</summary>
@@ -158,15 +161,18 @@ namespace Web_EIP_Csharp.Views.Components
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
             ApplyConfig();
+            ApplyLovFieldDefaults();
             ApplyAutoBindingIds(context);
             ApplyAutoValues(context);
             EnsureRuntimeInjected(output);
 
             var colSpan  = Math.Max(1, ColSpan);
             var colClass = colSpan > 1 ? $"md:col-span-{colSpan}" : string.Empty;
+            var rowSpan  = RowSpan >= 2 ? 2 : 1;
+            var rowClass = rowSpan > 1 ? $"md:row-span-{rowSpan}" : "md:row-span-1";
 
             output.TagName = "div";
-            output.Attributes.SetAttribute("class", $"flex flex-col gap-1 {colClass}".Trim());
+            output.Attributes.SetAttribute("class", $"flex flex-col gap-1 {colClass} {rowClass}".Trim());
             output.Attributes.SetAttribute("data-glov-input", "1");
             if (!string.IsNullOrWhiteSpace(LovName))
                 output.Attributes.SetAttribute("data-lov-name", LovName.Trim());
@@ -179,6 +185,7 @@ namespace Web_EIP_Csharp.Views.Components
 
             var inputsHtml = $"<div class=\"flex\">{hiddenHtml}{codeHtml}{nameHtml}{btnHtml}</div>";
             output.Content.SetHtmlContent(labelHtml + inputsHtml);
+            AppendNamedLovRegistration(output);
         }
 
         // ────────────────────────────────────────────────────────────────────
@@ -295,6 +302,17 @@ namespace Web_EIP_Csharp.Views.Components
                 (LovName  ?? string.Empty).Contains("employee",    StringComparison.OrdinalIgnoreCase);
             if (!isEmployeeLov || ViewContext?.ViewData == null) return;
 
+            var hasExplicitBinding =
+                context.AllAttributes.ContainsName("hidden-id") ||
+                context.AllAttributes.ContainsName("code-id") ||
+                context.AllAttributes.ContainsName("name-id") ||
+                context.AllAttributes.ContainsName("hidden-value") ||
+                context.AllAttributes.ContainsName("code-value") ||
+                context.AllAttributes.ContainsName("name-value") ||
+                context.AllAttributes.ContainsName("id-prefix");
+
+            if (!hasExplicitBinding) return;
+
             if (!context.AllAttributes.ContainsName("hidden-value") && string.IsNullOrWhiteSpace(HiddenValue) &&
                 ViewContext.ViewData.TryGetValue("NumericUserId", out var numId) && numId != null)
                 HiddenValue = numId.ToString() ?? string.Empty;
@@ -325,6 +343,22 @@ namespace Web_EIP_Csharp.Views.Components
             if (!LovSortEnabled.HasValue && Config.SortEnabled.HasValue) LovSortEnabled = Config.SortEnabled.Value;
         }
 
+        private void ApplyLovFieldDefaults()
+        {
+            var fields = SplitCsv(LovFields);
+            if (fields.Count == 0) return;
+
+            var firstField = fields.ElementAtOrDefault(0) ?? string.Empty;
+            var secondField = fields.ElementAtOrDefault(1) ?? firstField;
+            var thirdField = fields.ElementAtOrDefault(2) ?? firstField;
+
+            LovKeyCode = LovKeyCode.Coalesce(firstField);
+            LovKeyName = LovKeyName.Coalesce(secondField);
+            LovReturnDisplayField = LovReturnDisplayField.Coalesce(LovKeyName).Coalesce(secondField);
+            LovReturnValueField = LovReturnValueField.Coalesce(LovKeyHidden).Coalesce(thirdField);
+            LovKeyHidden = LovKeyHidden.Coalesce(LovReturnValueField).Coalesce(thirdField);
+        }
+
         private void EnsureRuntimeInjected(TagHelperOutput output)
         {
             var httpContext = ViewContext?.HttpContext;
@@ -334,6 +368,36 @@ namespace Web_EIP_Csharp.Views.Components
             output.PostElement.AppendHtml(@"
 <div id=""gLovHost""></div>
 <script src=""/js/g-lov-modal-runtime.js""></script>");
+        }
+
+        private void AppendNamedLovRegistration(TagHelperOutput output)
+        {
+            if (string.IsNullOrWhiteSpace(LovName)) return;
+
+            var api = BuildLovApiUrl();
+            if (string.IsNullOrWhiteSpace(api) || string.IsNullOrWhiteSpace(LovColumns) || string.IsNullOrWhiteSpace(LovFields))
+            {
+                return;
+            }
+
+            var title = string.IsNullOrWhiteSpace(LovTitle) ? Label : LovTitle;
+            var cols = SplitCsv(LovColumns);
+            var fields = SplitCsv(LovFields);
+            var colsJs = "[" + string.Join(",", cols.Select(c => $"'{EscapeJs(c)}'")) + "]";
+            var fieldsJs = "[" + string.Join(",", fields.Select(f => $"'{EscapeJs(f)}'")) + "]";
+
+            output.PostElement.AppendHtml($@"
+<script>
+window.gLov = window.gLov || {{}};
+if (typeof window.gLov.define === 'function') {{
+  window.gLov.define('{EscapeJs(LovName)}', {{
+    title: '{EscapeJs(title)}',
+    api: '{EscapeJs(api)}',
+    columns: {colsJs},
+    fields: {fieldsJs}
+  }});
+}}
+</script>");
         }
 
         // ────────────────────────────────────────────────────────────────────

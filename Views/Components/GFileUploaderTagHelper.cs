@@ -26,6 +26,9 @@ namespace Web_EIP_Csharp.Views.Components
         public string Folder { get; set; } = "";
         public string ResultInputId { get; set; } = "";
         public string ResultValueField { get; set; } = "relativePath";
+        public bool ToastOnUploaded { get; set; } = false;
+        public string SuccessToastText { get; set; } = "附件上傳成功";
+        public string OpenUrlTemplate { get; set; } = "/Files/Open?path={path}";
         public string ColumnName { get; set; } = "";
         public string TableId { get; set; } = "";
         public string ExtraData { get; set; } = ""; // JSON string
@@ -83,6 +86,9 @@ namespace Web_EIP_Csharp.Views.Components
                      data-folder=""{WebUtility.HtmlEncode(Folder)}""
                      data-result-input-id=""{WebUtility.HtmlEncode(ResultInputId)}""
                      data-result-value-field=""{WebUtility.HtmlEncode(ResultValueField)}""
+                     data-toast-on-uploaded=""{ToastOnUploaded.ToString().ToLowerInvariant()}""
+                     data-success-toast-text=""{WebUtility.HtmlEncode(SuccessToastText)}""
+                     data-open-url-template=""{WebUtility.HtmlEncode(OpenUrlTemplate)}""
                      data-column-name=""{WebUtility.HtmlEncode(ColumnName)}""
                      data-table-id=""{WebUtility.HtmlEncode(TableId)}""
                      data-extra-data=""{WebUtility.HtmlEncode(ExtraData)}""
@@ -128,4 +134,3 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-

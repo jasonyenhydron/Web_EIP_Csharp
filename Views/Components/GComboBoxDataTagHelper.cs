@@ -68,7 +68,8 @@ namespace Web_EIP_Csharp.Views.Components
 
             foreach (var item in Items.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                var parts = item.Split(':', 2, StringSplitOptions.TrimEntries);
+                var separator = item.Contains('=') ? '=' : ':';
+                var parts = item.Split(separator, 2, StringSplitOptions.TrimEntries);
                 var val = parts[0];
                 var text = parts.Length > 1 ? parts[1] : val;
                 var selected = string.Equals(val, Value, StringComparison.OrdinalIgnoreCase) ? " selected" : "";
@@ -113,7 +114,6 @@ namespace Web_EIP_Csharp.Views.Components
         }
     }
 }
-
 
 
 

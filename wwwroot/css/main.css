@@ -659,3 +659,72 @@ body.g-popup-page.g-popup-hide-inner-title .g-popup-titlebar {
 .g-grid-query-head .text-slate-700 {
     color: var(--dx-brand) !important;
 }
+
+/* Generic suggest input dropdown */
+.g-suggest-list {
+    position: fixed;
+    z-index: 9999;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--dx-surface, #fff);
+    border: 1px solid var(--dx-border, #cbd5e1);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.g-suggest-list.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.g-suggest-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.g-suggest-item:last-child {
+    border-bottom: none;
+}
+
+.g-suggest-item:hover,
+.g-suggest-item.active {
+    background-color: var(--dx-brand-soft, #f0f9ff);
+}
+
+.g-suggest-primary {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dx-brand, #2563eb);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.g-suggest-secondary {
+    font-size: 13px;
+    color: var(--dx-muted, #64748b);
+    font-weight: 500;
+}
+
+.g-suggest-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.g-suggest-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.g-suggest-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.g-suggest-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}

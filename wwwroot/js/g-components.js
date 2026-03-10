@@ -572,6 +572,8 @@ function setupGFileUploader(el) {
     const folder = el.dataset.folder || "";
     const resultInputId = el.dataset.resultInputId || "";
     const resultValueField = (el.dataset.resultValueField || "relativePath").trim();
+    const toastOnUploaded = (el.dataset.toastOnUploaded || "false") === "true";
+    const successToastText = (el.dataset.successToastText || "附件上傳成功").trim();
     const columnName = (el.dataset.columnName || "").trim();
     const tableId = (el.dataset.tableId || "").trim();
     const onValueChangedName = el.dataset.onValueChanged || "";
@@ -728,6 +730,11 @@ function setupGFileUploader(el) {
             writeResultInput(resultValue);
             setTargetColumnValue(resultValue, filesResult);
             showMessage("Upload success", "success");
+            if (toastOnUploaded && typeof window.gToast === "function") {
+                const count = filesResult.length;
+                const suffix = count > 0 ? ` (${count})` : "";
+                window.gToast(`${successToastText}${suffix}`, "success");
+            }
             callNamedFunction(onUploadedName, {
                 files: filesResult,
                 value: resultValue,
@@ -884,6 +891,429 @@ function callNamedFunction(fnName, payload) {
         target(payload);
     }
 }
+
+function initGValidate(root) {
+    const host = root || document;
+    const nodes = host.querySelectorAll('script[data-g-validate]');
+    nodes.forEach((el) => {
+        if (el.dataset.gValidateInitialized === "1") return;
+        el.dataset.gValidateInitialized = "1";
+        setupGValidate(el);
+    });
+}
+
+function setupGValidate(scriptEl) {
+    let config = null;
+    try {
+        config = JSON.parse(scriptEl.textContent || "{}");
+    } catch {
+        config = null;
+    }
+    if (!config || !config.bindingObjectId) return;
+
+    const bindingId = `${config.bindingObjectId}`.trim();
+    const root = document.getElementById(bindingId);
+    if (!root) return;
+
+    const state = {
+        config,
+        root,
+        key: `gValidateCarryOn:${config.name || bindingId}`,
+        errors: {}
+    };
+
+    if (config.defaultActive) {
+        applyDefaultValues(state);
+    }
+
+    if (config.leaveValidation) {
+        bindLeaveValidation(state);
+    }
+
+    bindSubmitValidation(state);
+    window.gValidate = window.gValidate || {};
+    window.gValidate._instances = window.gValidate._instances || {};
+    window.gValidate._instances[bindingId] = state;
+}
+
+function applyDefaultValues(state) {
+    const carryOnData = state.config.carryOn ? readCarryOn(state.key) : {};
+    (state.config.columns || []).forEach((col) => {
+        const field = resolveValidateField(state.root, col.fieldName);
+        if (!field) return;
+
+        const current = getValidateFieldValue(field);
+        if (!isEmptyValue(current)) return;
+
+        let nextValue = "";
+        if (col.carryOn && carryOnData && carryOnData[col.fieldName] !== undefined) {
+            nextValue = carryOnData[col.fieldName];
+        } else if (col.defaultValue) {
+            nextValue = resolveDefaultValue(col.defaultValue, state);
+        }
+
+        if (!isEmptyValue(nextValue)) {
+            setValidateFieldValue(field, nextValue);
+        }
+    });
+}
+
+function bindLeaveValidation(state) {
+    (state.config.columns || []).forEach((col) => {
+        const field = resolveValidateField(state.root, col.fieldName);
+        if (!field) return;
+
+        const evt = (field.type === "checkbox" || field.type === "radio" || field.tagName === "SELECT") ? "change" : "blur";
+        field.addEventListener(evt, () => {
+            validateSingleField(state, col);
+        });
+    });
+}
+
+function bindSubmitValidation(state) {
+    const form = state.root.tagName === "FORM" ? state.root : state.root.closest("form");
+    if (!form) return;
+
+    form.addEventListener("submit", async (e) => {
+        const valid = await runValidation(state);
+        if (!valid) {
+            e.preventDefault();
+            e.stopPropagation();
+        } else {
+            persistCarryOn(state);
+        }
+    });
+}
+
+async function runValidation(state) {
+    clearValidationSummary(state.root);
+    const errors = [];
+    const columns = Array.isArray(state.config.columns) ? state.config.columns : [];
+
+    for (const col of columns) {
+        const result = await validateSingleField(state, col);
+        if (!result.valid) {
+            errors.push(result);
+            if ((state.config.validateMode || "One").toLowerCase() !== "all") {
+                break;
+            }
+        }
+    }
+
+    if (state.config.checkKeyFieldEmpty) {
+        const firstField = columns[0]?.fieldName || "";
+        const field = resolveValidateField(state.root, firstField);
+        if (field && isEmptyValue(getValidateFieldValue(field))) {
+            errors.unshift({
+                fieldName: firstField,
+                message: `${getFieldCaption(field, columns[0])} 不可空白`
+            });
+        }
+    }
+
+    if (errors.length > 0) {
+        showValidationMessages(state.root, errors);
+        focusFirstInvalid(state.root, errors[0]?.fieldName);
+        return false;
+    }
+
+    return true;
+}
+
+async function validateSingleField(state, col) {
+    const field = resolveValidateField(state.root, col.fieldName);
+    if (!field) return { valid: true };
+
+    const value = getValidateFieldValue(field);
+    clearFieldValidation(field, col);
+
+    if (col.checkNull && isEmptyValue(value)) {
+        const message = col.warningMsg || col.validateMessage || `${getFieldCaption(field, col)} 不可空白`;
+        markFieldInvalid(field, col, message);
+        return { valid: false, fieldName: col.fieldName, message };
+    }
+
+    if (!isEmptyValue(value) && (col.rangeFrom || col.rangeTo)) {
+        const rangeMessage = checkRangeValue(value, col.rangeFrom, col.rangeTo, getFieldCaption(field, col));
+        if (rangeMessage) {
+            markFieldInvalid(field, col, rangeMessage);
+            return { valid: false, fieldName: col.fieldName, message: rangeMessage };
+        }
+    }
+
+    if (!isEmptyValue(value) && col.compareField && col.compareMode) {
+        const compareMessage = checkCompareFieldValue(state.root, field, col);
+        if (compareMessage) {
+            markFieldInvalid(field, col, compareMessage);
+            return { valid: false, fieldName: col.fieldName, message: compareMessage };
+        }
+    }
+
+    if (!isEmptyValue(value) && (col.validate || col.checkMethod)) {
+        const fnName = (col.validate || col.checkMethod || "").trim();
+        const result = await callValidateFunction(fnName, value, state, col);
+        if (result !== true && result !== undefined && result !== null && result !== "") {
+            const message = typeof result === "string"
+                ? result
+                : (col.warningMsg || col.validateMessage || `${getFieldCaption(field, col)} 驗證失敗`);
+            markFieldInvalid(field, col, message);
+            return { valid: false, fieldName: col.fieldName, message };
+        }
+        if (result === false) {
+            const message = col.warningMsg || col.validateMessage || `${getFieldCaption(field, col)} 驗證失敗`;
+            markFieldInvalid(field, col, message);
+            return { valid: false, fieldName: col.fieldName, message };
+        }
+    }
+
+    return { valid: true };
+}
+
+function resolveValidateField(root, fieldName) {
+    const name = `${fieldName || ""}`.trim();
+    if (!name) return null;
+
+    return root.querySelector(`#${cssEscape(name)}`)
+        || root.querySelector(`[name="${cssEscape(name)}"]`)
+        || root.querySelector(`[data-field-name="${cssEscape(name)}"]`)
+        || null;
+}
+
+function getValidateFieldValue(field) {
+    if (!field) return "";
+    if (field.type === "checkbox") return field.checked ? (field.value || "true") : "";
+    if (field.type === "radio") {
+        const checked = field.form?.querySelector(`[name="${cssEscape(field.name)}"]:checked`) || document.querySelector(`[name="${cssEscape(field.name)}"]:checked`);
+        return checked ? checked.value : "";
+    }
+    return `${field.value ?? ""}`.trim();
+}
+
+function setValidateFieldValue(field, value) {
+    if (!field) return;
+    if (field.type === "checkbox") {
+        field.checked = !!value && value !== "N" && value !== "false";
+    } else {
+        field.value = value ?? "";
+    }
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function isEmptyValue(value) {
+    return value === undefined || value === null || `${value}`.trim() === "" || `${value}` === "0";
+}
+
+function resolveDefaultValue(raw, state) {
+    const value = `${raw || ""}`.trim();
+    if (!value) return "";
+    const fn = window[value];
+    if (typeof fn === "function") {
+        return fn({ root: state.root, config: state.config });
+    }
+    return value;
+}
+
+function checkRangeValue(value, from, to, caption) {
+    const hasFrom = `${from || ""}`.trim() !== "";
+    const hasTo = `${to || ""}`.trim() !== "";
+    const numeric = !Number.isNaN(Number(value)) && (!hasFrom || !Number.isNaN(Number(from))) && (!hasTo || !Number.isNaN(Number(to)));
+
+    const current = numeric ? Number(value) : `${value}`;
+    const start = numeric ? Number(from) : `${from || ""}`;
+    const end = numeric ? Number(to) : `${to || ""}`;
+
+    if (hasFrom && current < start) {
+        return hasTo ? `${caption} 必須介於 ${from} 到 ${to}` : `${caption} 必須大於等於 ${from}`;
+    }
+    if (hasTo && current > end) {
+        return hasFrom ? `${caption} 必須介於 ${from} 到 ${to}` : `${caption} 必須小於等於 ${to}`;
+    }
+    return "";
+}
+
+function checkCompareFieldValue(root, field, col) {
+    const otherField = resolveValidateField(root, col.compareField);
+    if (!otherField) return "";
+
+    const leftValue = getValidateFieldValue(field);
+    const rightValue = getValidateFieldValue(otherField);
+    if (isEmptyValue(leftValue) || isEmptyValue(rightValue)) return "";
+
+    const mode = `${col.compareMode || ""}`.trim().toLowerCase();
+    const leftDate = Date.parse(leftValue);
+    const rightDate = Date.parse(rightValue);
+    const useDate = !Number.isNaN(leftDate) && !Number.isNaN(rightDate);
+    const leftNum = Number(leftValue);
+    const rightNum = Number(rightValue);
+    const useNumber = !useDate && !Number.isNaN(leftNum) && !Number.isNaN(rightNum);
+
+    const left = useDate ? leftDate : (useNumber ? leftNum : `${leftValue}`);
+    const right = useDate ? rightDate : (useNumber ? rightNum : `${rightValue}`);
+    const caption = getFieldCaption(field, col);
+    const otherCaption = getFieldCaption(otherField, { fieldName: col.compareField });
+
+    if ((mode === "after-field" || mode === "gt-field") && !(left > right)) {
+        return col.warningMsg || col.validateMessage || `${caption} 必須大於 ${otherCaption}`;
+    }
+    if ((mode === "before-field" || mode === "lt-field") && !(left < right)) {
+        return col.warningMsg || col.validateMessage || `${caption} 必須小於 ${otherCaption}`;
+    }
+    if ((mode === "gte-field" || mode === "on-or-after-field") && !(left >= right)) {
+        return col.warningMsg || col.validateMessage || `${caption} 必須大於等於 ${otherCaption}`;
+    }
+    if ((mode === "lte-field" || mode === "on-or-before-field") && !(left <= right)) {
+        return col.warningMsg || col.validateMessage || `${caption} 必須小於等於 ${otherCaption}`;
+    }
+
+    return "";
+}
+
+async function callValidateFunction(fnName, value, state, col) {
+    const fn = window[fnName];
+    if (typeof fn !== "function") return true;
+    const result = fn(value, {
+        root: state.root,
+        config: state.config,
+        column: col
+    });
+    return (result && typeof result.then === "function") ? await result : result;
+}
+
+function markFieldInvalid(field, col, message) {
+    field.classList.add("border-red-500", "ring-2", "ring-red-200");
+    field.setAttribute("data-g-validate-error", "1");
+    field.setAttribute("title", message);
+
+    const label = resolveValidateLabel(field, col);
+    if (label) {
+        if (!label.dataset.gValidateOriginalText) {
+            label.dataset.gValidateOriginalText = label.textContent || "";
+        }
+        label.classList.add("text-red-600");
+        if (!label.dataset.gValidatePrefixed) {
+            label.textContent = `* ${label.textContent || ""}`;
+            label.dataset.gValidatePrefixed = "1";
+        }
+    }
+}
+
+function clearFieldValidation(field, col) {
+    field.classList.remove("border-red-500", "ring-2", "ring-red-200");
+    field.removeAttribute("data-g-validate-error");
+    field.removeAttribute("title");
+
+    const label = resolveValidateLabel(field, col);
+    if (label) {
+        label.classList.remove("text-red-600");
+        if (label.dataset.gValidateOriginalText !== undefined) {
+            label.textContent = label.dataset.gValidateOriginalText;
+            delete label.dataset.gValidateOriginalText;
+            delete label.dataset.gValidatePrefixed;
+        }
+    }
+}
+
+function resolveValidateLabel(field, col) {
+    const link = `${col?.validateLabelLink || ""}`.trim();
+    if (link) {
+        return document.getElementById(link) || document.querySelector(link);
+    }
+    if (field.id) {
+        return document.querySelector(`label[for="${cssEscape(field.id)}"]`);
+    }
+    return field.closest("div")?.querySelector("label") || null;
+}
+
+function getFieldCaption(field, col) {
+    const label = resolveValidateLabel(field, col);
+    const text = (label?.textContent || col?.fieldName || field?.name || "欄位").replace(/^\*\s*/, "").trim();
+    return text || "欄位";
+}
+
+function showValidationMessages(root, errors) {
+    const messages = errors.map((x) => x.message).filter((x) => !!x);
+    if (!messages.length) return;
+    if (typeof window.gToast === "function") {
+        window.gToast(messages.join("\n"), "warning");
+    } else {
+        alert(messages.join("\n"));
+    }
+}
+
+function clearValidationSummary(root) {
+    root.querySelectorAll('[data-g-validate-error="1"]').forEach((el) => {
+        el.classList.remove("border-red-500", "ring-2", "ring-red-200");
+        el.removeAttribute("data-g-validate-error");
+        el.removeAttribute("title");
+    });
+}
+
+function focusFirstInvalid(root, fieldName) {
+    const field = resolveValidateField(root, fieldName);
+    if (field && typeof field.focus === "function") {
+        field.focus();
+    }
+}
+
+function readCarryOn(key) {
+    try {
+        return JSON.parse(localStorage.getItem(key) || "{}");
+    } catch {
+        return {};
+    }
+}
+
+function persistCarryOn(state) {
+    if (!state.config.carryOn) return;
+    const payload = {};
+    (state.config.columns || []).forEach((col) => {
+        if (!col.carryOn) return;
+        const field = resolveValidateField(state.root, col.fieldName);
+        if (!field) return;
+        payload[col.fieldName] = getValidateFieldValue(field);
+    });
+    try {
+        localStorage.setItem(state.key, JSON.stringify(payload));
+    } catch {
+        // ignore storage failures
+    }
+}
+
+window.gValidate = window.gValidate || {};
+window.gValidate.validate = async function (bindingObjectId) {
+    const key = `${bindingObjectId || ""}`.trim();
+    const instance = window.gValidate?._instances?.[key];
+    if (!instance) return true;
+    const valid = await runValidation(instance);
+    if (valid) {
+        persistCarryOn(instance);
+    }
+    return valid;
+};
+
+window.gFileUploader = window.gFileUploader || {};
+window.gFileUploader.openResult = function (resultInputId, openUrlTemplate) {
+    const inputId = (resultInputId || "").trim();
+    if (!inputId) return;
+
+    const hidden = document.getElementById(inputId);
+    const filePath = hidden?.value || "";
+    if (!filePath) {
+        if (typeof window.gToast === "function") {
+            window.gToast("請先上傳附件", "warning");
+        }
+        return;
+    }
+
+    const template = (openUrlTemplate || "/Files/Open?path={path}").trim();
+    const encodedPath = encodeURIComponent(filePath);
+    const url = template.includes("{path}")
+        ? template.replaceAll("{path}", encodedPath)
+        : `${template}${template.includes("?") ? "&" : "?"}path=${encodedPath}`;
+
+    window.open(url, "_blank");
+};
 
 function initGCardViews(root) {
     const host = root || document;
@@ -1236,9 +1666,10 @@ function iconHtml(icon) {
 
 document.addEventListener("DOMContentLoaded", () => {
     initGFileUploaders(document);
+    initGValidate(document);
     initGCardViews(document);
 });
 
 window.initGFileUploaders = initGFileUploaders;
+window.initGValidate = initGValidate;
 window.initGCardViews = initGCardViews;
-
